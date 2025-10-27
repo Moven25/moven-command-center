@@ -77,26 +77,53 @@
   </header>
   <main>
     <nav class="sidebar">
-      <a href="#">Dashboard</a>
-      <a href="#">Mission Control</a>
-      <a href="#">Carriers</a>
-      <a href="#">Brokers</a>
-      <a href="#">Finance Command</a>
-      <a href="#">CRM</a>
-      <a href="#">Settings</a>
-    </nav>
-    <section class="content">
-      <div class="panel">
-        <h2>Mission Control Overview</h2>
-        <p>Current Active Carriers: 0</p>
-        <p>Pending Loads: 0</p>
-        <p>System Status: Idle</p>
-      </div>
-      <div class="panel">
-        <h2>Notifications</h2>
-        <p>No alerts at this time.</p>
-      </div>
-    </section>
-  </main>
+  <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
+  <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
+  <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
+  <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
+  <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
+</nav> <section class="content">
+
+  <!-- MOVEN Command Panels -->
+  <div id="missionControl" class="panel-content">
+    <div class="panel">
+      <h2>Mission Control</h2>
+      <p>Overview of carriers, loads, and alerts.</p>
+    </div>
+  </div>
+
+  <div id="carrierCommand" class="panel-content" style="display:none;">
+    <div class="panel">
+      <h2>Carrier Command</h2>
+      <p>Carrier management dashboard (add/edit coming soon).</p>
+    </div>
+  </div>
+
+  <div id="brokerCommand" class="panel-content" style="display:none;">
+    <div class="panel">
+      <h2>Broker Command</h2>
+      <p>Broker relationship tracking.</p>
+    </div>
+  </div>
+
+  <div id="financeCommand" class="panel-content" style="display:none;">
+    <div class="panel">
+      <h2>Finance Command</h2>
+      <p>Profit First overview with account gauges.</p>
+    </div>
+  </div>
+
+  <div id="crmCommand" class="panel-content" style="display:none;">
+    <div class="panel">
+      <h2>CRM Command</h2>
+      <p>Contact and communication management hub.</p>
+    </div>
+  </div>
+
+</section>
+
+
+    </main>
+<script src="command_panels.js"></script>
 </body>
 </html>
