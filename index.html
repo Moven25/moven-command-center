@@ -1,94 +1,59 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px 'Helvetica Neue'}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px 'Helvetica Neue'; min-height: 15.0px}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOVEN Command Console</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #ff0101;
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    input, button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+    }
+    input {
+      width: 250px;
+    }
+    button {
+      background: #ff0101;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #c40000;
+    }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;MOVEN Command Console&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body { background:#0a0a0a; color:#f0f0f0; font-family: Arial, sans-serif; padding:40px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>input, button { margin-top:10px; padding:8px; font-size:16px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>button { cursor:pointer; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>a { color:#7fb3ff; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- Load your config (ACCESS_CODE, SHEET_PUBLISH_ID, GIDs) --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="config.js"&gt;&lt;/script&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;h2&gt;Private Access&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;p&gt;Enter your access code to open the MOVEN console.&lt;/p&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;input id="accessInput" type="password" placeholder="Enter access code"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;button onclick="unlockBase()"&gt;Unlock&lt;/button&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;hr&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="app"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p&gt;Tip: change the code in &lt;code&gt;config.js&lt;/code&gt;.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p&gt;&lt;strong&gt;MOVEN Command Console&lt;/strong&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p&gt;Data Source: &lt;em&gt;Change this in &lt;code&gt;config.js&lt;/code&gt;&lt;/em&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p&gt;&lt;button onclick="runChecks()"&gt;Run Checks&lt;/button&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="status"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>// Unlock using ACCESS_CODE from config.js</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function unlockBase() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const entered = document.getElementById('accessInput').value.trim();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!window.MOVEN_CONFIG) return alert('Config not loaded.');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (entered === window.MOVEN_CONFIG.ACCESS_CODE) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Reveal console UI (simple approach: remove the access section)</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.querySelector('h2').remove();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.querySelector('p').remove();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('accessInput').remove();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.querySelector('button').remove();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>alert('Access Denied – please check your code.');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// Minimal check to confirm CSV endpoints respond</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function runChecks() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const cfg = window.MOVEN_CONFIG;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!cfg) { alert('Config not loaded.'); return; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const base = `https://docs.google.com/spreadsheets/d/e/${cfg.SHEET_PUBLISH_ID}/pub`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const feeds = {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>market_power:<span class="Apple-converted-space">  </span>`${base}?gid=${cfg.TABS.market_power}&amp;single=true&amp;output=csv`,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>seasonal_flow: `${base}?gid=${cfg.TABS.seasonal_flow}&amp;single=true&amp;output=csv`,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>lane_command:<span class="Apple-converted-space">  </span>`${base}?gid=${cfg.TABS.lane_command}&amp;single=true&amp;output=csv`,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>fleet_checkin: `${base}?gid=${cfg.TABS.fleet_checkin}&amp;single=true&amp;output=csv`,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>fuel_zones:<span class="Apple-converted-space">    </span>`${base}?gid=${cfg.TABS.fuel_zones}&amp;single=true&amp;output=csv`,</p>
-<p class="p1"><span class="Apple-converted-space">      </span>};</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const status = document.getElementById('status');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>status.innerHTML = '&lt;p&gt;Checking…&lt;/p&gt;';</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const rows = [];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>Object.entries(feeds).forEach(([name, url]) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>fetch(url, { cache: 'no-store' })</p>
-<p class="p1"><span class="Apple-converted-space">          </span>.then(r =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>rows.push(`&lt;div&gt;• &lt;strong&gt;${name}&lt;/strong&gt; — ${r.ok ? 'OK ✅' : 'ERROR ' + r.status + ' ❌'} — &lt;a href="${url}" target="_blank"&gt;open&lt;/a&gt;&lt;/div&gt;`);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>})</p>
-<p class="p1"><span class="Apple-converted-space">          </span>.catch(() =&gt; rows.push(`&lt;div&gt;• &lt;strong&gt;${name}&lt;/strong&gt; — FAILED ❌&lt;/div&gt;`))</p>
-<p class="p1"><span class="Apple-converted-space">          </span>.finally(() =&gt; { status.innerHTML = rows.join(''); });</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <h2>Private Access Only</h2>
+  <p>Enter your access code to open the MOVEN console.</p>
+  <input id="accessInput" type="password" placeholder="Enter access code">
+  <button onclick="unlockBase()">Unlock</button>
+  <p id="status"></p>
+
+  <script src="config.js"></script>
+  <script>
+    function unlockBase() {
+      const ACCESS_CODE = "MOVEN2025"; // temporary placeholder code
+      const input = document.getElementById("accessInput").value.trim();
+      const status = document.getElementById("status");
+      if (input === ACCESS_CODE) {
+        status.innerHTML = "Access Granted ✅ Loading Command Console...";
+        setTimeout(() => {
+          window.location.href = "/dashboard.html"; // future redirect
+        }, 1500);
+      } else {
+        status.innerHTML = "❌ Invalid code. Please try again.";
+      }
+    }
+  </script>
 </body>
 </html>
