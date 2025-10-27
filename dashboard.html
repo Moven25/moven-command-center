@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOVEN Command Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0a0a0a;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #111;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #ff0101;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 5px rgba(255,0,0,0.3);
+    }
+    nav {
+      background: #141414;
+      width: 240px;
+      padding-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      border-right: 2px solid #ff0101;
+    }
+    nav a {
+      color: #ff0101;
+      text-decoration: none;
+      padding: 10px 25px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    nav a:hover {
+      background: #ff0101;
+      color: #fff;
+    }
+    main {
+      flex: 1;
+      display: flex;
+    }
+    .sidebar {
+      min-width: 240px;
+    }
+    .content {
+      flex: 1;
+      padding: 40px;
+      background: #0f0f0f;
+    }
+    .panel {
+      background: #1b1b1b;
+      border: 1px solid #ff0101;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .panel h2 {
+      color: #ff0101;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>MOVEN COMMAND SYSTEM</div>
+    <div>🟢 Online</div>
+  </header>
+  <main>
+    <nav class="sidebar">
+      <a href="#">Dashboard</a>
+      <a href="#">Mission Control</a>
+      <a href="#">Carriers</a>
+      <a href="#">Brokers</a>
+      <a href="#">Finance Command</a>
+      <a href="#">CRM</a>
+      <a href="#">Settings</a>
+    </nav>
+    <section class="content">
+      <div class="panel">
+        <h2>Mission Control Overview</h2>
+        <p>Current Active Carriers: 0</p>
+        <p>Pending Loads: 0</p>
+        <p>System Status: Idle</p>
+      </div>
+      <div class="panel">
+        <h2>Notifications</h2>
+        <p>No alerts at this time.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
