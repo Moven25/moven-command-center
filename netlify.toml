@@ -1,9 +1,11 @@
-[[headers]]
-for = "/*"
-  [headers.values]
-  Content-Type = "text/html; charset=UTF-8"
+[build]
+  publish = "."
+  command = ""
 
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Type = "text/html; charset=utf-8"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer-when-downgrade"
