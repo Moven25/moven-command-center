@@ -1,59 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOVEN Command Console</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOVEN Command System</title>
   <style>
     body {
       background: #0a0a0a;
       color: #ff0101;
       font-family: Arial, sans-serif;
-      padding: 40px;
-      text-align: center;
+      margin: 0;
+      padding: 0;
+      display: flex;
     }
-    input, button {
-      margin-top: 10px;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 4px;
+    .sidebar {
+      width: 220px;
+      background: #1a1a1a;
+      height: 100vh;
+      padding: 20px;
+      border-right: 2px solid #ff0101;
     }
-    input {
-      width: 250px;
-    }
-    button {
-      background: #ff0101;
-      color: #fff;
+    .sidebar a {
+      display: block;
+      color: #ff0101;
+      text-decoration: none;
+      margin: 12px 0;
+      font-weight: bold;
       cursor: pointer;
     }
-    button:hover {
-      background: #c40000;
+    .sidebar a:hover {
+      text-decoration: underline;
+    }
+    .content {
+      flex: 1;
+      padding: 30px;
+    }
+    .panel-content {
+      display: none;
+      border: 1px solid #ff0101;
+      padding: 20px;
+      border-radius: 6px;
+      background: #111;
+    }
+    .panel-content h2 {
+      margin-top: 0;
+      color: #ff0101;
     }
   </style>
 </head>
 <body>
-  <h2>Private Access Only</h2>
-  <p>Enter your access code to open the MOVEN console.</p>
-  <input id="accessInput" type="password" placeholder="Enter access code">
-  <button onclick="unlockBase()">Unlock</button>
-  <p id="status"></p>
+  <nav class="sidebar">
+    <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
+    <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
+    <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
+    <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
+    <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
+  </nav>
 
-  <script src="config.js"></script>
-  <script>
-    function unlockBase() {
-      const ACCESS_CODE = "MOVEN2025"; // temporary placeholder code
-      const input = document.getElementById("accessInput").value.trim();
-      const status = document.getElementById("status");
-      if (input === ACCESS_CODE) {
-        status.innerHTML = "Access Granted ✅ Loading Command Console...";
-        setTimeout(() => {
-          window.location.href = "/dashboard.html"; // future redirect
-        }, 1500);
-      } else {
-        status.innerHTML = "❌ Invalid code. Please try again.";
-      }
-    }
-  </script>
+  <main class="content">
+    <div id="missionControl" class="panel-content" style="display:block;">
+      <h2>Mission Control</h2>
+      <p>Overview of carriers, loads, and alerts.</p>
+    </div>
+
+    <div id="carrierCommand" class="panel-content">
+      <h2>Carrier Command</h2>
+      <p>Carrier management dashboard (add/edit coming soon).</p>
+    </div>
+
+    <div id="brokerCommand" class="panel-content">
+      <h2>Broker Command</h2>
+      <p>Broker relationship tracking.</p>
+    </div>
+
+    <div id="financeCommand" class="panel-content">
+      <h2>Finance Command</h2>
+      <p>Profit First overview with account gauges.</p>
+    </div>
+
+    <div id="crmCommand" class="panel-content">
+      <h2>CRM Command</h2>
+      <p>Contact and communication management hub.</p>
+    </div>
+  </main>
+
+  <script src="command_panels.js"></script>
 </body>
 </html>
