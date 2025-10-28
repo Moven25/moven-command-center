@@ -1,2 +1,3 @@
-/*    /index.html    200
-http://command.movenlogistics.com/*  https://command.movenlogistics.com/:splat  301!
+/js/*    /js/:splat    200
+/*       /index.html    200
+http://command.movenlogistics.com/*    https://command.movenlogistics.com/:splat    301!
