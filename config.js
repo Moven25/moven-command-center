@@ -1,12 +1,12 @@
 window.MOVEN_CONFIG = {
   ACCESS_CODE: "Moven2026",
-  SHEET_PUBLISH_ID: "2PACX-1vS7NYEayV6hx1prr66ZMfNn7mWruqNKDVyvPCwNhkvKvnzQ-4zCLTSkRQtv9QC7geaBqSYISokNBPMv",
+  SHEET_PUBLISH_ID: "2PACX-1vS7NEayV6hx1p...etc",
   TABS: {
     market_power: "0",
-    seasonal_flow: "1413461949",
-    lane_command: "1012805009",
-    fleet_checkin: "163017449",
-    fuel_zones: "33721459"
+    seasonal_flow: "14134614949",
+    lane_command: "18126850609",
+    fleet_checkin: "1361074404",
+    fuel_zones: "339724569"
   },
   ALERT_THRESHOLDS: {
     market_delta_pts: 10,
@@ -15,6 +15,7 @@ window.MOVEN_CONFIG = {
     nws_levels: ["Advisory", "Watch", "Warning"]
   }
 };
+
 // --- Dummy Data Mode for MOVEN Command ---
 window.MOVEN_DUMMY = {
   carriers: [
@@ -32,4 +33,5 @@ window.MOVEN_DUMMY = {
     { type: "Inactive MC", carrier: "Alpha Logistics", days_left: 3 }
   ]
 };
-Added dummy data preview for Mission Control
+
+console.log("MOVEN Command config loaded successfully");
