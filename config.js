@@ -15,3 +15,21 @@ window.MOVEN_CONFIG = {
     nws_levels: ["Advisory", "Watch", "Warning"]
   }
 };
+// --- Dummy Data Mode for MOVEN Command ---
+window.MOVEN_DUMMY = {
+  carriers: [
+    { name: "Titan Freight LLC", trucks: 5, status: "Active", mc: "123456", dot: "789012" },
+    { name: "Empire Hauling", trucks: 3, status: "Pending", mc: "654321", dot: "210987" },
+    { name: "Alpha Logistics", trucks: 7, status: "Active", mc: "987654", dot: "345678" }
+  ],
+  loads: [
+    { origin: "Dallas, TX", destination: "Chicago, IL", rate: "$2,450", status: "In Transit" },
+    { origin: "Atlanta, GA", destination: "Houston, TX", rate: "$1,850", status: "Delivered" },
+    { origin: "Los Angeles, CA", destination: "Phoenix, AZ", rate: "$1,200", status: "Assigned" }
+  ],
+  alerts: [
+    { type: "Insurance Expiring", carrier: "Empire Hauling", days_left: 7 },
+    { type: "Inactive MC", carrier: "Alpha Logistics", days_left: 3 }
+  ]
+};
+Added dummy data preview for Mission Control
