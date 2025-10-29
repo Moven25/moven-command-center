@@ -15,3 +15,5 @@
 /*.html
   Content-Type: text/html; charset=utf-8
   Cache-Control: public, max-age=600
+/js/command_panels.js
+  Content-Type: application/javascript
