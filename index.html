@@ -42,10 +42,20 @@
       border-radius: 6px;
       background: #111;
     }
-    .panel-content h2 {
-      margin-top: 0;
-      color: #ff0101;
-    }
+    
+.panel-content h2 {
+  margin-top: 0;
+  color: #ff0101;
+}
+
+.panel-content {
+  display: none;
+  color: #fff;
+}
+
+.panel-content:first-of-type {
+  display: block;
+}
   </style>
 </head>
 <body>
@@ -59,10 +69,9 @@
 
   <main class="content">
     <div id="missionControl" class="panel-content" style="display:block;">
-      <h2>Mission Control</h2>
-      <p>Overview of carriers, loads, and alerts.</p>
-    </div>
-
+  <h2>Mission Control</h2>
+  <p>Overview of carriers, loads, and alerts.</p>
+</div>
     <div id="carrierCommand" class="panel-content">
       <h2>Carrier Command</h2>
       <p>Carrier management dashboard (add/edit coming soon).</p>
