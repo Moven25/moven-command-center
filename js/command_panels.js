@@ -6,5 +6,8 @@ function loadPanel(panelId) {
 }
 
 // Default open Mission Control
-window.onload = () => loadPanel("missionControl");
-console.log("✅ MOVEN Command Panel Loaded — Google Sheet connection active.");
+window.onload = () => {
+  loadPanel("missionControl");
+  document.getElementById("missionControl").style.display = "block";
+  console.log("✅ MOVEN Command Panel Loaded — Google Sheet connection active.");
+};
