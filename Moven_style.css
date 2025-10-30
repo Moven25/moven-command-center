@@ -120,3 +120,16 @@ header::before {
   80% { opacity: 1; }
   100% { left: 100%; opacity: 0; }
 }
+/* ===== Header Glow Animation ===== */
+@keyframes headerGlow {
+  0% { box-shadow: 0 0 0px red; }
+  50% { box-shadow: 0 0 20px red; }
+  100% { box-shadow: 0 0 0px red; }
+}
+
+header div {
+  animation: headerGlow 6s ease-in-out infinite;
+}
+header div {
+  animation: headerGlow 6s ease-in-out infinite, sweep 6s linear infinite;
+}
