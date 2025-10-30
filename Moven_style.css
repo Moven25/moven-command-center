@@ -1,3 +1,4 @@
+
 /* MOVEN Command Center Theme  */
 
 body {
@@ -77,4 +78,45 @@ button:hover {
   margin: 10px 0;
   padding: 10px;
   border-radius: 6px;
+}
+/* === MOVEN Header Glow Animation === */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0a0a0a, #121212);
+  padding: 15px 30px;
+  border-bottom: 1px solid #ff1c1c;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+}
+
+header div:first-child {
+  font-size: 1.3em;
+  color: #ff1c1c;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 2;
+}
+
+header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150px;
+  width: 150px;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 0, 0, 0.5), transparent);
+  animation: sweep 6s linear infinite;
+}
+
+@keyframes sweep {
+  0% { left: -150px; opacity: 0; }
+  20% { opacity: 1; }
+  50% { left: 100%; opacity: 0.5; }
+  80% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
 }
