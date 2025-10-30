@@ -167,3 +167,37 @@ header {
   text-transform: uppercase;
   animation: headerGlow 6s ease-in-out infinite;
 }
+/* ===== MOVEN Header Visibility Fix ===== */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #0a0a0a;
+  border-bottom: 2px solid red;
+  text-align: center;
+  padding: 15px 0;
+  z-index: 1000;
+}
+
+.header-title {
+  color: #ff1c1c;
+  font-size: 1.7rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: headerGlow 6s ease-in-out infinite;
+}
+
+.status-indicator {
+  position: absolute;
+  right: 30px;
+  top: 22px;
+  color: #00ff00;
+  font-size: 0.9rem;
+}
+
+/* Push content down so header doesn’t overlap */
+main {
+  margin-top: 80px;
+}
