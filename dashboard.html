@@ -4,126 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MOVEN Command Dashboard</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #0a0a0a;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background: #111;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #ff0101;
-      font-weight: bold;
-      letter-spacing: 1px;
-      box-shadow: 0 2px 5px rgba(255,0,0,0.3);
-    }
-    nav {
-      background: #141414;
-      width: 240px;
-      padding-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      border-right: 2px solid #ff0101;
-    }
-    nav a {
-      color: #ff0101;
-      text-decoration: none;
-      padding: 10px 25px;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-    nav a:hover {
-      background: #ff0101;
-      color: #fff;
-    }
-    main {
-      flex: 1;
-      display: flex;
-    }
-    .sidebar {
-      min-width: 240px;
-    }
-    .content {
-      flex: 1;
-      padding: 40px;
-      background: #0f0f0f;
-    }
-    .panel {
-      background: #1b1b1b;
-      border: 1px solid #ff0101;
-      border-radius: 6px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .panel h2 {
-      color: #ff0101;
-      margin-bottom: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="Moven_style.css">
 </head>
 <body>
   <header>
     <div>MOVEN COMMAND SYSTEM</div>
-    <div>🟢 Online</div>
+    <div class="status-indicator online">● Online</div>
   </header>
+
   <main>
     <nav class="sidebar">
-  <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
-  <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
-  <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
-  <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
-  <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
-</nav> <section class="content">
+      <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
+      <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
+      <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
+      <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
+      <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
+      <a href="#" onclick="loadPanel('settingsPanel')">Settings</a>
+    </nav>
 
-  <!-- MOVEN Command Panels -->
-  <div id="missionControl" class="panel-content">
-    <div class="panel">
-      <h2>Mission Control</h2>
-      <p>Overview of carriers, loads, and alerts.</p>
-    </div>
-  </div>
+    <section class="content">
+      <!-- Mission Control -->
+      <div id="missionControl" class="panel-content">
+        <h2>Mission Control</h2>
+        <div class="summary-grid">
+          <div class="summary-card" id="totalCarriers">
+            <h3>Total Carriers</h3>
+            <p class="summary-value">0</p>
+          </div>
+          <div class="summary-card" id="activeLoads">
+            <h3>Active Loads</h3>
+            <p class="summary-value">0</p>
+          </div>
+          <div class="summary-card" id="systemStatus">
+            <h3>System Status</h3>
+            <p class="summary-value">Idle</p>
+          </div>
+          <div class="summary-card" id="alerts">
+            <h3>Alerts</h3>
+            <p class="summary-value">None</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  <div id="carrierCommand" class="panel-content" style="display:none;">
-    <div class="panel">
-      <h2>Carrier Command</h2>
-      <p>Carrier management dashboard (add/edit coming soon).</p>
-    </div>
-  </div>
-
-  <div id="brokerCommand" class="panel-content" style="display:none;">
-    <div class="panel">
-      <h2>Broker Command</h2>
-      <p>Broker relationship tracking.</p>
-    </div>
-  </div>
-
-  <div id="financeCommand" class="panel-content" style="display:none;">
-    <div class="panel">
-      <h2>Finance Command</h2>
-      <p>Profit First overview with account gauges.</p>
-    </div>
-  </div>
-
-  <div id="crmCommand" class="panel-content" style="display:none;">
-    <div class="panel">
-      <h2>CRM Command</h2>
-      <p>Contact and communication management hub.</p>
-    </div>
-  </div>
-
-</section>
-
-
-    </main>
-<script src="command_panels.js"></script>
+  <script src="js/command_panels.js"></script>
+  <script src="js/sheets.js"></script>
 </body>
 </html>
