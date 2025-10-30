@@ -146,3 +146,24 @@ header div {
     letter-spacing: 2px;
     animation: headerGlow 6s ease-in-out infinite;
 }
+/* ====== MOVEN Header Positioning & Visibility ====== */
+header {
+  background-color: #0a0a0a; /* dark base to make it visible */
+  border-bottom: 2px solid red; /* thin red divider line */
+  text-align: center;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.header-title {
+  color: #ff1c1c; /* MOVEN red */
+  font-size: 1.6rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: headerGlow 6s ease-in-out infinite;
+}
