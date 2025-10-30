@@ -137,3 +137,12 @@ header div {
     box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
     animation: headerGlow 6s ease-in-out infinite, sweep 6s linear infinite;
 }
+/* MOVEN Header Title Styling */
+.header-title {
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #ff1c1c;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: headerGlow 6s ease-in-out infinite;
+}
