@@ -1,6 +1,6 @@
 // MOVEN Command Center - Google Sheets Live Data
 // MOVEN Command Center – Live Carrier Data Feed
-const MOVEN_CARRIERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdKCxbvnD3G8qfZW3DdNS7xlrmmcGelkf9UEDEJ1O0F7By8Et0gyyX3O22xFpOcJ1k5Q0-7tV4E6YV/pub?gid=1944593323&single=true&output=csv":
+const MOVEN_CARRIERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdKCxbvnD3G8qfZW3DdNS7xlrmmcGelkf9UEDEJ1O0F7By8Et0gyyX3O22xFp0cJ1k5Q0-7tV4E6YV/pub?gid=1944593323&single=true&output=csv";
 
 async function loadCarrierData() {
   try {
