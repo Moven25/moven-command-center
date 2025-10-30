@@ -131,5 +131,9 @@ header div {
   animation: headerGlow 6s ease-in-out infinite;
 }
 header div {
-  animation: headerGlow 6s ease-in-out infinite, sweep 6s linear infinite;
+    color: #ff1c1c;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+    animation: headerGlow 6s ease-in-out infinite, sweep 6s linear infinite;
 }
