@@ -8,74 +8,98 @@
   <!-- MOVEN Style -->
   <link rel="stylesheet" href="Moven_style.css">
 
-  <style>
-    body {
-      background-color: #0b0b0b;
-      color: #e3e3e3;
-      font-family: "Inter", sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .sidebar {
-      width: 220px;
-      height: 100vh;
-      background: #111;
-      border-right: 2px solid #D2222A;
-      position: fixed;
-      padding: 20px;
-    }
-    .sidebar h2 {
-      color: #D2222A;
-      margin-bottom: 30px;
-    }
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
-    .sidebar ul li {
-      margin: 15px 0;
-    }
-    .sidebar ul li a {
-      color: #e3e3e3;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .sidebar ul li a:hover {
-      color: #D2222A;
-    }
+<style>
+  body {
+    background-color: #0b0b0b;
+    color: #e3e3e3;
+    font-family: "Inter", sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-    .content {
-      margin-left: 240px;
-      padding: 40px;
-    }
+  /* Sidebar */
+  .sidebar {
+    flex: 0 0 250px;
+    height: 100vh;
+    background: #111;
+    border-right: 2px solid #D2222A;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 30px 20px;
+    box-sizing: border-box;
+  }
 
-    .command-panel {
-      border: 1px solid #D2222A;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-      background-color: #121212;
-    }
+  .sidebar h2 {
+    color: #D2222A;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
 
-    .command-panel h2 {
-      color: #D2222A;
-      margin-top: 0;
-    }
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-    .summary-value {
-      font-size: 2rem;
-      font-weight: bold;
-      color: #fff;
-      margin-top: 10px;
-    }
+  .sidebar ul li {
+    margin: 18px 0;
+  }
 
-    footer {
-      color: #777;
-      text-align: center;
-      padding: 20px;
-      font-size: 0.9rem;
-    }
-  </style>
+  .sidebar ul li a {
+    color: #e3e3e3;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s ease;
+  }
+
+  .sidebar ul li a:hover {
+    color: #D2222A;
+  }
+
+  /* Main Dashboard Area */
+  .content {
+    flex: 1;
+    padding: 40px 60px;
+    overflow-y: auto;
+    background: #0b0b0b;
+    box-sizing: border-box;
+  }
+
+  .command-panel {
+    border: 1px solid #D2222A;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+    background-color: #121212;
+    box-shadow: 0px 0px 10px rgba(210, 34, 42, 0.15);
+  }
+
+  .command-panel h2, 
+  .command-panel h3 {
+    color: #D2222A;
+    margin-top: 0;
+  }
+
+  .summary-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    margin-top: 10px;
+  }
+
+  footer {
+    color: #777;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.9rem;
+  }
+</style>
 </head>
 
 <body>
