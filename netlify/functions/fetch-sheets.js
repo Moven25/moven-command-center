@@ -2,7 +2,7 @@
 // Ensures Safari & Chrome compatibility for MOVEN Logistics
 // MOVEN Command live sync test - rebuild trigger
   const SHEET_URL =
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qFfqzDN5f7LrmcEkfYhUBEDs11FFyVEtGnygX3X2nFqCd5HG6M-7JWEE/pub?gid=0&single=true&output=csv";
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdKCxbvnD3G8qfZW3DdNS7xlrmmcGelkf9UEDEJ1O0F7By8Et0gyyX3O22xFp0cJ1k5Q0-7tV4E6YV/pub?output=csv"}
 
   try {
     const response = await fetch(SHEET_URL, {
@@ -34,4 +34,3 @@
       body: `Error fetching sheet data: ${err.message}`,
     };
   }
-}
