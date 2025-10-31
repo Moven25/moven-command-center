@@ -124,6 +124,46 @@
       margin-top: auto;
       width: 100%;
     }
+    /* ---------- LIVE SYNC INDICATOR ---------- */
+.sync-status {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-top: 8px;
+  border-top: 1px solid rgba(210, 34, 34, 0.3);
+  padding-top: 8px;
+}
+
+.sync-status span {
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background-color: #999;
+  vertical-align: middle;
+}
+
+.status-indicator.ok {
+  background-color: #00cc66;
+  box-shadow: 0 0 6px #00cc66;
+  animation: pulse 1.5s infinite;
+}
+
+.status-indicator.error {
+  background-color: #D2222A;
+  box-shadow: 0 0 6px #D2222A;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}  
   </style>
 </head>
 
@@ -147,10 +187,18 @@
       <p>Overview of carriers, loads, and alerts.</p>
 
       <div class="command-panel">
-        <h3>Total Carriers</h3>
-        <div class="summary-value">3</div>
-      </div>
+  <h3>Total Carriers</h3>
+  <div class="summary-value">3</div>
 
+  <!-- Live Data Sync Status -->
+  <div class="sync-status">
+    <p>Last Sync: <span id="sync-time">Loading...</span></p>
+   <p>Status:
+  <span class="status-indicator" id="sync-indicator"></span>
+  <span id="sync-status">Connecting...</span>
+</p>  
+  </div>
+</div>
       <div class="command-panel">
         <h3>Active Loads</h3>
         <p>Coming soon...</p>
@@ -166,5 +214,38 @@
       </footer>
     </div>
   </div>
+  <script>
+  // MOVEN Command: Live Sync Monitor
+  async function updateSyncStatus() {
+    const timeElement = document.getElementById("sync-time");
+    const statusElement = document.getElementById("sync-status");
+    const indicator = document.getElementById("sync-indicator");
+
+    try {
+      const response = await fetch(
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qfFqzDN5f7LrrmCoEkfYbUEDEs1I0FTy@Etgny%3X02nFq0c3H500-p7HUEE/pub?gid=0&single=true&output=csv",
+        { cache: "no-cache" }
+      );
+
+      if (response.ok) {
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString();
+        statusElement.textContent = "Live";
+        statusElement.className = "ok";
+        indicator.className = "status-indicator ok";
+      } else {
+        throw new Error("Failed");
+      }
+    } catch (error) {
+      statusElement.textContent = "Disconnected";
+      statusElement.className = "error";
+      indicator.className = "status-indicator error";
+    }
+  }
+
+  // Initial check + refresh every 60 seconds
+  updateSyncStatus();
+  setInterval(updateSyncStatus, 60000);
+</script>
 </body>
 </html>
