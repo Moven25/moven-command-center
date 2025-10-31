@@ -1,19 +1,22 @@
+
+
 /*
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: same-origin
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Access-Control-Allow-Headers: Origin, Content-Type, Accept
+  Content-Type: text/html; charset=UTF-8
+*/
 
 /js/*
   Content-Type: application/javascript
-  Cache-Control: public, max-age=31536000, immutable
 
-/*.css
+/css/*
   Content-Type: text/css
-  Cache-Control: public, max-age=31536000, immutable
 
-/*.html
-  Content-Type: text/html; charset=utf-8
-  Cache-Control: public, max-age=600
-/js/command_panels.js
-  Content-Type: application/javascript
+/*
+  X-Content-Type-Options: nosniff
+
+# Ensure Google Sheet CSV fetch works on Safari
+https://docs.google.com/spreadsheets/*
+  Access-Control-Allow-Origin: *
+  Content-Type: text/csv; charset=utf-8
