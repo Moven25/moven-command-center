@@ -41,5 +41,5 @@
 # --- MOVEN FUNCTION REDIRECTS ---
 [[redirects]]
   from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
+  to = ".netlify/functions/:splat"
   status = 200
