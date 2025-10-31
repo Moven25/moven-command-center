@@ -1,160 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MOVEN Command</title>
 
-  <!-- MOVEN Style -->
-  <link rel="stylesheet" href="Moven_style.css">
+  <style>
+    /* ---------- GLOBAL LAYOUT ---------- */
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #0b0b0b;
+      color: #e3e3e3;
+      font-family: "Poppins", sans-serif;
+      overflow-x: hidden;
+    }
 
-<style>
-  body {
-    background-color: #0b0b0b;
-    color: #e3e3e3;
-    font-family: "Inter", sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
+    .layout {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      width: 100%;
+    }
 
-  /* Sidebar */
-  .sidebar {
-    flex: 0 0 250px;
-    height: 100vh;
-    background: #111;
-    border-right: 2px solid #D2222A;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 30px 20px;
-    box-sizing: border-box;
-  }
+    /* ---------- SIDEBAR ---------- */
+    .sidebar {
+      width: 260px;
+      background: #111;
+      color: #e3e3e3;
+      padding: 30px 20px;
+      border-right: 2px solid #D2222A;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+    }
 
-  .sidebar h2 {
-    color: #D2222A;
-    margin-bottom: 40px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 700;
-  }
+    .sidebar h2 {
+      color: #D2222A;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 25px;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
 
-  .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
 
-  .sidebar ul li {
-    margin: 18px 0;
-  }
+    .sidebar ul li {
+      margin: 18px 0;
+    }
 
-  .sidebar ul li a {
-    color: #e3e3e3;
-    text-decoration: none;
-    font-weight: 500;
-    transition: 0.2s ease;
-  }
+    .sidebar ul li a {
+      color: #e3e3e3;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
 
-  .sidebar ul li a:hover {
-    color: #D2222A;
-  }
+    .sidebar ul li a:hover {
+      color: #D2222A;
+    }
 
-  
-  }/* Main Dashboard Area */
-.content {
-  flex: 1;
-  padding: 40px 60px;
-  overflow-y: auto;
-  background: #0b0b0b;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* <-- forces alignment to the left */
-max-width: 100%;
-}
+    /* ---------- MAIN DASHBOARD ---------- */
+    .content {
+      flex: 1;
+      padding: 40px 60px;
+      overflow-y: auto;
+      background: #0b0b0b;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: 100%;
+    }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}  .command-panel {
-    border: 1px solid #D2222A;
-    padding: 20px;
-    margin-bottom: 25px;
-    border-radius: 6px;
-    background-color: #121212;
-    box-shadow: 0px 0px 10px rgba(210, 34, 42, 0.15);
-  }
+    .content h2 {
+      color: #D2222A;
+      margin-top: 0;
+      font-size: 1.8rem;
+      letter-spacing: 0.5px;
+    }
 
-  .command-panel h2, 
-  .command-panel h3 {
-    color: #D2222A;
-    margin-top: 0;
-  }
+    .content p {
+      color: #aaa;
+      margin-top: 5px;
+      margin-bottom: 25px;
+    }
 
-  .summary-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #fff;
-    margin-top: 10px;
-  }
+    /* ---------- PANELS ---------- */
+    .command-panel {
+      border: 1px solid #D2222A;
+      padding: 20px 25px;
+      border-radius: 6px;
+      margin-bottom: 25px;
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: 0 0 12px rgba(210, 34, 34, 0.1);
+    }
 
-  footer {
-    color: #777;
-    text-align: center;
-    padding: 20px;
-    font-size: 0.9rem;
-  }
-</style>
+    .command-panel h3 {
+      color: #D2222A;
+      margin-top: 0;
+    }
+
+    .summary-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      color: #777;
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9rem;
+      margin-top: auto;
+      width: 100%;
+    }
+  </style>
 </head>
 
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>MOVEN Command</h2>
-    <ul>
-      <li><a href="#">Mission Control</a></li>
-      <li><a href="#">Carrier Command</a></li>
-      <li><a href="#">Broker Command</a></li>
-      <li><a href="#">Finance Command</a></li>
-      <li><a href="#">CRM Command</a></li>
-    </ul>
-  </div>
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>MOVEN Command</h2>
+      <ul>
+        <li><a href="#">Mission Control</a></li>
+        <li><a href="#">Carrier Command</a></li>
+        <li><a href="#">Broker Command</a></li>
+        <li><a href="#">Finance Command</a></li>
+        <li><a href="#">CRM Command</a></li>
+      </ul>
+    </div>
 
-  <!-- Main Content -->
-  <div class="content">
-    <div class="command-panel">
+    <!-- Main Content -->
+    <div class="content">
       <h2>Mission Control</h2>
       <p>Overview of carriers, loads, and alerts.</p>
-    </div>
 
-    <!-- ✅ New Carrier Counter Block -->
-    <div id="totalCarriers" class="command-panel">
-      <h3>Total Carriers</h3>
-      <p class="summary-value">0</p>
-    </div>
+      <div class="command-panel">
+        <h3>Total Carriers</h3>
+        <div class="summary-value">3</div>
+      </div>
 
-    <!-- Placeholder Panels -->
-    <div class="command-panel">
-      <h3>Active Loads</h3>
-      <p>Coming soon...</p>
-    </div>
+      <div class="command-panel">
+        <h3>Active Loads</h3>
+        <p>Coming soon...</p>
+      </div>
 
-    <div class="command-panel">
-      <h3>Alerts & Notifications</h3>
-      <p>No new alerts.</p>
+      <div class="command-panel">
+        <h3>Alerts & Notifications</h3>
+        <p>No new alerts.</p>
+      </div>
+
+      <footer>
+        © MOVEN Command Panel | MOVEN Logistics LLC
+      </footer>
     </div>
   </div>
-
-  <!-- Footer -->
-  <footer>
-    © MOVEN Command Panel | MOVEN Logistics LLC
-  </footer>
-
-  <!-- Scripts -->
-  <script src="js/sheets.js" type="application/javascript"></script>
 </body>
 </html>
