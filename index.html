@@ -1,99 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MOVEN Command System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOVEN Command</title>
+
+  <!-- MOVEN Style -->
+  <link rel="stylesheet" href="Moven_style.css">
+
   <style>
     body {
-      background: #0a0a0a;
-      color: #ff0101;
-      font-family: Arial, sans-serif;
+      background-color: #0b0b0b;
+      color: #e3e3e3;
+      font-family: "Inter", sans-serif;
       margin: 0;
       padding: 0;
-      display: flex;
     }
     .sidebar {
       width: 220px;
-      background: #1a1a1a;
       height: 100vh;
-      padding: 20px;
-      border-right: 2px solid #ff0101;
-    }
-    .sidebar a {
-      display: block;
-      color: #ff0101;
-      text-decoration: none;
-      margin: 12px 0;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .sidebar a:hover {
-      text-decoration: underline;
-    }
-    .content {
-      flex: 1;
-      padding: 30px;
-    }
-    .panel-content {
-      display: none;
-      border: 1px solid #ff0101;
-      padding: 20px;
-      border-radius: 6px;
       background: #111;
+      border-right: 2px solid #D2222A;
+      position: fixed;
+      padding: 20px;
     }
-    
-.panel-content h2 {
-  margin-top: 0;
-  color: #ff0101;
-}
+    .sidebar h2 {
+      color: #D2222A;
+      margin-bottom: 30px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+    .sidebar ul li a {
+      color: #e3e3e3;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .sidebar ul li a:hover {
+      color: #D2222A;
+    }
 
-.panel-content {
-  display: none;
-  color: #fff;
-}
+    .content {
+      margin-left: 240px;
+      padding: 40px;
+    }
 
-.panel-content:first-of-type {
-  display: block;
-}
+    .command-panel {
+      border: 1px solid #D2222A;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      background-color: #121212;
+    }
+
+    .command-panel h2 {
+      color: #D2222A;
+      margin-top: 0;
+    }
+
+    .summary-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    footer {
+      color: #777;
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
+
 <body>
-  <nav class="sidebar">
-    <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
-    <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
-    <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
-    <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
-    <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
-  </nav>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>MOVEN Command</h2>
+    <ul>
+      <li><a href="#">Mission Control</a></li>
+      <li><a href="#">Carrier Command</a></li>
+      <li><a href="#">Broker Command</a></li>
+      <li><a href="#">Finance Command</a></li>
+      <li><a href="#">CRM Command</a></li>
+    </ul>
+  </div>
 
-  <main class="content">
-    <div id="missionControl" class="panel-content" style="display:block;">
-  <h2>Mission Control</h2>
-  <p>Overview of carriers, loads, and alerts.</p>
-</div>
-    <div id="carrierCommand" class="panel-content">
-      <h2>Carrier Command</h2>
-      <p>Carrier management dashboard (add/edit coming soon).</p>
+  <!-- Main Content -->
+  <div class="content">
+    <div class="command-panel">
+      <h2>Mission Control</h2>
+      <p>Overview of carriers, loads, and alerts.</p>
     </div>
 
-    <div id="brokerCommand" class="panel-content">
-      <h2>Broker Command</h2>
-      <p>Broker relationship tracking.</p>
+    <!-- ✅ New Carrier Counter Block -->
+    <div id="totalCarriers" class="command-panel">
+      <h3>Total Carriers</h3>
+      <p class="summary-value">0</p>
     </div>
 
-    <div id="financeCommand" class="panel-content">
-      <h2>Finance Command</h2>
-      <p>Profit First overview with account gauges.</p>
+    <!-- Placeholder Panels -->
+    <div class="command-panel">
+      <h3>Active Loads</h3>
+      <p>Coming soon...</p>
     </div>
 
-    <div id="crmCommand" class="panel-content">
-      <h2>CRM Command</h2>
-      <p>Contact and communication management hub.</p>
+    <div class="command-panel">
+      <h3>Alerts & Notifications</h3>
+      <p>No new alerts.</p>
     </div>
-  </main>
+  </div>
 
-<script src="./js/command_panels.js" type="text/javascript"></script>
-<script src="./js/sheets.js" type="text/javascript"></script>
+  <!-- Footer -->
+  <footer>
+    © MOVEN Command Panel | MOVEN Logistics LLC
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/sheets.js" type="application/javascript"></script>
 </body>
 </html>
