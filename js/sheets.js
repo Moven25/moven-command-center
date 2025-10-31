@@ -1,6 +1,6 @@
 // MOVEN Command Center — Live Carrier Data Feed with Auto-Fallback (Safari + Chrome Compatible)
 
-const MOVEN_CARRIERS_URL = "https://docs.google.com/spreadsheets/d/1NCXtVxmWZd6-ySN3cVAJSMxnZKEQWNbXGcREn-lIyzw/gviz/tq?tqx=out:csv";
+const MOVEN_CARRIERS_URL = "/.netlify/functions/fetch-sheet";
 // Fallback CSV (hosted on Netlify in /data folder)
 const MOVEN_FALLBACK_URL = "/data/backup_carriers.csv";
 
