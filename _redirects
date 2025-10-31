@@ -1,3 +1,8 @@
-/js/*    /js/:splat    200
-/*       /index.html    200
-https://command.movenlogistics.com/*    https://command.movenlogistics.com/:splat    301!
+# Allow Netlify Functions to run
+/.netlify/functions/*  /.netlify/functions/:splat  200
+
+# Allow JS files to resolve
+/js/*  /js/:splat  200
+
+# Handle app routing
+/*  /index.html  200
