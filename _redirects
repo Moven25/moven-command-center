@@ -1,8 +1,5 @@
-# Allow Netlify Functions to run
-/.netlify/functions/*  /.netlify/functions/:splat  200
-
-# Allow JS files to resolve
-/js/*  /js/:splat  200
-
-# Handle app routing
-/*  /index.html  200
+# --- MOVEN FUNCTION REDIRECTS ---
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
