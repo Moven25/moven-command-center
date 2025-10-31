@@ -1,5 +1,3 @@
-# --- MOVEN FUNCTION REDIRECTS ---
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+/.netlify/functions/* /.netlify/functions/:splat 200
+/js/* /js/:splat 200
+/* /index.html 200
