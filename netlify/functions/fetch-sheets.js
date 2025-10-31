@@ -1,7 +1,6 @@
 // MOVEN Command: Secure Google Sheet Proxy via Netlify Function
 // Ensures Safari & Chrome compatibility for MOVEN Logistics
-
-export async function handler(event, context) {
+// MOVEN Command live sync test - rebuild trigger
   const SHEET_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qFfqzDN5f7LrmcEkfYhUBEDs11FFyVEtGnygX3X2nFqCd5HG6M-7JWEE/pub?gid=0&single=true&output=csv";
 
