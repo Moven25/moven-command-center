@@ -40,6 +40,6 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 # --- MOVEN FUNCTION REDIRECTS ---
 [[redirects]]
-  from = "netlify/functions/*"
-  to = "netlify/functions/:splat"
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
   status = 200
