@@ -1,20 +1,26 @@
 // MOVEN Command: Secure Google Sheet Proxy via Netlify Function
-// Created for MOVEN Logistics LLC to ensure Safari and CORS compatibility.
+// Ensures Safari & Chrome compatibility for MOVEN Logistics
 
-export async function handler() {
-  // ✅ Your live Google Sheet CSV link
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qFfqzDN5f7LrrmCoEkfYhUED6s11EFTyVEgEtgny3X02zFnFqc85H60b-7pWUEE/pub?gid=0&single=true&output=csv";
+export async function handler(event, context) {
+  const SHEET_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qFfqzDN5f7LrmcEkfYhUBEDs11FFyVEtGnygX3X2nFqCd5HG6M-7JWEE/pub?gid=0&single=true&output=csv";
 
   try {
-    const res = await fetch(SHEET_URL);
-    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    const data = await res.text();
+    const response = await fetch(SHEET_URL, {
+      headers: { "Cache-Control": "no-cache" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fetch failed: ${response.status}`);
+    }
+
+    const data = await response.text();
 
     return {
       statusCode: 200,
       headers: {
-        "Content-Type": "text/plain",
-        "Access-Control-Allow-Origin": "*", // ✅ allows MOVEN domain access
+        "Content-Type": "text/plain; charset=utf-8",
+        "Access-Control-Allow-Origin": "*", // ✅ allows MOVEN Command access
       },
       body: data,
     };
@@ -22,6 +28,10 @@ export async function handler() {
     console.error("❌ Error fetching Google Sheet:", err);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "text/plain",
+      },
       body: `Error fetching sheet data: ${err.message}`,
     };
   }
