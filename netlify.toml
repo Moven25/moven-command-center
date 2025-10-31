@@ -1,9 +1,12 @@
-[build]
+build]
   publish = "."
   functions = "netlify/functions"
   command = ""
 
-[[headers]]
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["netlify/functions/*"]
+  [[headers]]
   for = "/*"
   [headers.values]
     Content-Type = "text/html; charset=utf-8"
