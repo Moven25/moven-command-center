@@ -1,3 +1,4 @@
-/.netlify/functions/* /.netlify/functions/:splat 200
-/js/* /js/:splat 200
+
+# MOVEN FUNCTION REDIRECTS
+.netlify/functions/* /.netlify/functions/:splat 200
 /* /index.html 200
