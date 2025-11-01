@@ -1,31 +1,35 @@
-// MOVEN Command Center — Live Carrier Data Feed with Auto-Fallback (Safari + Chrome Compatible)
+// ===========================================================
+// MOVEN Command Center — Live Carrier Data Feed
+// Safari + Chrome Compatible | Auto-Fallback | 2025 Edition
+// ===========================================================
 
+// ✅ 1. Live data feed (via Netlify proxy)
 const MOVEN_CARRIERS_URL = "/.netlify/functions/fetch-sheets";
-// Fallback CSV (hosted on Netlify in /data folder)
+
+// ✅ 2. Local backup feed (only used if Google Sheet fails)
 const MOVEN_FALLBACK_URL = "/data/backup_carriers.csv";
 
+// ✅ 3. Load carrier data with fallback handling
 async function loadCarrierData() {
-  try {
-    console.log("🚚 MOVEN Command initializing data sync...");
+  console.log("🚀 MOVEN Command initializing data sync...");
 
-    // Attempt live Google Sheet fetch
+  try {
+    // --- Attempt live Google Sheet fetch ---
     const response = await fetch(MOVEN_CARRIERS_URL, { cache: "no-store" });
     if (!response.ok) throw new Error(`Google Sheet HTTP ${response.status}`);
 
     const csv = await response.text();
-    processCarrierData(csv, "✅ Live Google Sheet connected.");
-
+    processCarrierData(csv, "🟢 Live Google Sheet connected.");
   } catch (err) {
     console.warn("⚠️ Google Sheet load failed. Switching to fallback CSV.", err);
 
     try {
-      // Try loading fallback CSV
+      // --- Attempt local backup ---
       const backup = await fetch(MOVEN_FALLBACK_URL, { cache: "no-store" });
       if (!backup.ok) throw new Error(`Fallback HTTP ${backup.status}`);
 
       const csv = await backup.text();
-      processCarrierData(csv, "🗂️ Fallback data loaded successfully.");
-
+      processCarrierData(csv, "🟡 Fallback data loaded successfully.");
     } catch (fallbackErr) {
       console.error("❌ Error loading fallback data:", fallbackErr);
       showError("Data unavailable — please check connection or Sheet access.");
@@ -33,27 +37,25 @@ async function loadCarrierData() {
   }
 }
 
-function processCarrierData(csv, msg) {
-  const rows = csv.split("\n").slice(1); // Skip header row
-  const carriers = rows.map(r => r.split(",")).filter(r => r[0].trim() !== "");
-  const total = carriers.length;
+// ✅ 4. Parse and process CSV data
+function processCarrierData(csvText, successMessage) {
+  const rows = csvText.split("\n").slice(1).filter(r => r.trim() !== "");
+  const total = rows.length;
 
-  const totalEl = document.querySelector("#totalCarriers .summary-value");
-  if (totalEl) {
-    totalEl.textContent = total;
-    console.log(`${msg} ${total} records found.`);
-  } else {
-    console.warn("⚠️ Carrier counter element not found in DOM.");
-  }
+  // Update dashboard
+  const totalDisplay = document.querySelector("#TotalCarriers .summary-value");
+  if (totalDisplay) totalDisplay.textContent = total;
+
+  console.log(successMessage);
+  console.log(`📊 Total carriers loaded: ${total}`);
 }
 
+// ✅ 5. Show error messages cleanly
 function showError(message) {
-  const panel = document.querySelector("#totalCarriers .summary-value");
-  if (panel) {
-    panel.textContent = "—";
-    panel.style.color = "#D2222A";
-  }
-  alert(`MOVEN Command Notice: ${message}`);
+  const el = document.querySelector("#TotalCarriers .summary-value");
+  if (el) el.textContent = "0";
+  console.error(message);
 }
 
+// ✅ 6. Initialize data load when dashboard opens
 window.addEventListener("load", loadCarrierData);
