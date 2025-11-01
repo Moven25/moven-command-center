@@ -1,6 +1,6 @@
 window.MOVEN_CONFIG = {
   ACCESS_CODE: "Moven2026",
-  SHEET_PUBLISH_ID: ",2PACX-1vR9g32m-JILM6A7WieX4L4PP1-vdbIQWcSlqVYV2rsl5Amu9Q_J2l4Z3k9PEgz3nfA21Y1z6qo4AjmM  
+  SHEET_PUBLISH_ID: ", https://docs.google.com/spreadsheets/d/15DSI0R-BU6MQ7KvoBbUD1sjvPf4c8o8bHiYsJczYS3c/gviz/tq?tqx=out:csv&sheet=Carriers';
     TABS: {
     market_power: "0",
     seasonal_flow: "14134614949",
