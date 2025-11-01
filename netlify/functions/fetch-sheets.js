@@ -1,8 +1,8 @@
 // MOVEN Command: Secure Google Sheet Proxy via Netlify Function
 // Updated for Netlify ESM compatibility (2025)
 
-export default async (req, context) => {
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9WNWI-qRULZ1bAlP_YfASSFSVXfW4z74VPYvFhZwBYJIF5q3T0bqZWcU9u-R6SaxWD9t2teF0A2Tf/pub?gid=939602594&single=true&output=csv;]
+export default async (req, context) => 
+  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpbNrACSaOrNhhIB7_HsWwyB8kPQseOS0uTir3EfCa-ME4NhvJLSK2P4Y2pi8Ze0HP4ch4JJpKeS38/pub?output=csv";
 
   try {
     const response = await fetch(SHEET_URL, { headers: { "Cache-Control": "no-cache" } });
