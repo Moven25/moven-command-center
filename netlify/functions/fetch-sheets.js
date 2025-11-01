@@ -2,7 +2,7 @@
 // Updated for Netlify ESM compatibility (2025)
 
 export default async (req, context) => 
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpbNrACSaOrNhhIB7_HsWwyB8kPQseOS0uTir3EfCa-ME4NhvJLSK2P4Y2pi8Ze0HP4ch4JJpKeS38/pub?output=csv";
+  const CARRIERS_CSV_PATH = './data/Carriers.csv';
 
   try {
     const response = await fetch(SHEET_URL, { headers: { "Cache-Control": "no-cache" } });
