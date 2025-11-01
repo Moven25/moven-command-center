@@ -4,7 +4,7 @@
 // ===========================================================
 
 // ✅ 1. Live data feed (via Netlify proxy)
-const MOVEN_CARRIERS_URL = ".netlify/functions/fetch-sheets";
+const MOVEN_CARRIERS_URL = "/.netlify/functions/fetch-sheets";
 
 // ✅ 2. Local backup feed (only used if Google Sheet fails)
 const MOVEN_FALLBACK_URL = "/data/backup_carriers.csv";
