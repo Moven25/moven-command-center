@@ -9,5 +9,5 @@ function loadPanel(panelId) {
 window.onload = () => {
   loadPanel("missionControl");
   document.getElementById("missionControl").style.display = "block";
-  console.log("✅ MOVEN Command Panel Loaded — Google Sheet connection active.");
+  console.log("✅ MOVEN Command Panel Loaded – Zoho Sheet connection active.");
 };
