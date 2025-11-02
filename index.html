@@ -222,11 +222,9 @@
     const indicator = document.getElementById("sync-indicator");
 
     try {
-      const response = await fetch(
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdcXbvm083qfFqzDN5f7LrrmCoEkfYbUEDEs1I0FTy@Etgny%3X02nFq0c3H500-p7HUEE/pub?gid=0&single=true&output=csv",
-        { cache: "no-cache" }
-      );
-
+    const response = await fetch(
+     "https://sheet.zohopublic.com/sheet/published/11wj393dbcdb8644A4719b79c89353de104977d?download=csv&sheetname=Carriers"
+);
       if (response.ok) {
         const now = new Date();
         timeElement.textContent = now.toLocaleTimeString();
