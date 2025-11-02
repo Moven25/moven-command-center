@@ -1,15 +1,15 @@
 /* ==========================================================
    MOVEN COMMAND — CONFIG.JS
-   Integrated with six live Zoho Sheet data feeds
+   Six Zoho Sheet Tabs Integrated (Live CSV Feeds)
    ========================================================== */
 
 const SHEETS = {
-  carriers: "https://sheet.zohopublic.com/sheet/publishedsheet/b60b377df24d88912965f213a1a968fc5c7d20076367611e1ddcc3bd2eaa9717?format=csv",
-  brokers: "https://sheet.zohopublic.com/sheet/publishedsheet/40ea75fd22a57c01c387830b680d858b34d438876d1eec406351a9056b2eeddf?format=csv",
-  factoring: "https://sheet.zohopublic.com/sheet/publishedsheet/7db4450b9864fc3b0669b8abb46ad715fdb66b49226e3001910f7b61fc2ce04b?format=csv",
-  loads: "https://sheet.zohopublic.com/sheet/publishedsheet/72ccc5052eb831b3b15268edc8e4b7ccc465954e4ff146bb65d4439f5ae4019e?format=csv",
-  compliance: "https://sheet.zohopublic.com/sheet/publishedsheet/515c28909397dc37bf6f4f2a9d328c02568d8306ce5fbc5187d8ed9f5a9fb830?format=csv",
-  finance: "https://sheet.zohopublic.com/sheet/publishedsheet/5decf929e1dddcd56d8585a70993c709735a781b21ec3499f314aeb4e0e311f5?format=csv"
+  carriers: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Carriers",
+  brokers: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Brokers",
+  factoring: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Factoring",
+  loads: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Loads",
+  compliance: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Compliance Tracker",
+  finance: "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Finance Dashboard"
 };
 
 /* ==========================================================
@@ -50,4 +50,5 @@ async function MOVEN_SyncAll() {
   // Optional: trigger UI updates here, e.g. updateDashboard(data);
 }
 
+// Initialize sync
 MOVEN_SyncAll();
