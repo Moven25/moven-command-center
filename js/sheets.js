@@ -1,61 +1,100 @@
-// ===========================================================
-// MOVEN Command Center — Live Carrier Data Feed
-// Safari + Chrome Compatible | Auto-Fallback | 2025 Edition
-// ===========================================================
+/* ==========================================================
+   MOVEN COMMAND — SHEETS.JS
+   Handles fetching, parsing, and rendering all data from config.js
+   ========================================================== */
 
-// ✅ 1. Live data feed (via Netlify proxy)
-const MOVEN_CARRIERS_URL = "/.netlify/functions/fetch-sheets";
+// Import sheet URLs
+import { SHEETS } from "./config.js";
 
-// ✅ 2. Local backup feed (only used if Google Sheet fails)
-const MOVEN_FALLBACK_URL = "/data/backup_carriers.csv";
+/* ==========================================================
+   Utility: Convert CSV text → Array of objects
+   ========================================================== */
+function parseCSV(csvText) {
+  const [headerLine, ...lines] = csvText.split(/\r?\n/).filter(Boolean);
+  const headers = headerLine.split(",").map(h => h.trim());
 
-// ✅ 3. Load carrier data with fallback handling
-async function loadCarrierData() {
-  console.log("🚀 MOVEN Command initializing data sync...");
+  return lines.map(line => {
+    const values = line.split(",");
+    const row = {};
+    headers.forEach((h, i) => (row[h] = values[i] ? values[i].trim() : ""));
+    return row;
+  });
+}
 
+/* ==========================================================
+   Fetch and Parse Sheet Data
+   ========================================================== */
+async function getSheetData(name, url) {
   try {
-    // --- Attempt live Google Sheet fetch ---
-    const response = await fetch(MOVEN_CARRIERS_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Google Sheet HTTP ${response.status}`);
-
-    const csv = await response.text();
-    processCarrierData(csv, "🟢 Live Google Sheet connected.");
-  } catch (err) {
-    console.warn("⚠️ Google Sheet load failed. Switching to fallback CSV.", err);
-
-    try {
-      // --- Attempt local backup ---
-      const backup = await fetch(MOVEN_FALLBACK_URL, { cache: "no-store" });
-      if (!backup.ok) throw new Error(`Fallback HTTP ${backup.status}`);
-
-      const csv = await backup.text();
-      processCarrierData(csv, "🟡 Fallback data loaded successfully.");
-    } catch (fallbackErr) {
-      console.error("❌ Error loading fallback data:", fallbackErr);
-      showError("Data unavailable — please check connection or Sheet access.");
-    }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const csvText = await response.text();
+    const data = parseCSV(csvText);
+    console.log(`✅ MOVEN ${name.toUpperCase()} — ${data.length} rows loaded`);
+    return data;
+  } catch (error) {
+    console.error(`❌ MOVEN ${name.toUpperCase()} load failed:`, error);
+    return [];
   }
 }
 
-// ✅ 4. Parse and process CSV data
-function processCarrierData(csvText, successMessage) {
-  const rows = csvText.split("\n").slice(1).filter(r => r.trim() !== "");
-  const total = rows.length;
+/* ==========================================================
+   Render Data into HTML Tables
+   ========================================================== */
+function renderTable(containerId, data) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
 
-  // Update dashboard
-  const totalDisplay = document.querySelector("#TotalCarriers .summary-value");
-  if (totalDisplay) totalDisplay.textContent = total;
+  if (!data.length) {
+    container.innerHTML = `<p class="text-gray-500">No data available.</p>`;
+    return;
+  }
 
-  console.log(successMessage);
-  console.log(`📊 Total carriers loaded: ${total}`);
+  const headers = Object.keys(data[0]);
+  const table = document.createElement("table");
+  table.className =
+    "min-w-full border-collapse border border-gray-400 text-sm text-left";
+
+  // Header
+  const thead = document.createElement("thead");
+  thead.innerHTML = `<tr>${headers
+    .map(h => `<th class="border border-gray-300 p-2 bg-gray-100">${h}</th>`)
+    .join("")}</tr>`;
+  table.appendChild(thead);
+
+  // Body
+  const tbody = document.createElement("tbody");
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = headers
+      .map(
+        h =>
+          `<td class="border border-gray-200 p-2">${row[h] || "&nbsp;"}</td>`
+      )
+      .join("");
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  container.innerHTML = "";
+  container.appendChild(table);
 }
 
-// ✅ 5. Show error messages cleanly
-function showError(message) {
-  const el = document.querySelector("#TotalCarriers .summary-value");
-  if (el) el.textContent = "0";
-  console.error(message);
+/* ==========================================================
+   Main: Load and Render All Sheets
+   ========================================================== */
+async function MOVEN_LoadAllSheets() {
+  console.log("🔄 MOVEN: Loading all sheets...");
+  const results = {};
+
+  for (const [name, url] of Object.entries(SHEETS)) {
+    const data = await getSheetData(name, url);
+    results[name] = data;
+    renderTable(`table-${name}`, data);
+  }
+
+  console.log("✅ MOVEN: All sheets rendered successfully", results);
 }
 
-// ✅ 6. Initialize data load when dashboard opens
-window.addEventListener("load", loadCarrierData);
+// Initialize
+MOVEN_LoadAllSheets();
