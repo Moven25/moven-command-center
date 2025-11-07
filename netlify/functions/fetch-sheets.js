@@ -1,30 +1,23 @@
-// MOVEN Command: Secure Zoho Sheet Proxy via Netlify Function
-// Updated for Netlify ESM compatibility (2025)
+// MOVEN Logistics - Zoho Sheet Connections (CORS-safe)
 
-export default async (req, context) => {
-  const ZOHO_SHEET_URL = "https://sheet.zohopublic.com/sheet/published/11wj393dbcd8644A4719b79c89353de104977d/download=.csv";
-  
-  try {
-    const response = await fetch(ZOHO_SHEET_URL, { headers: { "Cache-Control": "no-cache" } });
-    if (!response.ok) throw new Error(`Fetch failed ${response.status}`);
+const proxy = "https://api.allorigins.win/raw?url=";
 
-    const data = await response.text();
-
-    return new Response(data, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (err) {
-    console.error("❌ Error fetching Zoho Sheet:", err);
-    return new Response(`Error fetching Zoho Sheet data: ${err.message}`, {
-      status: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "text/plain",
-      },
-    });
-  }
+const sheets = {
+  finance: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Finance%20Dashboard",
+  compliance: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Compliance%20Tracker",
+  loads: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Loads",
+  carriers: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Carriers",
+  factoring: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Factoring"
 };
+
+// Example fetch test (Carriers)
+fetch(`${proxy}${encodeURIComponent(sheets.carriers)}`)
+  .then(response => {
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.text();
+  })
+  .then(data => {
+    console.log("Carriers CSV loaded successfully!");
+    console.log(data); // remove or replace with data parsing logic
+  })
+  .catch(error => console.error("Error loading carriers data:", error));
