@@ -1,5 +1,5 @@
 // MOVEN Logistics - Serverless Sheet Fetcher (Netlify Function)
-import fetch from "node-fetch";
+
 
 export const handler = async (event, context) => {
   const proxy = "https://api.allorigins.win/raw?url=";
