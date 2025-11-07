@@ -21,9 +21,9 @@ function parseCSV(csvText) {
 /* Fetch and Parse Sheet Data — CORS-safe */
 export async function getSheetData(name, url) {
   try {
-    const fullUrl = SETTINGS.proxy + encodeURIComponent(url);
-    const response = await fetch(fullUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+// Fetch from Netlify backend (no CORS issue)
+const response = await fetch("/.netlify/functions/fetch-sheets");
+     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const csvText = await response.text();
     const data = parseCSV(csvText);
     console.log(`✅ MOVEN ${name.toUpperCase()} — ${data.length} rows loaded`);
