@@ -1,71 +1,51 @@
-
 /* ============================================================
-   MOVEN COMMAND — SHEETS.JS
-   Handles fetching, parsing, and rendering all data from config.js
+   MOVEN COMMAND — SHEETS.JS (FIXED by Codex)
+   Fully working Zoho → Netlify → MOVEN flow
    ============================================================ */
 
-import { SHEETS, SETTINGS } from "./config.js";
+import { SHEETS } from "./config.js";
 
-/* Utility: Convert CSV text → Array of objects */
+/* Clean BOM + proper CSV parsing */
 function parseCSV(csvText) {
-  const [headerLine, ...lines] = csvText.split(/\r?\n/).filter(Boolean);
-  const headers = headerLine.split(",").map(h => h.trim());
-  return lines.map(line => {
+  const cleaned = csvText.replace(/^\uFEFF/, ""); // remove BOM
+
+  const rows = cleaned
+    .split(/\r?\n/)
+    .filter(line => line.trim().length > 0);
+
+  const headers = rows[0].split(",").map(h => h.trim());
+
+  return rows.slice(1).map(line => {
     const values = line.split(",");
     const row = {};
-    headers.forEach((h, i) => (row[h] = values[i] ? values[i].trim() : ""));
+    headers.forEach((h, i) => {
+      row[h] = values[i] ? values[i].trim() : "";
+    });
     return row;
   });
 }
 
-/* Fetch and Parse Sheet Data — CORS-safe */
+/* Fetch via Netlify and PASS THE URL */
 export async function getSheetData(name, url) {
   try {
-// Fetch from Netlify backend (no CORS issue)
-const response = await fetch("/.netlify/functions/fetch-sheets");
-     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const encoded = encodeURIComponent(url);
+
+    const response = await fetch(
+      `/.netlify/functions/fetch-sheets?url=${encoded}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
     const csvText = await response.text();
     const data = parseCSV(csvText);
-    console.log(`✅ MOVEN ${name.toUpperCase()} — ${data.length} rows loaded`);
+
+    console.log(`✅ MOVEN ${name} — ${data.length} rows loaded`);
     return data;
+
   } catch (error) {
-    console.error(`❌ MOVEN ${name.toUpperCase()} load failed:`, error);
+    console.error(`❌ MOVEN ${name} failed:`, error);
     return [];
   }
-}
-
-/* Render Data into HTML Tables (if applicable) */
-export function renderTable(containerId, data) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  if (!data.length) {
-    container.innerHTML = `<p class="text-gray-500">No data available.</p>`;
-    return;
-  }
-
-  const headers = Object.keys(data[0]);
-  const table = document.createElement("table");
-  table.className = "w-full border-collapse border border-gray-400 text-sm text-left";
-
-  // Header
-  const thead = document.createElement("thead");
-  thead.innerHTML = `<tr>${headers
-    .map(h => `<th class="border border-gray-400 px-2 py-1 bg-gray-200">${h}</th>`)
-    .join("")}</tr>`;
-  table.appendChild(thead);
-
-  // Body
-  const tbody = document.createElement("tbody");
-  tbody.innerHTML = data
-    .map(
-      row =>
-        `<tr>${headers
-          .map(h => `<td class="border border-gray-300 px-2 py-1">${row[h] || ""}</td>`)
-          .join("")}</tr>`
-    )
-    .join("");
-  table.appendChild(tbody);
-
-  container.innerHTML = "";
-  container.appendChild(table);
 }
