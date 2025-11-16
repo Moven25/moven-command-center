@@ -1,54 +1,56 @@
-// ========================================
-// MOVEN Command Panels (Mission Control)
-// ========================================
+/* ============================================================
+   MOVEN COMMAND — SHEETS.JS
+   Zoho → Netlify → MOVEN data loader
+   ============================================================ */
 
-import { getSheetData } from "./sheets.js";
+import { SHEETS } from "./config.js";
 
-function loadPanel(panelId) {
-  const panels = document.querySelectorAll(".panel-content");
-  panels.forEach((p) => (p.style.display = "none"));
-  document.getElementById(panelId).style.display = "block";
+/* Clean BOM + proper CSV parsing */
+function parseCSV(csvText) {
+  const cleaned = csvText.replace(/^\uFEFF/, ""); // remove BOM if present
+
+  const rows = cleaned
+    .split(/\r?\n/)
+    .filter(line => line.trim().length > 0);
+
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].split(",").map(h => h.trim());
+
+  return rows.slice(1).map(row => {
+    const cols = row.split(",");
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = (cols[i] || "").trim();
+    });
+    return obj;
+  });
 }
 
-// Default open Mission Control
-window.onload = async () => {
-  loadPanel("missionControl");
-  document.getElementById("missionControl").style.display = "block";
-  console.log("✅ MOVEN Mission Control Loaded - initializing live data sync...");
-
-  const carriersBox = document.querySelector("#totalCarriers .summary-value");
-  const loadsBox = document.querySelector("#activeLoads .summary-value");
-  const systemStatusBox = document.querySelector("#systemStatus .summary-value");
-
-  // Make sure elements exist
-  if (!carriersBox || !loadsBox || !systemStatusBox) {
-    console.error("❌ MOVEN: One or more Mission Control elements not found in DOM.");
-    return;
-  }
-
+/**
+ * Generic sheet loader
+ * @param {string} key - one of: "carriers", "brokers", "loads", "compliance", "factoring"
+ */
+export async function getSheetData(key) {
   try {
-    systemStatusBox.textContent = "Connecting…";
+    const url = SHEETS[key];
+    if (!url) {
+      throw new Error(`Unknown sheet key: ${key}`);
+    }
 
-    // ====== CARRIERS ======
-    const carriers = await getSheetData("carriers");
-    const totalCarriers = carriers.length; // each row is a carrier
-    carriersBox.textContent = totalCarriers;
+    const response = await fetch(url);
 
-    console.log(`🚚 MOVEN Mission Control — ${totalCarriers} carriers loaded.`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-    // ====== LOADS ======
-    const loads = await getSheetData("loads");
+    const csvText = await response.text();
+    const data = parseCSV(csvText);
 
-    // For now: Active Loads = total rows (later we can filter by Status column)
-    const activeLoads = loads.length;
-    loadsBox.textContent = activeLoads;
-
-    console.log(`📦 MOVEN Mission Control — ${activeLoads} loads loaded.`);
-
-    // ====== STATUS ======
-    systemStatusBox.textContent = "Live";
+    console.log(`✅ MOVEN ${key} — ${data.length} rows loaded`);
+    return data;
   } catch (error) {
-    systemStatusBox.textContent = "Disconnected";
-    console.error("❌ MOVEN Mission Control sync failed:", error);
+    console.error(`❌ MOVEN ${key} failed:`, error);
+    return [];
   }
-};
+}
