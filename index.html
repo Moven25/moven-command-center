@@ -223,8 +223,8 @@
 
     try {
     const response = await fetch(
-     "https://sheet.zohopublic.com/sheet/published/11wj393dbcdb8644A4719b79c89353de104977d?download=csv&sheetname=Carriers"
-);
+     const response = await fetch("/.netlify/functions/fetch-sheets?sheet=carriers");
+      
       if (response.ok) {
         const now = new Date();
         timeElement.textContent = now.toLocaleTimeString();
