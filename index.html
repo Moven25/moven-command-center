@@ -216,34 +216,35 @@
   </div>
   <script>
   // MOVEN Command: Live Sync Monitor
-  async function updateSyncStatus() {
-    const timeElement = document.getElementById("sync-time");
-    const statusElement = document.getElementById("sync-status");
-    const indicator = document.getElementById("sync-indicator");
+ <script>
+async function updateSyncStatus() {
+  const timeElement = document.getElementById("sync-time");
+  const statusElement = document.getElementById("sync-status");
+  const indicator = document.getElementById("sync-indicator");
 
-    try {
-    const response = await fetch(
-     const response = await fetch("/.netlify/functions/fetch-sheets?sheet=carriers");
-      
-      if (response.ok) {
-        const now = new Date();
-        timeElement.textContent = now.toLocaleTimeString();
-        statusElement.textContent = "Live";
-        statusElement.className = "ok";
-        indicator.className = "status-indicator ok";
-      } else {
-        throw new Error("Failed");
-      }
-    } catch (error) {
-      statusElement.textContent = "Disconnected";
-      statusElement.className = "error";
-      indicator.className = "status-indicator error";
+  try {
+    const response = await fetch("/.netlify/functions/fetch-sheets?sheet=carriers");
+
+    if (response.ok) {
+      const now = new Date();
+      timeElement.textContent = now.toLocaleTimeString();
+      statusElement.textContent = "Live";
+      statusElement.className = "ok";
+      indicator.className = "status-indicator ok";
+    } else {
+      throw new Error("Failed");
     }
+  } catch (error) {
+    timeElement.textContent = "";
+    statusElement.textContent = "Disconnected";
+    statusElement.className = "error";
+    indicator.className = "status-indicator error";
   }
+}
 
-  // Initial check + refresh every 60 seconds
-  updateSyncStatus();
-  setInterval(updateSyncStatus, 60000);
+// Initial check + refresh every 60 seconds
+updateSyncStatus();
+setInterval(updateSyncStatus, 60000);
 </script>
 </body>
 </html>
