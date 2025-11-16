@@ -12,9 +12,9 @@ export const SHEETS = {
   brokers: API_BASE + "brokers",
   loads: API_BASE + "loads",
   compliance: API_BASE + "compliance",
-  factoring: API_BASE + "factoring"
+  factoring: API_BASE + "factoring",
 };
 
 export const SETTINGS = {
-  updateInterval: 60000 // refresh every 60 seconds
+  updateInterval: 60000, // refresh every 60 seconds
 };
