@@ -14,41 +14,44 @@ function loadPanel(panelId) {
 window.onload = async () => {
   loadPanel("missionControl");
   document.getElementById("missionControl").style.display = "block";
+
   console.log("✅ MOVEN Mission Control Loaded - initializing live data sync...");
 
   const carriersBox = document.querySelector("#totalCarriers .summary-value");
   const loadsBox = document.querySelector("#activeLoads .summary-value");
   const systemStatusBox = document.querySelector("#systemStatus .summary-value");
 
-  // Make sure elements exist
   if (!carriersBox || !loadsBox || !systemStatusBox) {
-    console.error("❌ MOVEN: One or more Mission Control elements not found in DOM.");
+    console.error("❌ MOVEN: Missing DOM elements for Mission Control.");
     return;
   }
 
   try {
     systemStatusBox.textContent = "Connecting…";
 
-    // ====== CARRIERS ======
+    // -----------------------------
+    // CARRIERS
+    // -----------------------------
     const carriers = await getSheetData("carriers");
-    const totalCarriers = carriers.length; // each row is a carrier
-    carriersBox.textContent = totalCarriers;
+    carriersBox.textContent = carriers.length;
+    console.log(`🚚 MOVEN: ${carriers.length} carriers loaded`);
 
-    console.log(`🚚 MOVEN Mission Control — ${totalCarriers} carriers loaded.`);
-
-    // ====== LOADS ======
+    // -----------------------------
+    // LOADS
+    // -----------------------------
     const loads = await getSheetData("loads");
 
-    // For now: Active Loads = total rows (later we can filter by Status column)
-    const activeLoads = loads.length;
-    loadsBox.textContent = activeLoads;
+    // Until we build smart logic:
+    // Active Loads = total rows in the LOADS sheet
+    loadsBox.textContent = loads.length;
+    console.log(`📦 MOVEN: ${loads.length} loads loaded`);
 
-    console.log(`📦 MOVEN Mission Control — ${activeLoads} loads loaded.`);
-
-    // ====== STATUS ======
+    // -----------------------------
+    // STATUS
+    // -----------------------------
     systemStatusBox.textContent = "Live";
   } catch (error) {
     systemStatusBox.textContent = "Disconnected";
-    console.error("❌ MOVEN Mission Control sync failed:", error);
+    console.error("❌ MOVEN Mission Control failed to sync:", error);
   }
 };
