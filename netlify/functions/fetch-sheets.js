@@ -14,15 +14,19 @@ export const handler = async (event) => {
     // --- Correct Published Zoho CSV URLs ---
     const SHEETS = {
       carriers:
-        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Carriers",
+      /.netlify/functions/fetch-sheets?sheet=carriers,
+
       brokers:
-        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Brokers",
+      /.netlify/functions/fetch-sheets?sheet=brokers,
+      
       loads:
-        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Loads",
+      /.netlify/functions/fetch-sheets?sheet=loads,
+
       compliance:
-        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Compliance%20Tracker",
+      /.netlify/functions/fetch-sheets?sheet=compliance,
+
       factoring:
-        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Factoring",
+      /.netlify/functions/fetch-sheets?sheet=factoring,
     };
 
     const url = SHEETS[sheet];
