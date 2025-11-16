@@ -3,7 +3,7 @@
    Zoho → Netlify → MOVEN data loader
    ============================================================ */
 
-import { SHEETS } from "./config.js";
+import { SHEETS } from "../config.js";
 
 /* Clean BOM + proper CSV parsing */
 function parseCSV(csvText) {
