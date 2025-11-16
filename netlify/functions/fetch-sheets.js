@@ -1,21 +1,45 @@
-// MOVEN Logistics - Serverless Sheet Fetcher (Netlify Function)
+// MOVEN Logistics — Correct Zoho CSV Fetcher (Netlify Function)
 
-
-export const handler = async (event, context) => {
-  const proxy = "https://api.allorigins.win/raw?url=";
-
-  const sheets = {
-    finance: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Finance%20Dashboard",
-    compliance: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Compliance%20Tracker",
-    loads: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Loads",
-    carriers: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Carriers",
-    factoring: "https://sheet.zohopublic.com/sheet/published/5dec9292e1dadcd56d685a70993c709753a781b21e3c34997314aeb40e63115?download=csv&sheetname=Factoring",
-  };
-
+export const handler = async (event) => {
   try {
-    // Fetch the Carriers sheet as the current data source
-    const response = await fetch(`${proxy}${encodeURIComponent(sheets.carriers)}`);
-    if (!response.ok) throw new Error(`Network error: ${response.status}`);
+    const sheet = event.queryStringParameters.sheet;
+
+    if (!sheet) {
+      return {
+        statusCode: 400,
+        body: "Missing ?sheet= parameter",
+      };
+    }
+
+    // --- Correct Published Zoho CSV URLs ---
+    const SHEETS = {
+      carriers:
+        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Carriers",
+      brokers:
+        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Brokers",
+      loads:
+        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Loads",
+      compliance:
+        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Compliance%20Tracker",
+      factoring:
+        "https://sheet.zohopublic.com/sheet/published/11wip393dbcdd86444719b79c893530e1d9f7?download=csv&sheetname=Factoring",
+    };
+
+    const url = SHEETS[sheet];
+
+    if (!url) {
+      return {
+        statusCode: 400,
+        body: `Invalid sheet name: ${sheet}`,
+      };
+    }
+
+    // Fetch Zoho CSV directly (Netlify handles CORS)
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Zoho fetch failed (${response.status})`);
+    }
 
     const csv = await response.text();
 
@@ -28,7 +52,7 @@ export const handler = async (event, context) => {
       body: csv,
     };
   } catch (error) {
-    console.error("Error fetching Zoho sheet:", error);
+    console.error("ERROR in fetch-sheets.js:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
