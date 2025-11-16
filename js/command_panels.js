@@ -1,12 +1,12 @@
 // ========================================
-// MOVEN Command Panels (Phase 2 Core Framework)
+// MOVEN Command Panels (Mission Control)
 // ========================================
 
-import { getSheetData } from "./sheets.js";  // 👈 Add this import
+import { getSheetData } from "./sheets.js";
 
 function loadPanel(panelId) {
   const panels = document.querySelectorAll(".panel-content");
-  panels.forEach(p => p.style.display = "none");
+  panels.forEach((p) => (p.style.display = "none"));
   document.getElementById(panelId).style.display = "block";
 }
 
@@ -14,27 +14,41 @@ function loadPanel(panelId) {
 window.onload = async () => {
   loadPanel("missionControl");
   document.getElementById("missionControl").style.display = "block";
-  console.log("✅ MOVEN Command Panel Loaded - initializing live data sync...");
+  console.log("✅ MOVEN Mission Control Loaded - initializing live data sync...");
 
-  // ====== LIVE DATA SYNC FOR MISSION CONTROL ======
-  const totalBox = document.querySelector("#totalCarriers");
-  const statusBox = document.querySelector("#status");
+  const carriersBox = document.querySelector("#totalCarriers .summary-value");
+  const loadsBox = document.querySelector("#activeLoads .summary-value");
+  const systemStatusBox = document.querySelector("#systemStatus .summary-value");
+
+  // Make sure elements exist
+  if (!carriersBox || !loadsBox || !systemStatusBox) {
+    console.error("❌ MOVEN: One or more Mission Control elements not found in DOM.");
+    return;
+  }
 
   try {
-    statusBox.textContent = "Connecting...";
-    statusBox.style.color = "#ffcc00";
+    systemStatusBox.textContent = "Connecting…";
 
-    const carriers = await getSheetData("Carriers");
-    const totalCarriers = carriers.length > 0 ? carriers.length - 1 : 0;
+    // ====== CARRIERS ======
+    const carriers = await getSheetData("carriers");
+    const totalCarriers = carriers.length; // each row is a carrier
+    carriersBox.textContent = totalCarriers;
 
-    totalBox.textContent = totalCarriers;
-    statusBox.textContent = "Connected";
-    statusBox.style.color = "#00ff00";
+    console.log(`🚚 MOVEN Mission Control — ${totalCarriers} carriers loaded.`);
 
-    console.log(`🚚 MOVEN Mission Control synced — ${totalCarriers} carriers loaded.`);
+    // ====== LOADS ======
+    const loads = await getSheetData("loads");
+
+    // For now: Active Loads = total rows (later we can filter by Status column)
+    const activeLoads = loads.length;
+    loadsBox.textContent = activeLoads;
+
+    console.log(`📦 MOVEN Mission Control — ${activeLoads} loads loaded.`);
+
+    // ====== STATUS ======
+    systemStatusBox.textContent = "Live";
   } catch (error) {
-    statusBox.textContent = "Disconnected";
-    statusBox.style.color = "red";
+    systemStatusBox.textContent = "Disconnected";
     console.error("❌ MOVEN Mission Control sync failed:", error);
   }
 };
