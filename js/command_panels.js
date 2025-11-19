@@ -1,82 +1,60 @@
 // ---------------------------------------------------------
-//  MOVEN COMMAND CENTER — Mission Control Sync Logic
+//  MOVEN COMMAND CENTER — Mission Control Sync Logic (Clean)
+//  Uses fetch-sheets-v2 + new sheets.js loader
 // ---------------------------------------------------------
 
-// Load CSV from Netlify function
-async function getSheetData(sheetName) {
-    const response = await fetch(`/.netlify/functions/fetch-sheets?sheet=${sheetName}`);
-    const csv = await response.text();
-
-    const rows = csv.trim().split('\n');
-    const headers = rows[0].split(',');
-
-    return rows.slice(1).map(row => {
-        const values = row.split(',');
-        let obj = {};
-        headers.forEach((header, index) => {
-            obj[header.trim()] = values[index] ? values[index].trim() : "";
-        });
-        return obj;
-    });
-}
+import { getSheetData } from "/js/sheets.js";
 
 // ---------------------------------------------------------
-//  NEW: Mission Control initializer
+//  Mission Control initializer
 // ---------------------------------------------------------
 async function initMissionControl() {
-    console.log("🚀 MOVEN: Initializing Mission Control...");
+  console.log("🚀 MOVEN: Mission Control Start");
 
-    const carriersBox = document.querySelector("#totalCarriers .summary-value");
-    const loadsBox = document.querySelector("#activeLoads .summary-value");
-    const systemStatusBox = document.querySelector("#systemStatus .summary-value");
+  const carriersBox = document.querySelector("#totalCarriers .summary-value");
+  const loadsBox = document.querySelector("#activeLoads .summary-value");
+  const systemStatusBox = document.querySelector("#systemStatus .summary-value");
 
-    if (!carriersBox || !loadsBox || !systemStatusBox) {
-        console.error("❌ MOVEN ERROR: Mission Control DOM elements missing.");
-        return;
-    }
+  if (!carriersBox || !loadsBox || !systemStatusBox) {
+    console.error("❌ MOVEN: Mission Control DOM missing elements.");
+    return;
+  }
 
-    try {
-        systemStatusBox.textContent = "Connecting...";
+  systemStatusBox.textContent = "Connecting...";
 
-        // CARRIERS
-        const carriers = await getSheetData("carriers");
-        carriersBox.textContent = carriers.length;
-        console.log(`📦 MOVEN: Loaded ${carriers.length} carriers.`);
+  try {
+    // CARRIERS
+    const carriers = await getSheetData("carriers");
+    carriersBox.textContent = carriers.length;
 
-        // LOADS
-        const loads = await getSheetData("loads");
-        loadsBox.textContent = loads.length;
-        console.log(`🚚 MOVEN: Loaded ${loads.length} loads.`);
+    // LOADS
+    const loads = await getSheetData("loads");
+    loadsBox.textContent = loads.length;
 
-        // STATUS
-        systemStatusBox.textContent = "Live";
-        console.log("🟢 MOVEN Mission Control: LIVE");
-    }
-    catch (err) {
-        systemStatusBox.textContent = "Disconnected";
-        console.error("❌ MOVEN Sync Failed:", err);
-    }
+    systemStatusBox.textContent = "Live";
+    console.log("🟢 MOVEN Mission Control: LIVE");
+  } catch (err) {
+    systemStatusBox.textContent = "Disconnected";
+    console.error("❌ MOVEN MC Sync Failed:", err);
+  }
 }
 
 // ---------------------------------------------------------
-//  EXISTING PANEL LOADER — MODIFIED
+//  PANEL LOADER
 // ---------------------------------------------------------
 function loadPanel(panelId) {
-    let panels = document.querySelectorAll(".panel-content");
-    panels.forEach(panel => panel.style.display = "none");
+  document.querySelectorAll(".panel-content").forEach((p) => {
+    p.style.display = "none";
+  });
 
-    let panel = document.getElementById(panelId);
-    if (panel) panel.style.display = "block";
+  const panel = document.getElementById(panelId);
+  if (panel) panel.style.display = "block";
 
-    // 🔥 NEW: Trigger MC load ONLY when Mission Control is displayed
-    if (panelId === "missionControl") {
-        initMissionControl();
-    }
+  if (panelId === "missionControl") {
+    initMissionControl();
+  }
 }
 
-// ---------------------------------------------------------
-// Remove the old window.onload block COMPLETELY.
-// Mission Control now loads ONLY when selected.
-// ---------------------------------------------------------
+window.loadPanel = loadPanel;
 
-console.log("⚡ MOVEN Command Panel JS Loaded");
+console.log("⚡ MOVEN Command Panels JS Loaded");
