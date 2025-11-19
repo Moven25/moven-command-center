@@ -9,16 +9,33 @@ import { getSheetData } from "/js/sheets.js";
 //  Mission Control initializer
 // ---------------------------------------------------------
 async function initMissionControl() {
-  console.log("🚀 MOVEN: Mission Control Start");
+    console.log("🚀 MOVEN: Initializing Mission Control...");
 
-  const carriersBox = document.querySelector("#totalCarriers .summary-value");
-  const loadsBox = document.querySelector("#activeLoads .summary-value");
-  const systemStatusBox = document.querySelector("#systemStatus .summary-value");
+    const carriersBox = document.querySelector("#totalCarriers");
+    const loadsBox = document.querySelector("#activeLoads");
+    const systemStatusBox = document.querySelector("#systemStatus");
 
-  if (!carriersBox || !loadsBox || !systemStatusBox) {
-    console.error("❌ MOVEN: Mission Control DOM missing elements.");
-    return;
-  }
+    if (!carriersBox || !loadsBox || !systemStatusBox) {
+        console.error("❌ MOVEN ERROR: Mission Control DOM elements missing.");
+        return;
+    }
+
+    try {
+        systemStatusBox.textContent = "Connecting...";
+
+        const carriers = await getSheetData("carriers");
+        carriersBox.textContent = carriers.length;
+
+        const loads = await getSheetData("loads");
+        loadsBox.textContent = loads.length;
+
+        systemStatusBox.textContent = "Live";
+    }
+    catch (err) {
+        systemStatusBox.textContent = "Disconnected";
+        console.error("❌ MOVEN Sync Failed:", err);
+    }
+}
 
   systemStatusBox.textContent = "Connecting...";
 
