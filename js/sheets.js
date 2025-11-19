@@ -1,15 +1,35 @@
 /* ============================================================
-   MOVEN COMMAND — SHEETS.JS (Frontend Loader)
-   Frontend → Netlify → JSON loader
+   MOVEN COMMAND — SHEETS.JS (Clean Version)
+   Frontend → Netlify Function → CSV → JSON loader
    ============================================================ */
 
-(function () {
-  /**
-   * Generic sheet data loader (from v2 Netlify Function)
-   * @param {string} key
-   * @returns {Promise<Array<Object>>}
-   */
-  window.getSheetData = async function (key) {
+(function() {
+
+  function parseCsvToJson(csvText) {
+    const lines = csvText
+      .replace(/^\uFEFF/, "")
+      .replace(/\r/g, "")
+      .split("\n")
+      .filter(ln => ln.trim().length > 0)
+      .map(row =>
+        row
+          .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+          .map(v => v.replace(/^"|"$/g, ""))
+      );
+
+    if (lines.length === 0) return [];
+
+    const headers = lines.shift();
+
+    return lines.map(row =>
+      Object.fromEntries(headers.map((h, i) => [h.trim(), row[i] || ""]))
+    );
+  }
+
+  // -----------------------------------------------------------
+  //  Public loader attached to window
+  // -----------------------------------------------------------
+  window.getSheetData = async function(key) {
     try {
       const url = `/.netlify/functions/fetch-sheets-v2?sheet=${key}`;
 
@@ -17,23 +37,24 @@
       const text = await res.text();
 
       if (!res.ok) {
-        console.error(`❌ ${key.toUpperCase()} HTTP Error:`, res.status);
+        console.error(`❌ HTTP error loading ${key}:`, res.status);
         return [];
       }
 
-      // If backend returned an error JSON
-      if (text.trim().startsWith("{") && text.includes('"error"')) {
-        console.error(`❌ ${key.toUpperCase()} Backend Error:`, text);
+      // Catch backend error JSON
+      if (text.trim().startsWith("{") && text.includes("error")) {
+        console.error(`❌ Backend responded with error for ${key}:`, text);
         return [];
       }
 
-      // Normal case: JSON array from Netlify function
-      const data = JSON.parse(text);
-      console.log(`✅ MOVEN ${key}: ${data.length} rows loaded`);
-      return Array.isArray(data) ? data : [];
+      const json = parseCsvToJson(text);
+      console.log(`✅ MOVEN ${key.toUpperCase()} → ${json.length} rows`);
+      return json;
+
     } catch (err) {
-      console.error(`❌ MOVEN ${key} load failed:`, err);
+      console.error(`❌ MOVEN load failed for ${key}:`, err);
       return [];
     }
   };
+
 })();
