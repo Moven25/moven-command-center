@@ -1,7 +1,6 @@
 // MOVEN Logistics — Zoho CSV Fetcher v2 (Netlify Function)
 // Uses Zoho "Download as CSV" links and returns clean JSON.
-// Usage example:
-//   /.netlify/functions/fetch-sheets-v2?sheet=carriers
+// Usage: /.netlify/functions/fetch-sheets-v2?sheet=carriers
 
 export const handler = async (event) => {
   try {
@@ -53,33 +52,11 @@ export const handler = async (event) => {
       };
     }
 
-    // Small helper to parse CSV into JSON
-    const parseCsvToJson = (csvText) => {
-      const rows = csvText
-        .replace(/\r/g, "")
-        .split("\n")
-        .map((row) =>
-          row
-            .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-            .map((v) => v.replace(/^"|"$/g, ""))
-        )
-        .filter((row) => row.length > 1);
-
-      if (!rows.length) return [];
-
-      const headers = rows.shift();
-      return rows.map((row) =>
-        Object.fromEntries(headers.map((h, i) => [h.trim(), row[i] || ""]))
-      );
-    };
-
-    // 🔄 FETCH CSV FROM ZOHO
     const response = await fetch(url);
     const text = await response.text();
 
     const trimmed = text.trim().toLowerCase();
     if (trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html")) {
-      // Failsafe: Zoho sent HTML again
       return {
         statusCode: 502,
         headers: {
@@ -87,15 +64,27 @@ export const handler = async (event) => {
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          error: "Zoho returned HTML instead of CSV for this sheet.",
+          error: "Zoho returned HTML instead of CSV",
           sheet: sheetKey,
-          hint:
-            "Double-check the Download as .csv setting in Zoho's Publish window.",
+          hint: "Check Zoho publish settings",
         }),
       };
     }
 
-    const json = parseCsvToJson(text);
+    const rows = text
+      .replace(/\r/g, "")
+      .split("\n")
+      .filter((r) => r.trim().length > 0)
+      .map((r) =>
+        r
+          .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+          .map((v) => v.replace(/^"|"$/g, ""))
+      );
+
+    const headers = rows.shift();
+    const json = rows.map((row) =>
+      Object.fromEntries(headers.map((h, i) => [h.trim(), row[i] || ""]))
+    );
 
     return {
       statusCode: 200,
