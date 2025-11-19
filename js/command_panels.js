@@ -1,53 +1,54 @@
-// ---------------------------------------------------------
-//  MOVEN COMMAND CENTER — Mission Control Sync Logic (Clean)
-//  Uses fetch-sheets-v2 + new sheets.js loader
-// ---------------------------------------------------------
-
-// ⛔ NO imports here – we use the global getSheetData from sheets.js
+/* ============================================================
+   MOVEN COMMAND CENTER — Mission Control Panels JS
+   Clean / No ES Modules / Works in all browsers
+   ============================================================ */
 
 async function initMissionControl() {
-    console.log("🚀 MOVEN: Initializing Mission Control...");
+  console.log("🚀 MOVEN: Initializing Mission Control...");
 
-    const carriersBox = document.querySelector("#totalCarriers");
-    const loadsBox = document.querySelector("#activeLoads");
-    const systemStatusBox = document.querySelector("#systemStatus");
+  const carriersBox = document.querySelector("#totalCarriers");
+  const loadsBox = document.querySelector("#activeLoads");
+  const systemStatusBox = document.querySelector("#systemStatus");
 
-    if (!carriersBox || !loadsBox || !systemStatusBox) {
-        console.error("❌ MOVEN ERROR: Mission Control DOM elements missing.");
-        return;
-    }
+  if (!carriersBox || !loadsBox || !systemStatusBox) {
+    console.error("❌ Missing Mission Control DOM Elements.");
+    return;
+  }
 
-    try {
-        systemStatusBox.textContent = "Connecting...";
+  systemStatusBox.textContent = "Connecting...";
 
-        const carriers = await getSheetData("carriers");
-        carriersBox.textContent = carriers.length;
+  try {
+    // --- CARRIERS ---
+    const carriers = await getSheetData("carriers");
+    carriersBox.textContent = carriers.length;
 
-        const loads = await getSheetData("loads");
-        loadsBox.textContent = loads.length;
+    // --- LOADS ---
+    const loads = await getSheetData("loads");
+    loadsBox.textContent = loads.length;
 
-        systemStatusBox.textContent = "Live";
-        console.log("🟢 MOVEN Mission Control: LIVE");
-    } catch (err) {
-        systemStatusBox.textContent = "Disconnected";
-        console.error("❌ MOVEN MC Sync Failed:", err);
-    }
+    systemStatusBox.textContent = "Live";
+    console.log("🟢 MOVEN Mission Control: LIVE");
+
+  } catch (err) {
+    systemStatusBox.textContent = "Disconnected";
+    console.error("❌ MOVEN Mission Control Sync Failed:", err);
+  }
 }
 
-// ---------------------------------------------------------
-//  PANEL LOADER
-// ---------------------------------------------------------
+/* -----------------------------------------------------------
+   PANEL LOADER
+----------------------------------------------------------- */
 function loadPanel(panelId) {
-    document.querySelectorAll(".panel-content").forEach((p) => {
-        p.style.display = "none";
-    });
+  document.querySelectorAll(".panel-content").forEach(p => {
+    p.style.display = "none";
+  });
 
-    const panel = document.getElementById(panelId);
-    if (panel) panel.style.display = "block";
+  const panel = document.getElementById(panelId);
+  if (panel) panel.style.display = "block";
 
-    if (panelId === "missionControl") {
-        initMissionControl();
-    }
+  if (panelId === "missionControl") {
+    initMissionControl();
+  }
 }
 
 window.loadPanel = loadPanel;
