@@ -1,55 +1,39 @@
 /* ============================================================
-   MOVEN COMMAND — SHEETS.JS (Clean Version)
-   Frontend → Netlify → CSV → JSON loader
+   MOVEN COMMAND — SHEETS.JS (Frontend Loader)
+   Frontend → Netlify → JSON loader
    ============================================================ */
 
-function parseCsvToJson(csvText) {
-  const lines = csvText
-    .replace(/^\uFEFF/, "")
-    .replace(/\r/g, "")
-    .split("\n")
-    .filter((ln) => ln.trim().length > 0)
-    .map((row) =>
-      row
-        .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-        .map((v) => v.replace(/^"|"$/g, ""))
-    );
+(function () {
+  /**
+   * Generic sheet data loader (from v2 Netlify Function)
+   * @param {string} key
+   * @returns {Promise<Array<Object>>}
+   */
+  window.getSheetData = async function (key) {
+    try {
+      const url = `/.netlify/functions/fetch-sheets-v2?sheet=${key}`;
 
-  if (lines.length === 0) return [];
+      const res = await fetch(url);
+      const text = await res.text();
 
-  const headers = lines.shift();
+      if (!res.ok) {
+        console.error(`❌ ${key.toUpperCase()} HTTP Error:`, res.status);
+        return [];
+      }
 
-  return lines.map((line) =>
-    Object.fromEntries(headers.map((h, i) => [h.trim(), line[i] || ""]))
-  );
-}
+      // If backend returned an error JSON
+      if (text.trim().startsWith("{") && text.includes('"error"')) {
+        console.error(`❌ ${key.toUpperCase()} Backend Error:`, text);
+        return [];
+      }
 
-/**
- * Generic sheet data loader (from v2 Netlify Function)
- * @param {string} key
- */
-export async function getSheetData(key) {
-  try {
-    const url = `/.netlify/functions/fetch-sheets-v2?sheet=${key}`;
-
-    const res = await fetch(url);
-    const text = await res.text();
-
-    if (!res.ok) {
-      console.error(`❌ ${key.toUpperCase()} HTTP Error:`, res.status);
+      // Normal case: JSON array from Netlify function
+      const data = JSON.parse(text);
+      console.log(`✅ MOVEN ${key}: ${data.length} rows loaded`);
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error(`❌ MOVEN ${key} load failed:`, err);
       return [];
     }
-
-    if (text.trim().startsWith("{") && text.includes("error")) {
-      console.error(`❌ ${key.toUpperCase()} Backend Error:`, text);
-      return [];
-    }
-
-    const json = parseCsvToJson(text);
-    console.log(`✅ MOVEN ${key}: ${json.length} rows loaded`);
-    return json;
-  } catch (err) {
-    console.error(`❌ MOVEN ${key} load failed:`, err);
-    return [];
-  }
-}
+  };
+})();
