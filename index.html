@@ -225,15 +225,15 @@
       </footer>
     </div>
   </div>
-  <script>
-  // MOVEN Command: Live Sync Monitor
-  async function updateSyncStatus() {
+<script>
+// MOVEN Command: Live Sync Monitor
+async function updateSyncStatus() {
   const timeElement = document.getElementById("sync-time");
   const statusElement = document.getElementById("sync-status");
   const indicator = document.getElementById("sync-indicator");
 
   try {
-    const response = await fetch("/.netlify/functions/fetch-sheets?sheet=carriers");
+    const response = await fetch("/.netlify/functions/fetch-sheets-v2?sheet=carriers");
 
     if (response.ok) {
       const now = new Date();
@@ -252,13 +252,23 @@
   }
 }
 
-    <!-- Initial check + refresh every 60 seconds -->
-    updateSyncStatus();
-    setInterval(updateSyncStatus, 60000);
+// Initial check + refresh every 60 seconds
+updateSyncStatus();
+setInterval(updateSyncStatus, 60000);
 </script>
 
-<script type="module" src="js/sheets.js"></script>
-<script src="js/command_panels.js"></script>
+<!-- Load sheets.js FIRST -->
+<script src="/js/sheets.js"></script>
+
+<!-- Load mission control + panels AFTER -->
+<script src="/js/command_panels.js"></script>
+
+<!-- Load panels by default -->
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    loadPanel("missionControl");
+  });
+</script>
 
 </body>
 </html>
