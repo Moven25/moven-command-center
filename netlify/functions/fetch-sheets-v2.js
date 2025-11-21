@@ -1,110 +1,65 @@
-// MOVEN Logistics — Zoho CSV Fetcher v2 (Netlify Function)
-// Uses Zoho "Download as CSV" links and returns clean JSON.
-// Usage: /.netlify/functions/fetch-sheets-v2?sheet=carriers
+// MOVEN Logistics — Correct Zoho CSV Fetcher (Netlify Function)
 
 export const handler = async (event) => {
   try {
-    const sheetKey = event.queryStringParameters?.sheet;
+    const sheet = event.queryStringParameters.sheet;
 
-    if (!sheetKey) {
+    if (!sheet) {
       return {
         statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ error: "Missing ?sheet= parameter" }),
+        body: "Missing ?sheet= parameter",
       };
     }
 
-    // 🔗 DIRECT CSV DOWNLOAD LINKS FROM ZOHO
+    // --- CLEAN, UPDATED, REAL-TIME ZOHO CSV LINKS ---
     const SHEETS = {
-      carriers:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=CARRIERS_MASTER",
-      loads:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=LOADS_ACTIVE",
-      brokers:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=BROKERS_MASTER",
-      ratecons:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=RATECON_ARCHIVE",
-      profit:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=PROFIT_CALCULATOR",
-      dtl:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=DTL_ENGINE",
-      pipeline:
-        "https://sheet.zohopublic.com/sheet/published/grvkfc10caaf7dd82421fb161edc79bb57ac2?download=csv&sheetname=NEW_CARRIER_PIPELINE",
+      carriers: "https://sheet.zohopublic.com/sheet/published/vq6yna2ad12fbe72946f18c0b08b7f35f4de5?download=csv&sheetname=Sheet1",
+      brokers: "https://sheet.zohopublic.com/sheet/published/vq6yn39d82da95fdd4e39a15b015fcb531025?download=csv&sheetname=Sheet1",
+      loads: "https://sheet.zohopublic.com/sheet/published/vq6ynb406f6561f444927bd7044d538588051?download=csv&sheetname=Sheet1",
+      compliance: "https://sheet.zohopublic.com/sheet/published/vq6yn5eaae746fd134676a01453882325226c?download=csv&sheetname=Sheet1",
+      factoring: "https://sheet.zohopublic.com/sheet/published/vq6yn1ff4dce85b0345da8ded5d0add258f74?download=csv&sheetname=Sheet1",
+      driverstatus: "https://sheet.zohopublic.com/sheet/published/vq6yn32a55f4e9ef445cfb7d85faae9b27587?download=csv&sheetname=Sheet1",
     };
 
-    const url = SHEETS[sheetKey];
+    const url = SHEETS[sheet];
 
     if (!url) {
       return {
         statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          error: `Unknown sheet '${sheetKey}'. Valid options: ${Object.keys(
-            SHEETS
-          ).join(", ")}`,
-        }),
+        body: `Invalid sheet name: ${sheet}`,
       };
     }
 
+    // Debug log (optional)
+    console.log("Fetching Zoho CSV from:", url);
+
+    // Fetch the CSV
     const response = await fetch(url);
-    const text = await response.text();
 
-    const trimmed = text.trim().toLowerCase();
-    if (trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html")) {
+    if (!response.ok) {
       return {
-        statusCode: 502,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          error: "Zoho returned HTML instead of CSV",
-          sheet: sheetKey,
-          hint: "Check Zoho publish settings",
-        }),
+        statusCode: 500,
+        body: `Error fetching CSV from Zoho: ${response.statusText}`,
       };
     }
 
-    const rows = text
-      .replace(/\r/g, "")
-      .split("\n")
-      .filter((r) => r.trim().length > 0)
-      .map((r) =>
-        r
-          .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-          .map((v) => v.replace(/^"|"$/g, ""))
-      );
-
-    const headers = rows.shift();
-    const json = rows.map((row) =>
-      Object.fromEntries(headers.map((h, i) => [h.trim(), row[i] || ""]))
-    );
+    const csvText = await response.text();
 
     return {
       statusCode: 200,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "text/csv",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify(json),
+      body: csvText,
     };
-  } catch (err) {
+
+  } catch (error) {
+    console.error("Fetch error:", error);
+
     return {
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        error: "Server error",
-        details: err.message,
-      }),
+      body: "Internal Server Error",
     };
   }
 };
