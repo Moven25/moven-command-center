@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta-name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOVEN Command Dashboard</title>
 
     <link rel="stylesheet" href="styles.css">
@@ -60,7 +60,7 @@
 
         </div>
 
-        <h3>Active Loads</h3>
+        <h3>Active Loads (Live)</h3>
         <div id="activeLoadsPanel" class="load-list">
             <!-- Loads will auto-populate here -->
         </div>
@@ -98,17 +98,19 @@
     <!-- ============================================================
          LOAD JS LAST — Important for DOM Ready
     ============================================================ -->
-<!-- Load JS in the correct order -->
-<script src="js/sheets.js"></script>
-<script src="js/command_panels.js"></script>
 
-<script>
-  // Safest load method to prevent “getSheetData is not defined”
-  window.addEventListener("load", () => {
-      loadPanel('missionControl');
-  });
-</script>
+    <!-- 1. Load sheets.js FIRST -->
+    <script src="js/sheets.js"></script>
+
+    <!-- 2. Load command_panels.js SECOND -->
+    <script src="js/command_panels.js"></script>
+
+    <!-- 3. Initialize Mission Control AFTER both scripts load -->
+    <script>
+      window.addEventListener("load", () => {
+          loadPanel('missionControl');
+      });
+    </script>
 
 </body>
 </html>
-
