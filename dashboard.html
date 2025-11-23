@@ -1,95 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MOVEN Command Dashboard</title>
-  <link rel="stylesheet" href="Moven_style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOVEN Command Dashboard</title>
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-  <header>
-    <h1>MOVEN Command</h1>
-  </header>
 
-  <main>
-    <nav class="sidebar">
-      <a href="#" onclick="loadPanel('missionControl')">Mission Control</a>
-      <a href="#" onclick="loadPanel('carrierCommand')">Carrier Command</a>
-      <a href="#" onclick="loadPanel('brokerCommand')">Broker Command</a>
-      <a href="#" onclick="loadPanel('financeCommand')">Finance Command</a>
-      <a href="#" onclick="loadPanel('crmCommand')">CRM Command</a>
-      <a href="#" onclick="loadPanel('settingsPanel')">Settings</a>
+    <!-- ============================================================
+         TOP NAV
+    ============================================================ -->
+    <header class="top-bar">
+        <div class="logo">
+            <img src="assets/moven_logo.png" alt="MOVEN Logo">
+        </div>
+        <h1>MOVEN Command Dashboard</h1>
+    </header>
+
+    <!-- ============================================================
+         PANEL BUTTONS
+    ============================================================ -->
+    <nav class="panel-buttons">
+        <button onclick="loadPanel('missionControl')">Mission Control</button>
+        <button onclick="loadPanel('loadsPanel')">Loads</button>
+        <button onclick="loadPanel('carriersPanel')">Carriers</button>
+        <button onclick="loadPanel('brokersPanel')">Brokers</button>
     </nav>
 
-    <section class="content">
+    <!-- ============================================================
+         PANEL CONTAINERS
+    ============================================================ -->
 
-      <!-- ==================== MISSION CONTROL ==================== -->
-      <div id="missionControl" class="panel-content">
-        <h2>Mission Control</h2>
+    <!-- =======================
+         1. Mission Control
+    ======================= -->
+    <section id="missionControl" class="panel-content" style="display: block;">
 
-        <div class="summary-grid">
+        <h2>Mission Control Live Status</h2>
 
-          <!-- Total Carriers -->
-          <div class="summary-card">
-            <h3>Total Carriers</h3>
-            <p class="summary-value" id="totalCarriers">0</p>
-          </div>
+        <div class="stats-grid">
 
-          <!-- Active Loads -->
-          <div class="summary-card">
-            <h3>Active Loads</h3>
-            <p class="summary-value" id="activeLoads">0</p>
-
-            <!-- Load details panel -->
-            <div id="activeLoadsPanel" class="loads-panel" style="margin-top: 15px;">
-              <!-- Loading indicator for now -->
-              <p>Loading...</p>
+            <div class="stat-box">
+                <label>Total Carriers</label>
+                <div id="totalCarriers" class="stat-value">0</div>
             </div>
-          </div>
 
-          <!-- System Status -->
-          <div class="summary-card">
-            <h3>System Status</h3>
-            <p class="summary-value" id="systemStatus">Idle</p>
-          </div>
+            <div class="stat-box">
+                <label>Active Loads</label>
+                <div id="activeLoads" class="stat-value">0</div>
+            </div>
 
-          <!-- Alerts -->
-          <div class="summary-card">
-            <h3>Alerts</h3>
-            <p class="summary-value" id="alerts">None</p>
-          </div>
+            <div class="stat-box">
+                <label>System Status</label>
+                <div id="systemStatus" class="stat-value status-offline">Offline</div>
+            </div>
 
         </div>
-      </div>
 
-      <!-- ============= EMPTY PANELS FOR OTHER COMMANDS ============= -->
-
-      <div id="carrierCommand" class="panel-content" style="display:none;">
-        <h2>Carrier Command</h2>
-      </div>
-
-      <div id="brokerCommand" class="panel-content" style="display:none;">
-        <h2>Broker Command</h2>
-      </div>
-
-      <div id="financeCommand" class="panel-content" style="display:none;">
-        <h2>Finance Command</h2>
-      </div>
-
-      <div id="crmCommand" class="panel-content" style="display:none;">
-        <h2>CRM Command</h2>
-      </div>
-
-      <div id="settingsPanel" class="panel-content" style="display:none;">
-        <h2>Settings</h2>
-      </div>
+        <h3>Active Loads</h3>
+        <div id="activeLoadsPanel" class="load-list">
+            <!-- Loads will auto-populate here -->
+        </div>
 
     </section>
-  </main>
 
-  <script src="js/command_panels.js"></script>
-  <script src="js/sheets.js"></script>
+
+    <!-- =======================
+         2. Loads
+    ======================= -->
+    <section id="loadsPanel" class="panel-content" style="display:none;">
+        <h2>Loads Module</h2>
+        <p>Coming soon…</p>
+    </section>
+
+
+    <!-- =======================
+         3. Carriers
+    ======================= -->
+    <section id="carriersPanel" class="panel-content" style="display:none;">
+        <h2>Carriers Module</h2>
+        <p>Coming soon…</p>
+    </section>
+
+
+    <!-- =======================
+         4. Brokers
+    ======================= -->
+    <section id="brokersPanel" class="panel-content" style="display:none;">
+        <h2>Brokers Module</h2>
+        <p>Coming soon…</p>
+    </section>
+
+
+    <!-- ============================================================
+         LOAD JS LAST — Important for DOM Ready
+    ============================================================ -->
+    <script src="js/sheets.js"></script>
+    <script src="js/command_panels.js"></script>
+
+</body>
+</html>
+
 
 </body>
 </html>
