@@ -102,5 +102,13 @@
 <script src="js/sheets.js"></script>
 <script src="js/command_panels.js"></script>
 
+<script>
+  // Safest load method to prevent “getSheetData is not defined”
+  window.addEventListener("load", () => {
+      loadPanel('missionControl');
+  });
+</script>
+
 </body>
 </html>
+
