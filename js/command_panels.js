@@ -11,10 +11,18 @@ async function initMissionControl() {
   const systemStatusBox = document.querySelector("#systemStatus");
   const loadPanel = document.querySelector("#activeLoadsPanel");
 
-  if (!carriersBox || !loadsBox || !systemStatusBox || !loadPanel) {
-    console.error("❌ Missing Mission Control DOM Elements.");
+  // ---------- FIXED LINE ----------
+  const missing = [];
+  if (!carriersBox) missing.push("#totalCarriers");
+  if (!loadsBox) missing.push("#activeLoads");
+  if (!systemStatusBox) missing.push("#systemStatus");
+  if (!loadPanel) missing.push("#activeLoadsPanel");
+
+  if (missing.length > 0) {
+    console.error("❌ Missing Mission Control DOM Elements:", missing.join(", "));
     return;
   }
+  // ---------------------------------
 
   systemStatusBox.textContent = "Connecting...";
 
