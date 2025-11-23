@@ -3,6 +3,15 @@
    Clean / Works with dashboard.html
 ================================================================== */
 
+// Wait until DOM is loaded before initializing
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("⚡ DOM Ready — Launching MOVEN Mission Control…");
+  initMissionControl();
+});
+
+/* ================================================================
+   MAIN INITIALIZER
+================================================================== */
 async function initMissionControl() {
   console.log("🟡 MOVEN: Initializing Mission Control...");
 
@@ -11,7 +20,7 @@ async function initMissionControl() {
   const systemStatusBox = document.querySelector("#systemStatus");
   const loadPanel = document.querySelector("#activeLoadsPanel");
 
-  // ---------- FIXED LINE ----------
+  // ---------- Improved Error Reporting ----------
   const missing = [];
   if (!carriersBox) missing.push("#totalCarriers");
   if (!loadsBox) missing.push("#activeLoads");
@@ -22,7 +31,7 @@ async function initMissionControl() {
     console.error("❌ Missing Mission Control DOM Elements:", missing.join(", "));
     return;
   }
-  // ---------------------------------
+  // ------------------------------------------------
 
   systemStatusBox.textContent = "Connecting...";
 
@@ -35,7 +44,7 @@ async function initMissionControl() {
     const loads = await getSheetData("loads");
     loadsBox.textContent = loads.length;
 
-    // Render load list inside panel
+    // ---- Render Loads ----
     loadPanel.innerHTML = loads
       .map(load => `
         <div class="load-row">
@@ -59,13 +68,16 @@ async function initMissionControl() {
    PANEL LOADER
 ================================================================== */
 function loadPanel(panelId) {
+  // Hide all panels
   document.querySelectorAll(".panel-content").forEach(p => {
     p.style.display = "none";
   });
 
+  // Show selected panel
   const panel = document.getElementById(panelId);
   if (panel) panel.style.display = "block";
 
+  // Re-initialize Mission Control when switching to it
   if (panelId === "missionControl") {
     initMissionControl();
   }
