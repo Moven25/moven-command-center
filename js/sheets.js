@@ -31,7 +31,7 @@
   // -----------------------------------------------------------
   window.getSheetData = async function(key) {
     try {
-      const url = `/.netlify/functions/fetch-sheets-v2?sheet=${key}`;
+      const url = /.netlify/functions/fetch-sheets?sheet=${key}
 
       const res = await fetch(url);
       const text = await res.text();
