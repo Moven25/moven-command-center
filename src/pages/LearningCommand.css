@@ -1,0 +1,307 @@
+/* src/pages/LearningCommand.css */
+
+.learning-page {
+  color: #ffffff;
+}
+
+/* HEADER */
+
+.learning-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.learning-header h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.learning-header p {
+  opacity: 0.8;
+}
+
+.learning-header-meta {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #ff4a4a;
+  background: #ff4a4a;
+  color: #000;
+  font-weight: 600;
+}
+
+.pill-outline {
+  background: transparent;
+  color: #ff4a4a;
+}
+
+.pill-soft {
+  background: rgba(255, 74, 74, 0.12);
+  color: #ff4a4a;
+  border-color: rgba(255, 74, 74, 0.4);
+}
+
+/* GRID LAYOUT */
+
+.learning-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 2.3fr 1.5fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* GLOBAL CARD STYLE (reuses card from other pages if you have one) */
+
+.card {
+  background: #181818;
+  border-radius: 10px;
+  padding: 20px 22px;
+  border: 1px solid #303030;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
+}
+
+/* TEXT HELPERS */
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
+/* TRACKS (LEFT COLUMN) */
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.track-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.track-item:last-child {
+  border-bottom: none;
+}
+
+.track-item h3 {
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.track-item p {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.track-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #262626;
+  border: 1px solid #404040;
+}
+
+.tag-green {
+  background: #1b4730;
+  border-color: #27c96f;
+  color: #c9ffd8;
+}
+
+.track-progress {
+  opacity: 0.75;
+}
+
+/* CURRENT LESSON (MIDDLE COLUMN) */
+
+.current-lesson-card .card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.lesson-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.lesson-meta p {
+  margin-top: 4px;
+}
+
+.lesson-body h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.lesson-body ul {
+  padding-left: 18px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.lesson-body li {
+  margin-bottom: 4px;
+}
+
+.lesson-actions {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0 12px;
+}
+
+.btn-primary {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: #ff4a4a;
+  color: #000;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.btn-ghost {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: transparent;
+  color: #f5f5f5;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-ghost:hover {
+  filter: brightness(1.08);
+}
+
+.lesson-notes {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.lesson-notes .placeholder {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* PROGRESS (RIGHT COLUMN) */
+
+.progress-card .section-title {
+  margin-bottom: 10px;
+}
+
+.progress-block {
+  margin-bottom: 10px;
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #262626;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffb84a, #ff4a4a);
+}
+
+.progress-value {
+  opacity: 0.8;
+}
+
+.quick-links {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-secondary {
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #3a3a3a;
+  background: #222;
+  color: #f5f5f5;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.small-note {
+  margin-top: 14px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* LIBRARY (BOTTOM) */
+
+.library-card {
+  margin-top: 8px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.library-column h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.library-column ul {
+  list-style: disc;
+  padding-left: 18px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.library-column li {
+  margin-bottom: 4px;
+}

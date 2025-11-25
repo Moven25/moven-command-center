@@ -1,0 +1,278 @@
+/* ===== ADMIN COMMAND LAYOUT ===== */
+
+.admin-page {
+  color: #ffffff;
+  padding: 32px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.admin-header h1 {
+  font-size: 28px;
+  margin: 0 0 4px;
+}
+
+.admin-subtitle {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.admin-header-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.badge-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.badge-live {
+  background: #1f7a3a;
+  border-color: #2db35c;
+}
+
+.badge-version {
+  background: #333333;
+}
+
+/* Grid */
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr;
+  gap: 20px;
+}
+
+/* Cards */
+
+.admin-card {
+  background: #20252b;
+  border-radius: 8px;
+  padding: 18px 20px;
+  border: 1px solid #30363d;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.35);
+}
+
+.admin-card h2 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.card-description {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+/* Metrics */
+
+.admin-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric-label {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.metric-note {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.metric-ok {
+  color: #2db35c;
+}
+
+/* Buttons */
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.button-row-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-primary {
+  background: #ff5b2e;
+  border: 1px solid #ff5b2e;
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #ff7249;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #555b63;
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  border-color: #ff5b2e;
+}
+
+/* Toggles */
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.toggle-row:first-of-type {
+  border-top: none;
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toggle-note {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.toggle-switch {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.toggle-on {
+  background: #204a2f;
+  border-color: #2db35c;
+  color: #84ffb0;
+}
+
+.toggle-off {
+  background: #3a2a1d;
+  border-color: #ff5b2e;
+  color: #ffb699;
+}
+
+/* Form fields */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-bottom: 10px;
+}
+
+.form-field label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.form-field input,
+.form-field select,
+.admin-notes-input {
+  width: 100%;
+  background: #1a1f24;
+  border-radius: 4px;
+  border: 1px solid #3a414a;
+  padding: 6px 8px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.admin-notes-input:focus {
+  outline: none;
+  border-color: #ff5b2e;
+}
+
+/* Dev tools */
+
+.dev-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dev-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-right: 4px;
+}
+
+.dev-value {
+  font-size: 12px;
+}
+
+/* Notes */
+
+.admin-notes-input {
+  min-height: 90px;
+  resize: vertical;
+}
+
+/* Responsive */
+
+@media (max-width: 1200px) {
+  .admin-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-header-badge {
+    align-items: flex-start;
+  }
+}

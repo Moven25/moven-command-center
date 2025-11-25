@@ -1,0 +1,438 @@
+/* src/pages/DTL.css */
+
+.dtl-page {
+  color: #ffffff;
+}
+
+/* HEADER */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.page-header p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.dtl-header-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge-red {
+  background: #ff3b30;
+  border-color: #ff3b30;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.badge-outline {
+  border-color: #444a55;
+  color: #c7c7c7;
+}
+
+/* CARDS / GRID */
+
+.dtl-top-grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.6fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.dtl-bottom-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr;
+  gap: 24px;
+}
+
+/* Make route planner full-width */
+.dtl-route-planner {
+  grid-column: 1 / -1;
+}
+
+.dtl-notes {
+  grid-column: 1 / -1;
+}
+
+.dtl-card {
+  background: #181a1f;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 0 0 1px #262a33;
+}
+
+.card-title {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.dtl-card-body.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+  margin-top: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.field input {
+  background: #101218;
+  border-radius: 6px;
+  border: 1px solid #2a2f3a;
+  padding: 7px 9px;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.field input::placeholder {
+  color: #868b96;
+}
+
+/* METRICS */
+
+.dtl-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.metric-sub {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.metric-bar {
+  margin-top: 4px;
+  height: 6px;
+  background: #20232b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.metric-bar-fill.good {
+  background: #2ecc71;
+}
+
+.metric-bar-fill.ok {
+  background: #f1c40f;
+}
+
+/* RULES */
+
+.dtl-rules-card {
+  font-size: 13px;
+}
+
+.dtl-rules-list {
+  margin-top: 10px;
+  padding-left: 18px;
+}
+
+.dtl-rules-list li {
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+/* SECTION HEADER */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.pill-toggle {
+  background: #101218;
+  padding: 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid #262a33;
+}
+
+.pill-button {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #c7c7c7;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pill-button.active {
+  background: #ff3b30;
+  color: #ffffff;
+}
+
+/* ROUTE PLANNER */
+
+.dtl-legs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dtl-leg h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.dtl-leg-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #2a2f3a;
+  background: #101218;
+}
+
+.chip-green {
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+.chip-amber {
+  border-color: #f1c40f;
+  color: #f1c40f;
+}
+
+.chip-blue {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.chip-purple {
+  border-color: #9b59b6;
+  color: #9b59b6;
+}
+
+/* WEEKLY CYCLE */
+
+.dtl-weekly-cycle {
+  min-height: 230px;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.day {
+  background: #101218;
+  border-radius: 8px;
+  padding: 8px 7px;
+  border: 1px solid #262a33;
+}
+
+.day-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.day-main {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.day-sub {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* RISK MATRIX */
+
+.dtl-risk-matrix {
+  min-height: 230px;
+}
+
+.risk-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.risk-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.risk-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.risk-sub {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.risk-bar {
+  height: 6px;
+  background: #20232b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.risk-bar-fill.good {
+  background: #2ecc71;
+}
+
+.risk-bar-fill.ok {
+  background: #f1c40f;
+}
+
+.risk-bar-fill.warn {
+  background: #e67e22;
+}
+
+.risk-score {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+.good-text {
+  color: #2ecc71;
+}
+
+.warn-text {
+  color: #e67e22;
+}
+
+/* NOTES */
+
+.notes-input {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  background: #101218;
+  border-radius: 8px;
+  border: 1px solid #2a2f3a;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.notes-input::placeholder {
+  color: #8a8f99;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+  .dtl-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dtl-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dtl-legs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .week-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+

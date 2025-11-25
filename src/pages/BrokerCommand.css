@@ -1,0 +1,82 @@
+.broker-page {
+  color: #ffffff;
+}
+
+.page-subtitle {
+  margin-top: 4px;
+  margin-bottom: 20px;
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.broker-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1.7fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: #1b1b1b;
+  border-radius: 8px;
+  padding: 20px 22px;
+  border: 1px solid #303030;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.35);
+}
+
+.card h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field.full-width {
+  width: 100%;
+}
+
+label {
+  margin-bottom: 4px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+input,
+select,
+textarea {
+  background: #2a2a2a;
+  border: 1px solid #3b3b3b;
+  padding: 10px;
+  border-radius: 6px;
+  color: #ffffff;
+}
+
+textarea {
+  min-height: 85px;
+}
+
+.save-btn {
+  margin-top: 24px;
+  background: #ff3b30;
+  color: #ffffff;
+  padding: 12px 22px;
+  border-radius: 6px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.save-btn:hover {
+  background: #ff1f1a;
+}

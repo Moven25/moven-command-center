@@ -1,0 +1,468 @@
+// src/pages/CarrierCommand.jsx
+
+import { useState } from "react";
+
+function CarrierCommand() {
+  const [carrier, setCarrier] = useState({
+    carrierName: "",
+    mcNumber: "",
+    primaryContact: "",
+    contactPhone: "",
+    email: "",
+    factoringCompany: "",
+    factoringTerms: "",
+    equipmentType: "Dry Van",
+    trucks: "1",
+    homeTerminalCity: "",
+    homeTerminalState: "",
+    preferredLanes: "",
+    doNotRunLanes: "",
+    minRatePerMile: "",
+    targetRatePerMile: "",
+    maxDailyMiles: "550",
+    eldProvider: "",
+    notes: "",
+  });
+
+  const [status, setStatus] = useState({
+    isActive: true,
+    currentMarket: "",
+    nextHomeTime: "",
+    thisWeekRevenue: "",
+    lastWeekRevenue: "",
+    onTimePercentage: "98",
+    safetyScore: "Green",
+    riskNotes: "",
+  });
+
+  // --- simple derived metrics for the right-side panel ---
+  const trucks = Number(carrier.trucks) || 0;
+  const thisWeekRev = Number(status.thisWeekRevenue) || 0;
+  const lastWeekRev = Number(status.lastWeekRevenue) || 0;
+  const avgRevPerTruck =
+    trucks > 0 ? (thisWeekRev / trucks).toFixed(0) : "0";
+
+  const targetRpm = Number(carrier.targetRatePerMile) || 0;
+  const minRpm = Number(carrier.minRatePerMile) || 0;
+  const rpmBand =
+    minRpm && targetRpm ? `${minRpm.toFixed(2)} – ${targetRpm.toFixed(2)}` : "--";
+
+  const trend =
+    thisWeekRev && lastWeekRev
+      ? thisWeekRev > lastWeekRev
+        ? "up"
+        : thisWeekRev < lastWeekRev
+        ? "down"
+        : "flat"
+      : "flat";
+
+  const onTime = Number(status.onTimePercentage) || 0;
+  const health =
+    onTime >= 97 ? "green" : onTime >= 93 ? "yellow" : "red";
+
+  const handleCarrierChange = (e) => {
+    const { name, value } = e.target;
+    setCarrier((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleStatusChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setStatus((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+
+    // For now this just confirms that things are wired.
+    // Later this will push to Zoho Sheets / MOVEN CRM.
+    console.log("Carrier profile:", carrier);
+    console.log("Carrier status:", status);
+    alert("Carrier profile saved locally. Later this will sync into MOVEN Command.");
+  };
+
+  return (
+    <main className="main-content carrier-page">
+      <h1>Carrier Command</h1>
+      <p className="page-subtitle">
+        Build the full MOVEN profile for each carrier: lanes, home time, money,
+        and risk — all in one place.
+      </p>
+
+      <div className="carrier-grid">
+        {/* LEFT SIDE – profile + preferences */}
+        <form className="card" onSubmit={handleSave}>
+          <h2>Carrier Profile</h2>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Carrier Name</label>
+              <input
+                type="text"
+                name="carrierName"
+                value={carrier.carrierName}
+                onChange={handleCarrierChange}
+                placeholder="Example Transport LLC"
+              />
+            </div>
+            <div className="form-field">
+              <label>MC #</label>
+              <input
+                type="text"
+                name="mcNumber"
+                value={carrier.mcNumber}
+                onChange={handleCarrierChange}
+                placeholder="MC123456"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Primary Contact</label>
+              <input
+                type="text"
+                name="primaryContact"
+                value={carrier.primaryContact}
+                onChange={handleCarrierChange}
+                placeholder="Owner / Dispatcher name"
+              />
+            </div>
+            <div className="form-field">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="contactPhone"
+                value={carrier.contactPhone}
+                onChange={handleCarrierChange}
+                placeholder="(555) 555-5555"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={carrier.email}
+                onChange={handleCarrierChange}
+                placeholder="owner@example.com"
+              />
+            </div>
+            <div className="form-field">
+              <label>Equipment Type</label>
+              <select
+                name="equipmentType"
+                value={carrier.equipmentType}
+                onChange={handleCarrierChange}
+              >
+                <option>Dry Van</option>
+                <option>Reefer</option>
+                <option>Flatbed</option>
+                <option>Power Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label># of Trucks on MOVEN</label>
+              <input
+                type="number"
+                min="1"
+                name="trucks"
+                value={carrier.trucks}
+                onChange={handleCarrierChange}
+              />
+            </div>
+            <div className="form-field">
+              <label>Home Terminal (City)</label>
+              <input
+                type="text"
+                name="homeTerminalCity"
+                value={carrier.homeTerminalCity}
+                onChange={handleCarrierChange}
+                placeholder="Atlanta"
+              />
+            </div>
+            <div className="form-field">
+              <label>State</label>
+              <input
+                type="text"
+                name="homeTerminalState"
+                value={carrier.homeTerminalState}
+                onChange={handleCarrierChange}
+                placeholder="GA"
+              />
+            </div>
+          </div>
+
+          <h2 className="section-title">Lanes & Preferences</h2>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Preferred Lanes</label>
+              <textarea
+                name="preferredLanes"
+                value={carrier.preferredLanes}
+                onChange={handleCarrierChange}
+                rows={3}
+                placeholder="ATL → CHI, CHI → DAL, SE regional, etc."
+              />
+            </div>
+            <div className="form-field">
+              <label>Do NOT Run</label>
+              <textarea
+                name="doNotRunLanes"
+                value={carrier.doNotRunLanes}
+                onChange={handleCarrierChange}
+                rows={3}
+                placeholder="NYC boroughs, CO mountains in winter, etc."
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Min Rate Per Mile (won&apos;t book below)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="minRatePerMile"
+                value={carrier.minRatePerMile}
+                onChange={handleCarrierChange}
+                placeholder="2.25"
+              />
+            </div>
+            <div className="form-field">
+              <label>Target Rate Per Mile</label>
+              <input
+                type="number"
+                step="0.01"
+                name="targetRatePerMile"
+                value={carrier.targetRatePerMile}
+                onChange={handleCarrierChange}
+                placeholder="2.75"
+              />
+            </div>
+            <div className="form-field">
+              <label>Max Daily Miles (ELD)</label>
+              <input
+                type="number"
+                name="maxDailyMiles"
+                value={carrier.maxDailyMiles}
+                onChange={handleCarrierChange}
+                placeholder="550"
+              />
+            </div>
+          </div>
+
+          <h2 className="section-title">Factoring & Notes</h2>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Factoring Company</label>
+              <input
+                type="text"
+                name="factoringCompany"
+                value={carrier.factoringCompany}
+                onChange={handleCarrierChange}
+                placeholder="e.g. RTS, OTR, Triumph"
+              />
+            </div>
+            <div className="form-field">
+              <label>Factoring Terms</label>
+              <input
+                type="text"
+                name="factoringTerms"
+                value={carrier.factoringTerms}
+                onChange={handleCarrierChange}
+                placeholder="3% fee, 90% advance, etc."
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>ELD Provider</label>
+              <input
+                type="text"
+                name="eldProvider"
+                value={carrier.eldProvider}
+                onChange={handleCarrierChange}
+                placeholder="KeepTruckin, Samsara, etc."
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Internal MOVEN Notes</label>
+            <textarea
+              name="notes"
+              value={carrier.notes}
+              onChange={handleCarrierChange}
+              rows={3}
+              placeholder="Anything that helps you dispatch smarter for this carrier."
+            />
+          </div>
+
+          <button type="submit" className="primary-btn">
+            Save Carrier Profile
+          </button>
+        </form>
+
+        {/* RIGHT SIDE – live MOVEN metrics & risk */}
+        <div className="card">
+          <h2>MOVEN Metrics</h2>
+
+          <div className="form-row">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                name="isActive"
+                checked={status.isActive}
+                onChange={handleStatusChange}
+              />
+              <span>Carrier Active on MOVEN</span>
+            </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>Current Market</label>
+              <input
+                type="text"
+                name="currentMarket"
+                value={status.currentMarket}
+                onChange={handleStatusChange}
+                placeholder="e.g. Atlanta, GA"
+              />
+            </div>
+            <div className="form-field">
+              <label>Next Home Time</label>
+              <input
+                type="date"
+                name="nextHomeTime"
+                value={status.nextHomeTime}
+                onChange={handleStatusChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>This Week Revenue ($)</label>
+              <input
+                type="number"
+                name="thisWeekRevenue"
+                value={status.thisWeekRevenue}
+                onChange={handleStatusChange}
+              />
+            </div>
+            <div className="form-field">
+              <label>Last Week Revenue ($)</label>
+              <input
+                type="number"
+                name="lastWeekRevenue"
+                value={status.lastWeekRevenue}
+                onChange={handleStatusChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label>On-Time %</label>
+              <input
+                type="number"
+                name="onTimePercentage"
+                value={status.onTimePercentage}
+                onChange={handleStatusChange}
+              />
+            </div>
+            <div className="form-field">
+              <label>Safety Score</label>
+              <input
+                type="text"
+                name="safetyScore"
+                value={status.safetyScore}
+                onChange={handleStatusChange}
+                placeholder="Green / Yellow / Red"
+              />
+            </div>
+          </div>
+
+          <div className="metrics-grid">
+            <div className="metric">
+              <div className="metric-label">Avg Rev / Truck (This Week)</div>
+              <div className="metric-value">${avgRevPerTruck}</div>
+            </div>
+
+            <div className="metric">
+              <div className="metric-label">RPM Band (Min → Target)</div>
+              <div className="metric-value">{rpmBand}</div>
+            </div>
+
+            <div className="metric">
+              <div className="metric-label">Revenue Trend</div>
+              <div className="metric-value">
+                {trend === "up" && "📈 Up"}
+                {trend === "down" && "📉 Down"}
+                {trend === "flat" && "➖ Flat"}
+              </div>
+            </div>
+
+            <div className="metric">
+              <div className="metric-label">MOVEN Health</div>
+              <div className="metric-value">
+                <span
+                  className={
+                    health === "green"
+                      ? "badge badge-green"
+                      : health === "yellow"
+                      ? "badge badge-yellow"
+                      : "badge badge-red"
+                  }
+                >
+                  {health === "green"
+                    ? "Prime"
+                    : health === "yellow"
+                    ? "Watch"
+                    : "At Risk"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="section-title">Risk & Alerts</h3>
+          <div className="form-field">
+            <label>Risk Notes / Special Instructions</label>
+            <textarea
+              name="riskNotes"
+              value={status.riskNotes}
+              onChange={handleStatusChange}
+              rows={3}
+              placeholder="Breakdown history, cancellations, special broker notes, etc."
+            />
+          </div>
+
+          <p className="carrier-summary">
+            MOVEN will use this profile later to **filter loads, protect RPM,
+            and plan DTL / triangle routes** around{" "}
+            <strong>{carrier.homeTerminalCity || "home base"}</strong> and{" "}
+            <strong>{carrier.preferredLanes || "your preferred lanes"}</strong>.
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default CarrierCommand;

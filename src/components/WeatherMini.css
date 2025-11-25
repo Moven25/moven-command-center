@@ -1,0 +1,24 @@
+.weather-card {
+  background: radial-gradient(circle at top left, #262a36, #151620);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  padding: 16px 18px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+  text-align: left;
+}
+
+.weather-icon {
+  font-size: 26px;
+  margin-bottom: 4px;
+}
+
+.weather-temp {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.weather-city {
+  font-size: 12px;
+  color: #a5a8b5;
+}

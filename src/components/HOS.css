@@ -1,0 +1,18 @@
+.hos-card {
+  background: radial-gradient(circle at top left, #252734, #14151f);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  padding: 16px 18px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+}
+
+.hos-time {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 6px 0 2px;
+}
+
+.hos-sub {
+  font-size: 12px;
+  color: #a4a7b5;
+}
