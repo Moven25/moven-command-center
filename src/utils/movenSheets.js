@@ -1,33 +1,45 @@
-// /src/utils/movenSheets.js
-// MOVEN Logistics — React Fetch Helpers
+// src/utils/movenSheets.js
 
-const API_BASE = "/.netlify/functions";
+const BASE_URL = "https://command.movenlogistics.com/.netlify/functions/fetch-sheets";
 
-export async function fetchSheet(sheetName) {
+// Unified fetcher
+async function fetchSheet(sheetName) {
   try {
-    const url = `${API_BASE}/fetch-sheets?sheet=${encodeURIComponent(sheetName)}`;
-    const res = await fetch(url);
+    const res = await fetch(`${BASE_URL}?sheet=${sheetName}`);
 
     if (!res.ok) {
-      console.error(`❌ Failed fetching ${sheetName}`, res.status);
-      return [];
+      throw new Error(`Failed to fetch ${sheetName}: ${res.status}`);
     }
 
-    const data = await res.json();
-    if (!Array.isArray(data)) return [];
+    const text = await res.text();
 
-    return data;
+    // Convert CSV to objects
+    const rows = text
+      .trim()
+      .split("\n")
+      .map((line) => line.split(","));
+
+    const headers = rows.shift();
+
+    return rows.map((row) =>
+      Object.fromEntries(
+        headers.map((h, i) => [h.trim(), row[i] ? row[i].trim() : ""])
+      )
+    );
   } catch (err) {
-    console.error(`❌ MOVEN Fetch Failed (${sheetName})`, err);
+    console.error(`❌ MOVEN Sheets Error (${sheetName}):`, err);
     return [];
   }
 }
 
-export const movenSheets = {
+// THIS is what Dashboard.jsx expects
+const movenSheets = {
   carriers: () => fetchSheet("carriers"),
   loads: () => fetchSheet("loads"),
   brokers: () => fetchSheet("brokers"),
   factoring: () => fetchSheet("factoring"),
   compliance: () => fetchSheet("compliance"),
-  drivers: () => fetchSheet("drivers")
+  driver_status: () => fetchSheet("driver_status"),
 };
+
+export default movenSheets;

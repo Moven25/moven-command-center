@@ -1,13 +1,135 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>moven-system</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+<!-- MOVEN Mission Control Dashboard -->
+<header class="mc-header">
+  <div class="mc-logo">MOVEN</div>
+  <nav class="mc-nav">
+    <button class="mc-nav-item mc-nav-item--active">Mission Control</button>
+    <button class="mc-nav-item">Carrier Command</button>
+    <button class="mc-nav-item">Load Command</button>
+    <button class="mc-nav-item">Broker Command</button>
+    <button class="mc-nav-item">Routing Command</button>
+    <button class="mc-nav-item">Finance Command</button>
+    <button class="mc-nav-item">Weather Command</button>
+    <button class="mc-nav-item">Learning Command</button>
+  </nav>
+  <button class="mc-settings-btn" aria-label="Settings">⚙️</button>
+</header>
+
+<main class="mc-layout">
+  <!-- LEFT COLUMN -->
+  <section class="mc-card mc-card--tall" id="card-live-carriers">
+    <h2>Live Carrier Data</h2>
+    <div class="mc-gauge" id="carrier-gauge">
+      <div class="mc-gauge-fill"></div>
+      <div class="mc-gauge-cover" id="carrier-gauge-value">84</div>
+    </div>
+    <ul class="mc-metric-list">
+      <li><span>Carrier Performance Score</span><strong id="carrier-score-text">84</strong></li>
+      <li><span>Live Carriers</span><strong id="live-carriers">0</strong></li>
+      <li><span>Insurance Alerts</span><strong id="insurance-alerts">0</strong></li>
+      <li><span>Compliance Warnings</span><strong id="compliance-warnings">0</strong></li>
+    </ul>
+  </section>
+
+  <section class="mc-card" id="card-weather-summary">
+    <h2>Weather Command</h2>
+    <ul class="mc-metric-list">
+      <li><span>Active Loads</span><strong id="weather-active-loads">0</strong></li>
+      <li><span>Loads This Week</span><strong id="weather-loads-week">0</strong></li>
+      <li><span>Total Loaded Miles</span><strong id="weather-total-miles">0</strong></li>
+      <li><span>Weather Alerts</span><strong id="weather-alert-count">0</strong></li>
+    </ul>
+  </section>
+
+  <!-- MIDDLE COLUMN -->
+  <section class="mc-card mc-card--wide" id="card-load-summary">
+    <h2>Load Command Summary</h2>
+    <table class="mc-table">
+      <thead>
+        <tr>
+          <th>Load ID</th>
+          <th>Origin</th>
+          <th>Pickup</th>
+          <th>Delivery</th>
+          <th>RPM</th>
+          <th>Suggested Score</th>
+        </tr>
+      </thead>
+      <tbody id="load-summary-body">
+        <!-- filled by JS -->
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mc-card" id="card-todays-priorities">
+    <h2>Today's Priorities</h2>
+    <ul class="mc-priority-list" id="priorities-list">
+      <!-- filled by JS -->
+    </ul>
+  </section>
+
+  <section class="mc-card" id="card-load-score">
+    <h2>Load Score</h2>
+    <div class="mc-gauge" id="load-gauge">
+      <div class="mc-gauge-fill"></div>
+      <div class="mc-gauge-cover" id="load-gauge-value">0</div>
+    </div>
+    <p class="mc-card-subtitle">Revenue Today</p>
+    <div class="mc-metric-large" id="revenue-today">$0</div>
+  </section>
+
+  <section class="mc-card" id="card-revenue-week">
+    <h2>Revenue This Week</h2>
+    <div class="mc-metric-large" id="revenue-week">$0</div>
+    <p class="mc-card-subtitle">Target vs. Actual</p>
+    <div class="mc-progress-bar">
+      <div class="mc-progress-fill" id="revenue-week-progress"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT COLUMN -->
+  <section class="mc-card" id="card-compliance">
+    <h2>Compliance Command</h2>
+    <ul class="mc-status-list">
+      <li><span>Insurance</span><span class="mc-pill mc-pill--ok" id="compliance-ins">OK</span></li>
+      <li><span>Permits</span><span class="mc-pill mc-pill--ok" id="compliance-permits">OK</span></li>
+      <li><span>IFTA</span><span class="mc-pill mc-pill--warn" id="compliance-ifta">Due</span></li>
+      <li><span>Medical</span><span class="mc-pill mc-pill--bad" id="compliance-med">Expired</span></li>
+    </ul>
+  </section>
+
+  <section class="mc-card" id="card-alerts">
+    <h2>Alerts Feed</h2>
+    <ul class="mc-alert-list" id="alerts-feed">
+      <!-- filled by JS -->
+    </ul>
+  </section>
+
+  <section class="mc-card" id="card-weather-radar">
+    <h2>Weather Radar</h2>
+    <div class="mc-weather-map">
+      <!-- placeholder; real map later -->
+      <span class="mc-weather-map-placeholder">Radar preview here</span>
+    </div>
+  </section>
+
+  <section class="mc-card" id="card-system-health">
+    <h2>System Health & Load Board Sync</h2>
+    <ul class="mc-status-list">
+      <li><span>Data Sync</span><span class="mc-pill mc-pill--ok" id="health-data">OK</span></li>
+      <li><span>Carrier CSV</span><span class="mc-pill mc-pill--ok" id="health-carriers">OK</span></li>
+      <li><span>Loads CSV</span><span class="mc-pill mc-pill--ok" id="health-loads">OK</span></li>
+      <li><span>API Health</span><span class="mc-pill mc-pill--ok" id="health-api">OK</span></li>
+      <li><span>Load Board Sync</span><span class="mc-pill mc-pill--ok" id="health-loadboard">Connected</span></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="mc-footer">
+  <button class="mc-btn">Add Carrier</button>
+  <button class="mc-btn">Add Load</button>
+  <button class="mc-btn">Run DTL Scan</button>
+  <button class="mc-btn">Sync Sheets</button>
+  <button class="mc-btn">Weather Scan</button>
+  <button class="mc-btn mc-btn--danger">Emergency Alert</button>
+</footer>
+
