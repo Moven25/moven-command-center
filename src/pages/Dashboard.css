@@ -1,279 +1,98 @@
-/* === General Layout === */
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif;
+/* ======= MAIN GRID LAYOUT ======= */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding: 24px;
+  color: white;
   background: #050608;
-  color: #ffffff;
+  min-height: 100vh;
 }
 
-.mc-header {
+/* ======= HEADER ======= */
+.dashboard-header {
   display: flex;
   align-items: center;
-  padding: 12px 24px;
+  padding: 16px 24px;
   background: #050608;
-  border-bottom: 1px solid #15181c;
+  border-bottom: 1px solid #15191f;
 }
 
-.mc-logo {
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  margin-right: 32px;
+.moven-logo {
+  height: 42px;
+  margin-right: 30px;
 }
 
-.mc-nav {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-}
-
-.mc-nav-item {
-  background: transparent;
+/* NAV BAR */
+.dashboard-nav button {
+  margin-right: 12px;
+  background: none;
   border: none;
-  color: #cfd3da;
+  color: #c7ced9;
   padding: 8px 14px;
-  border-radius: 999px;
   font-size: 14px;
+  border-radius: 20px;
+  transition: 0.3s;
   cursor: pointer;
 }
 
-.mc-nav-item--active {
-  background: #ffffff;
-  color: #000000;
+.dashboard-nav button.active,
+.dashboard-nav button:hover {
+  background: white;
+  color: #000;
 }
 
-.mc-settings-btn {
-  background: #11141a;
-  border-radius: 999px;
-  border: 1px solid #2b313b;
-  color: #cfd3da;
-  padding: 6px 10px;
-  cursor: pointer;
+/* ======= TILE / CARD ======= */
+.tile {
+  background: #0b0f16;
+  border: 1px solid #1a1f27;
+  border-radius: 14px;
+  padding: 16px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-.mc-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(420px, 2fr) minmax(260px, 1fr);
-  gap: 16px;
-  padding: 16px 24px 80px;
-}
-
-/* === Cards === */
-.mc-card {
-  background: #080b11;
-  border-radius: 16px;
-  padding: 14px 16px;
-  border: 1px solid #161b22;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-}
-
-.mc-card--tall {
-  grid-row: span 2;
-}
-
-.mc-card--wide {
-  grid-column: span 1;
-}
-
-.mc-card h2 {
-  margin: 0 0 8px;
+.tile h2 {
+  margin: 0 0 10px;
   font-size: 16px;
   font-weight: 600;
 }
 
-.mc-card-subtitle {
-  margin-top: 12px;
-  font-size: 13px;
-  color: #a0a7b3;
-}
-
-/* === Lists & Tables === */
-.mc-metric-list,
-.mc-status-list,
-.mc-alert-list,
-.mc-priority-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 13px;
-}
-
-.mc-metric-list li,
-.mc-status-list li,
-.mc-priority-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 4px 0;
-}
-
-.mc-metric-list span,
-.mc-status-list span,
-.mc-priority-list span {
-  color: #a0a7b3;
-}
-
-.mc-metric-list strong,
-.mc-status-list strong {
-  color: #ffffff;
-}
-
-.mc-table {
+/* ======= LOAD SUMMARY TABLE ======= */
+.load-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.mc-table th,
-.mc-table td {
-  padding: 6px 4px;
+.load-table th {
   text-align: left;
+  padding: 8px 4px;
+  color: #8f96a3;
+  border-bottom: 1px solid #141821;
 }
 
-.mc-table thead {
-  color: #a0a7b3;
-  border-bottom: 1px solid #161b22;
+.load-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #0f131a;
 }
 
-.mc-table tbody tr:nth-child(even) {
-  background: #0c1017;
+/* ======= ALERT LIST ======= */
+.alerts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-/* === Gauges === */
-.mc-gauge {
-  position: relative;
-  width: 140px;
-  height: 70px;
-  overflow: hidden;
-  margin: 6px auto 10px;
-}
-
-.mc-gauge::before {
-  content: "";
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: conic-gradient(#e6372f 0deg, #f7b955 120deg, #2ecc71 240deg, #2ecc71 180deg);
-  top: 0;
-  left: 0;
-}
-
-.mc-gauge-fill {
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: #050608;
-  top: 0;
-  left: 0;
-  transform-origin: center;
-  transform: rotate(180deg);
-}
-
-.mc-gauge-cover {
-  position: absolute;
-  width: 90px;
-  height: 45px;
-  background: #050608;
-  border-radius: 90px 90px 0 0;
-  top: 25px;
-  left: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  font-weight: 700;
-}
-
-/* === Pills & Progress === */
-.mc-pill {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-}
-
-.mc-pill--ok {
-  background: rgba(46, 204, 113, 0.12);
-  color: #2ecc71;
-}
-
-.mc-pill--warn {
-  background: rgba(247, 185, 85, 0.14);
-  color: #f7b955;
-}
-
-.mc-pill--bad {
-  background: rgba(230, 55, 47, 0.2);
-  color: #e6372f;
-}
-
-.mc-metric-large {
-  font-size: 22px;
-  font-weight: 700;
-  margin-top: 8px;
-}
-
-.mc-progress-bar {
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: #151b26;
-  overflow: hidden;
-  margin-top: 6px;
-}
-
-.mc-progress-fill {
-  height: 100%;
-  width: 0%;
-  background: #2ecc71;
-}
-
-/* === Alerts & Weather Map === */
-.mc-alert-list li {
-  padding: 4px 0;
-  border-bottom: 1px dashed #151b26;
-  font-size: 12px;
-  color: #cfd3da;
-}
-
-.mc-weather-map {
-  border-radius: 12px;
-  background: radial-gradient(circle at 30% 30%, #27ae60, #050608);
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mc-weather-map-placeholder {
-  font-size: 12px;
-  color: #a0a7b3;
-}
-
-/* === Footer buttons === */
-.mc-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 24px;
-  background: linear-gradient(to top, #050608, transparent);
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.mc-btn {
-  background: #11141a;
-  border-radius: 999px;
-  border: 1px solid #272c35;
-  color: #ffffff;
-  padding: 8px 14px;
+.alerts-list li {
+  padding: 6px 0;
+  border-bottom: 1px dashed #141821;
   font-size: 13px;
-  cursor: pointer;
 }
 
-.mc-btn--danger {
-  border-color: #e6372f;
-  color: #ffb3ae;
+/* ======= REVENUE ======= */
+.revenue-number {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 10px;
 }
