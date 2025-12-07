@@ -2,10 +2,13 @@ import "./App.css";
 import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 
 // Import pages
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"; // Mission Control
 import LoadCommand from "./pages/LoadCommand";
-import CarrierCommand from "./pages/CarrierCommand";
+import CarrierCommand from "./pages/CarrierCommandNew";
 import BrokerCommand from "./pages/BrokerCommand";
+import Routing from "./pages/Routing";
+import Finance from "./pages/Finance";
+import Weather from "./pages/Weather";
 import DTL from "./pages/DTL";
 import LearningCommand from "./pages/LearningCommand";
 import Settings from "./pages/Settings";
@@ -28,7 +31,7 @@ function App() {
               }
               to="/"
             >
-              Dashboard
+              Mission Control
             </NavLink>
 
             <NavLink
@@ -47,6 +50,33 @@ function App() {
               to="/carrier"
             >
               Carrier Command
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                isActive ? "nav-item active" : "nav-item"
+              }
+              to="/routing"
+            >
+              Routing
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                isActive ? "nav-item active" : "nav-item"
+              }
+              to="/finance"
+            >
+              Finance
+            </NavLink>
+
+            <NavLink
+              className={({ isActive }) =>
+                isActive ? "nav-item active" : "nav-item"
+              }
+              to="/weather"
+            >
+              Weather
             </NavLink>
 
             <NavLink
