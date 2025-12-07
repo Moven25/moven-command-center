@@ -3,14 +3,18 @@ import "./WeatherMini.css";
 
 export default function Alerts({ items = [] }) {
   return (
-    <div className="mc-alerts" role="feed" aria-live="polite">
-      <ul className="mc-alerts-list">
-        {items.length ? (
-          items.map((a, i) => <li key={i}>{a}</li>)
-        ) : (
-          <li className="muted">No alerts</li>
-        )}
-      </ul>
-    </div>
+  <div className="alerts-b2">
+    <div className="alerts-title-b2">Alerts Feed</div>
+    <ul className="alerts-list-b2">
+      {items.length ? (
+        items.map((alert, i) => <li key={i} className="alerts-item-b2">{alert}</li>)
+      ) : (
+        <li className="alerts-item-b2 muted">No alerts</li>
+      )}
+    </ul>
+  </div>
+);
+
+export default Alerts;
   );
 }
