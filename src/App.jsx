@@ -8,7 +8,7 @@ import Sidebar from "./components/Sidebar";
 // Import pages
 import Dashboard from "./pages/Dashboard"; // Mission Control
 import LoadCommand from "./pages/LoadCommand";
-import CarrierCommand from "./pages/CarrierCommandClean";
+import CarrierCommand from "./pages/CarrierCommand";
 import BrokerCommand from "./pages/BrokerCommand";
 import Routing from "./pages/Routing";
 import Finance from "./pages/Finance";

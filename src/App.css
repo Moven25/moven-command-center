@@ -48,6 +48,15 @@ body {
   margin: 0 auto;
 }
 
+/* theme tokens for polish */
+:root {
+  --mc-gap: 20px;
+  --mc-card-radius: 14px;
+  --mc-shadow: 0 12px 30px rgba(0,0,0,0.6);
+}
+
+.mc-card { border-radius: var(--mc-card-radius); box-shadow: var(--mc-shadow); }
+
 /* fallback simple components */
 .primary-btn{ background: var(--mc-accent); color:#071018; border:none; padding:8px 12px; border-radius:8px; }
 
