@@ -1,3 +1,81 @@
+/* App shell – full screen dark backdrop */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #222b3a 0, #02040a 45%, #000 100%);
+  color: #f5f5f5;
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+/* Additional styles can be added here as needed */
+
+/* Full height + dark theme */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--mc-bg);
+  color: var(--mc-text);
+  font-family: Inter, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App shell grid: left sidebar (260px) + main content */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
+}
+
+.app-content {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 24px;
+  overflow: auto;
+}
+
+/* utility container for centering pages */
+.page-root {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* theme tokens for polish */
+:root {
+  --mc-gap: 20px;
+  --mc-card-radius: 14px;
+  --mc-shadow: 0 12px 30px rgba(0,0,0,0.6);
+}
+
+.mc-card { border-radius: var(--mc-card-radius); box-shadow: var(--mc-shadow); }
+
+/* fallback simple components */
+.primary-btn{ background: var(--mc-accent); color:#071018; border:none; padding:8px 12px; border-radius:8px; }
 :root {
   --bg: #05070b;
   --bg-elevated: #11141d;
