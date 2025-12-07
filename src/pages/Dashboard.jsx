@@ -1,57 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import "./Dashboard.css";
-import Gauge from "../components/Gauge";
-
-const LOADS = [
-  { id: "53081", origin: "Chicago", pickup: "Dec. 5", delivery: "Feb. 7", rpm: 2.97, score: 82 },
-  { id: "53072", origin: "Louisville", pickup: "Dec. 5", delivery: "Jul. 15", rpm: 3.15, score: 77 },
-  { id: "53056", origin: "Charlotte", pickup: "Jul. 21", delivery: "Dec. 16", rpm: 2.46, score: 64 },
-  { id: "53058", origin: "Phoenix", pickup: "Jul. 29", delivery: "Dec. 7", rpm: 2.60, score: 72 },
-];
-
-const PRIORITIES = [
-  { label: "Urgent Loads", color: "#00ffb2" },
-  { label: "Check Calls Due", color: "#ff4d4f" },
-  { label: "Missing Documents", color: "#ffe066" },
-  { label: "Carrier Updates", color: "#35d07f" },
-];
-
-const ALERTS = [
-  "Weather alert on I-80. Adjust ETAs.",
-  "Road 53095 late at pickup.",
-  "Carrier HF995 insurance expiring.",
-  "New DTL opportunity opens Thursday.",
-];
 
 const Dashboard = () => {
-  // Core KPI state (safe demo defaults — your sheet hook can update later)
-  const [carrierScore] = useState(84);
-  const [liveCarriers] = useState(1280);
-  const [insuranceAlerts] = useState(6);
-  const [complianceWarnings] = useState(8);
-
-  const [activeLoads] = useState(4);
-  const [loadsThisWeek] = useState(79);
-  const [totalMiles] = useState("1.28M");
-  const [weatherAlerts] = useState(8);
-
-  const [marketTemp] = useState("Moderate");
-
-  const [loadScore] = useState(73);
-  const [revenueToday] = useState(36847);
-  const [revenueThisWeek] = useState(56487);
-
   return (
-    <div className="mc-dashboard-root">
-      <section className="mc-grid" aria-label="Mission Control overview">
-        {/* Live Carrier Data */}
-        <div className="mc-panel mc-panel--carrier">
-          <header className="mc-panel-header">
-            <h2 className="mc-panel-title">Live Carrier Data</h2>
-          </header>
+    <div className="dash-grid">
+      {/* LIVE CARRIER DATA */}
+      <section className="card card-live">
+        <header className="card-header">
+          <h2>Live Carrier Data</h2>
+        </header>
 
-          <div className="mc-panel-body mc-panel-body--carrier">
-            <div className="mc-carrier-gauge">
+        <div className="live-main">
+          <div className="live-gauge">
+            <div className="gauge-arc" />
               <Gauge value={carrierScore} label="Carrier Performance Score" />
             </div>
 
@@ -70,7 +31,7 @@ const Dashboard = () => {
               </li>
             </ul>
           </div>
-        </div>
+        </section>
 
         {/* Load Command Summary */}
         <div className="mc-panel mc-panel--loads">
@@ -256,8 +217,6 @@ const Dashboard = () => {
             </p>
           </div>
         </div>
-      </section>
-
       {/* Bottom action bar (Add Carrier / Add Load / Run DTL Scan / Sync Sheets / Emergency Alert) */}
       <footer className="mc-footer-bar">
         <button type="button">Add Carrier</button>
