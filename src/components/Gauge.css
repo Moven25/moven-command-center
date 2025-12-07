@@ -1,70 +1,70 @@
 .gauge-container {
   position: relative;
-  margin: 10px auto 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  mc-gauge {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
 
-/* Semicircle arc */
-.gauge-arc {
-  position: absolute;
-  bottom: 28%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  height: 60%;
-  border-radius: 100% 100% 0 0;
-  border: 10px solid rgba(255, 80, 80, 0.8);
-  border-bottom: none;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
-}
+  .mc-gauge-arc {
+    position: relative;
+    width: 100%;
+    padding-top: 50%; /* half circle */
+    overflow: hidden;
+  }
 
-/* Needle */
-.gauge-needle {
-  position: absolute;
-  bottom: 28%;
-  left: 50%;
-  transform-origin: bottom center;
-  width: 4px;
-  height: 55%;
-  border-radius: 999px;
-  background: linear-gradient(to top, #ff8a65, #ff3b30);
-  box-shadow: 0 0 12px rgba(255, 80, 80, 0.8);
-  transition: transform 0.4s ease-out;
-}
+  .mc-gauge-arc::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 120%, #111 40%, transparent 40%),
+                linear-gradient(90deg, #f97316, #facc15, #22c55e);
+    opacity: 0.18;
+  }
 
-/* Value + Label */
-.gauge-value {
-  position: absolute;
-  bottom: 6px;
-  font-size: 18px;
-  font-weight: 700;
-}
+  .mc-gauge-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 10px solid transparent;
+    border-top-color: #f97316;
+    border-left-color: #facc15;
+    border-right-color: #22c55e;
+    transform-origin: 50% 100%;
+    transform: rotate(0deg);
+    transition: transform 0.4s ease-out;
+  }
 
-.gauge-label {
-  position: absolute;
-  bottom: -10px;
-  font-size: 11px;
-  color: #a5a9b8;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.gauge-b2 {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.gauge-svg-b2 {
-  width: 140px;
-  height: 80px;
-  display: block;
-}
-.gauge-track-b2 {
+  .mc-gauge-cover {
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    transform: translateX(-50%);
+    width: 70%;
+    background: radial-gradient(circle at top, #111, #020617);
+    border-radius: 999px;
+    padding: 14px 10px 10px;
+    text-align: center;
+    box-shadow:
+      0 0 0 1px rgba(148, 163, 184, 0.15),
+      0 18px 28px rgba(15, 23, 42, 0.85);
+  }
+
+  .mc-gauge-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #e5e7eb;
+    line-height: 1;
+  }
+
+  .mc-gauge-label {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
   stroke: #232733;
   opacity: 0.7;
 }
