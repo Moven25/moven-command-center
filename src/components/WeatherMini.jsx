@@ -1,12 +1,12 @@
-import React from 'react';
+import React from "react";
+import "./WeatherMini.css";
 
-const WeatherMini = () => {
+export default function WeatherMini({ city = "—", temp = "—", icon = "☀️" }) {
   return (
-    <div className="weather-mini">
-      <h2>Weather</h2>
-      {/* Add weather information here */}
+    <div className="weather-card" role="group" aria-label={`Weather ${city}`}>
+      <div className="weather-icon" aria-hidden>{icon}</div>
+      <div className="weather-temp">{temp}</div>
+      <div className="weather-city">{city}</div>
     </div>
   );
-};
-
-export default WeatherMini;
+}
