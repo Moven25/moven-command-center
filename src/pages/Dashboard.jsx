@@ -4,6 +4,9 @@ import "./Dashboard.css";
 
 import getSheet from "../utils/movenSheets";
 import Gauge from "../components/Gauge";
+import PerformanceCard from "../components/PerformanceCard";
+import WeatherMini from "../components/WeatherMini";
+import Alerts from "../components/Alerts";
 
 const Dashboard = () => {
   // --- Basic state (with safe fallback demo values) ---

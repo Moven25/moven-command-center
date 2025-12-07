@@ -1,15 +1,12 @@
-import React from "react";
-import "./WeatherMini.css";
+import React from 'react';
 
-function WeatherMini({ city, temperature }) {
+const WeatherMini = () => {
   return (
-    <div className="weather-card">
-      <h3 className="panel-title">Weather</h3>
-      <div className="weather-icon">☁️</div>
-      <div className="weather-temp">{temperature}°</div>
-      <div className="weather-city">{city}</div>
+    <div className="weather-mini">
+      <h2>Weather</h2>
+      {/* Add weather information here */}
     </div>
   );
-}
+};
 
 export default WeatherMini;

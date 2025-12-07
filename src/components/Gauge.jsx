@@ -1,19 +1,13 @@
-import React from "react";
-import "./Gauge.css";
+import React from 'react';
 
-function Gauge({ value, small }) {
-  const size = small ? 120 : 180;
-  const rotate = (value / 600) * 180;
-
+const Gauge = () => {
   return (
-    <div className="gauge-container" style={{ width: size, height: size }}>
-      <div className="gauge-arc"></div>
-      <div className="gauge-needle" style={{ transform: `rotate(${rotate}deg)` }}></div>
-      <div className="gauge-value">{value}</div>
-      <div className="gauge-label">RPM</div>
+    <div className="gauge">
+      <h2>Gauge</h2>
+      {/* Add gauge visualization here */}
     </div>
   );
-}
+};
 
 export default Gauge;
 
