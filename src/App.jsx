@@ -1,49 +1,71 @@
+import React, { useState } from "react";
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-// App shell pieces
-import TopNav from "./components/TopNav";
-import Sidebar from "./components/Sidebar";
+import Dashboard from "./pages/Dashboard.jsx";
+import CarrierCommand from "./pages/CarrierCommand.jsx";
+import LoadCommand from "./pages/LoadCommand.jsx";
+import Weather from "./pages/Weather.jsx";
+import LearningCommand from "./pages/LearningCommand.jsx";
+import AdminCommand from "./pages/AdminCommand.jsx"; // safe even if simple
+import movenLogo from "./assets/moven-logo.png";
 
-// Import pages
-import Dashboard from "./pages/Dashboard"; // Mission Control
-import LoadCommand from "./pages/LoadCommand";
-import CarrierCommand from "./pages/CarrierCommand";
-import BrokerCommand from "./pages/BrokerCommand";
-import Routing from "./pages/Routing";
-import Finance from "./pages/Finance";
-import Weather from "./pages/Weather";
-import DTL from "./pages/DTL";
-import LearningCommand from "./pages/LearningCommand";
-import Settings from "./pages/Settings";
-import AdminCommand from "./pages/AdminCommand";
+const TABS = [
+  { id: "mission", label: "Mission Control" },
+  { id: "carrier", label: "Carrier Command" },
+  { id: "load", label: "Load Command" },
+  { id: "weather", label: "Weather Command" },
+  { id: "learning", label: "Learning Command" },
+];
 
 function App() {
+  const [activeTab, setActiveTab] = useState("mission");
+
+  const renderActive = () => {
+    switch (activeTab) {
+      case "carrier":
+        return <CarrierCommand />;
+      case "load":
+        return <LoadCommand />;
+      case "weather":
+        return <Weather />;
+      case "learning":
+        return <LearningCommand />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <Router>
-      <div className="app-shell">
-        <Sidebar />
-        <div className="app-main">
-          <TopNav />
-          <main className="app-content" style={{ padding: 24 }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/load" element={<LoadCommand />} />
-              <Route path="/carrier" element={<CarrierCommand />} />
-              <Route path="/broker" element={<BrokerCommand />} />
-              <Route path="/routing" element={<Routing />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/weather" element={<Weather />} />
-              <Route path="/dtl" element={<DTL />} />
-              <Route path="/learning" element={<LearningCommand />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<AdminCommand />} />
-            </Routes>
-          </main>
+    <div className="app-root">
+      <header className="mc-header">
+        <div className="mc-header-left">
+          <div className="mc-logo-wrap">
+            <img src={movenLogo} alt="MOVEN" className="mc-logo" />
+          </div>
         </div>
-      </div>
-    </Router>
+
+        <nav className="mc-nav" aria-label="Main navigation">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={
+                "mc-nav-item" + (activeTab === tab.id ? " mc-nav-item--active" : "")
+              }
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="mc-header-right">
+          {/* Placeholder for future icons / user menu */}
+        </div>
+      </header>
+
+      <main className="mc-main">{renderActive()}</main>
+    </div>
   );
 }
 
