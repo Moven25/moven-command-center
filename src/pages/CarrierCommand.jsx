@@ -1,24 +1,10 @@
 import React, { useState, useEffect } from "react";
 
 export default function CarrierCommand() {
-  const [carrier, setCarrier] = useState({
-    carrierName: "",
-    mcNumber: "",
-    trucks: "1",
-    preferredLanes: "",
-    homeTerminalCity: "",
-    factoringCompany: "",
-    factoringTerms: "",
-    eldProvider: "",
-    notes: "",
-  });
+  const [carrier, setCarrier] = useState({ carrierName: "", mcNumber: "", trucks: "1", preferredLanes: "", homeTerminalCity: "", factoringCompany: "", factoringTerms: "", eldProvider: "", notes: "" });
   const [status, setStatus] = useState({ isActive: true, thisWeekRevenue: "", lastWeekRevenue: "", onTimePercentage: "", riskNotes: "" });
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("");
-
-  const trucks = Number(carrier.trucks) || 0;
-  const thisWeekRev = Number(status.thisWeekRevenue) || 0;
-  const avgRevPerTruck = trucks > 0 ? (thisWeekRev / trucks).toFixed(2) : "0";
 
   useEffect(() => {
     async function load() {
@@ -27,7 +13,7 @@ export default function CarrierCommand() {
         if (!res.ok) return setCarriers([]);
         const csv = await res.text();
         if (!csv) return setCarriers([]);
-        const lines = csv.replace(/\r/g, "").trim().split("\n");
+        const lines = csv.replace(/\uFEFF/g, "").replace(/\r/g, "").trim().split("\n");
         if (!lines.length) return setCarriers([]);
         const headers = lines[0].split(",").map((h) => h.trim());
         const parsed = lines.slice(1).map((ln) => {
@@ -38,7 +24,7 @@ export default function CarrierCommand() {
         });
         setCarriers(parsed);
       } catch (err) {
-        console.error("Failed to load carriers:", err);
+        console.error(err);
         setCarriers([]);
       }
     }
@@ -48,20 +34,7 @@ export default function CarrierCommand() {
   const handleCarrierChange = (e) => setCarrier((p) => ({ ...p, [e.target.name]: e.target.value }));
   const handleStatusChange = (e) => setStatus((p) => ({ ...p, [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
-  const handleSelectCarrier = (e) => {
-    const id = e.target.value;
-    setSelectedCarrierId(id);
-    const found = carriers.find((c) => c.Carrier_ID === id || c.CarrierId === id || c.id === id);
-    if (!found) return;
-    setCarrier((p) => ({
-      ...p,
-      carrierName: found.Carrier_Name || found.name || p.carrierName,
-      mcNumber: found.MC || found.mc || p.mcNumber,
-      contactPhone: found.Phone || found.phone || p.contactPhone,
-      email: found.Email || found.email || p.email,
-      homeTerminalCity: found.HomeTerminal || p.homeTerminalCity,
-    }));
-  };
+  const handleSelectCarrier = (e) => setSelectedCarrierId(e.target.value);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -103,29 +76,7 @@ export default function CarrierCommand() {
           </div>
 
           <div className="form-row">
-            <div className="form-field">
-              <label>Factoring Company</label>
-              <input type="text" name="factoringCompany" value={carrier.factoringCompany} onChange={handleCarrierChange} placeholder="e.g. RTS, OTR, Triumph" />
-            </div>
-
-            <div className="form-field">
-              <label>Factoring Terms</label>
-              <input type="text" name="factoringTerms" value={carrier.factoringTerms} onChange={handleCarrierChange} placeholder="3% fee, 90% advance, etc." />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field">
-              <label>ELD Provider</label>
-              <input type="text" name="eldProvider" value={carrier.eldProvider} onChange={handleCarrierChange} placeholder="KeepTruckin, Samsara, etc." />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field">
-              <label>Internal MOVEN Notes</label>
-              <textarea name="notes" value={carrier.notes} onChange={handleCarrierChange} rows={3} placeholder="Anything that helps you dispatch smarter for this carrier." />
-            </div>
+            <div className="form-field"><label>Internal MOVEN Notes</label><textarea name="notes" value={carrier.notes} onChange={handleCarrierChange} rows={3} /></div>
           </div>
 
           <button type="submit" className="primary-btn">Save Carrier Profile</button>
@@ -133,163 +84,11 @@ export default function CarrierCommand() {
 
         <div className="card">
           <h2>MOVEN Metrics</h2>
-
-          <div className="form-row"><label className="toggle"><input type="checkbox" name="isActive" checked={status.isActive} onChange={handleStatusChange} /> <span>Carrier Active on MOVEN</span></label></div>
-
-          <div className="form-row">
-            <div className="form-field"><label>Current Market</label><input type="text" name="currentMarket" value={status.currentMarket || ""} onChange={handleStatusChange} placeholder="e.g. Atlanta, GA" /></div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field"><label>Next Home Time</label><input type="date" name="nextHomeTime" value={status.nextHomeTime || ""} onChange={handleStatusChange} /></div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field"><label>This Week Revenue ($)</label><input type="number" name="thisWeekRevenue" value={status.thisWeekRevenue} onChange={handleStatusChange} /></div>
-            <div className="form-field"><label>Last Week Revenue ($)</label><input type="number" name="lastWeekRevenue" value={status.lastWeekRevenue || ""} onChange={handleStatusChange} /></div>
-          </div>
-
           <div className="metrics-grid">
-            <div className="metric"><div className="metric-label">Avg Rev / Truck</div><div className="metric-value">${avgRevPerTruck}</div></div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field"><label>Risk Notes / Special Instructions</label><textarea name="riskNotes" value={status.riskNotes} onChange={handleStatusChange} rows={3} /></div>
+            <div className="metric"><div className="metric-label">Avg Rev / Truck</div><div className="metric-value">$0.00</div></div>
           </div>
         </div>
       </div>
-
-      <div className="carrier-summary">MOVEN will use this profile later to <strong>filter loads, protect RPM, and plan DTL / triangle routes</strong> around <strong>{carrier.homeTerminalCity || 'home base'}</strong> and <strong>{carrier.preferredLanes || 'your preferred lanes'}</strong>.</div>
     </main>
   );
 }
-
-            <div className="form-field">
-              <label>Last Week Revenue ($)</label>
-              <input
-                type="number"
-                name="lastWeekRevenue"
-                value={status.lastWeekRevenue}
-                onChange={handleStatusChange}
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field">
-              <label>On-Time %</label>
-              <input
-                type="number"
-                name="onTimePercentage"
-                value={status.onTimePercentage}
-                onChange={handleStatusChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Safety Score</label>
-              <input
-                type="text"
-                name="safetyScore"
-                value={status.safetyScore}
-                onChange={handleStatusChange}
-                placeholder="Green / Yellow / Red"
-              />
-            </div>
-          </div>
-
-          <div className="metrics-grid">
-            <div className="metric">
-              <div className="metric-label">Avg Rev / Truck (This Week)</div>
-              <div className="metric-value">${avgRevPerTruck}</div>
-            </div>
-
-            <div className="metric">
-              <div className="metric-label">RPM Band (Min → Target)</div>
-              <div className="metric-value">{rpmBand}</div>
-            </div>
-
-            <div className="metric">
-              <div className="metric-label">Revenue Trend</div>
-              <div className="metric-value">
-                {trend === "up" && "⬆ Up"}
-                {trend === "down" && "⬇ Down"}
-                {trend === "flat" && "➡ Flat"}
-              </div>
-            </div>
-
-            <div className="metric">
-              <div className="metric-label">MOVEN Health</div>
-              <div className="metric-value">
-                <span
-                  className={
-                    health === "green"
-                      ? "badge badge-green"
-                      : health === "yellow"
-                      ? "badge badge-yellow"
-                      : "badge badge-red"
-                  }
-                >
-                  {health === "green"
-                    ? "Prime"
-                    : health === "yellow"
-                    ? "Watch"
-                    : "At Risk"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <h3 className="section-title">Risk &amp; Alerts</h3>
-          <div className="form-row">
-            <div className="form-field">
-              <label>Risk Notes / Special Instructions</label>
-              <textarea
-                name="riskNotes"
-                value={status.riskNotes}
-                onChange={handleStatusChange}
-                rows={3}
-                placeholder="Breakdown history, cancellations, special broker notes, etc."
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="carrier-summary">
-        MOVEN will use this profile later to **filter loads, protect RPM, and
-        plan DTL / triangle routes** around{" "}
-        <strong>{carrier.homeTerminalCity || "home base"}</strong> and{" "}
-        <strong>{carrier.preferredLanes || "your preferred lanes"}</strong>.
-      </div>
-    </main>
-  );
-
-// Simple CSV parser: header row → objects
-function parseCSV(csv) {
-  // Normalize line endings
-  const lines = csv.replace(/\r/g, "").trim().split("\n");
-
-  // Extract headers
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const row = lines[i].trim();
-    if (!row) continue; // Skip empty lines
-
-    // Split respecting empty fields
-    const cols = row.split(",").map((c) => c.trim() || "");
-
-    const obj = {};
-    headers.forEach((h, index) => {
-      obj[h] = cols[index] || "";
-    });
-
-    rows.push(obj);
-  }
-
-  return rows;
-}
-export default CarrierCommand;
