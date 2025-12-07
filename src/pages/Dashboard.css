@@ -99,14 +99,17 @@
 /* MAIN LAYOUT ----------------------------------------------------- */
 
 .mc-main {
-  padding: 0 32px 28px;
+  padding: 0 0 28px;
 }
 
 .mc-grid {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1.35fr) 360px;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-auto-rows: minmax(120px, auto);
-  gap: 18px;
+  gap: 20px;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
 }
 
 /* CARDS ----------------------------------------------------------- */
