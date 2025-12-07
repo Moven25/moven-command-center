@@ -104,208 +104,150 @@ const Dashboard = () => {
       <main className="mc-main">
         <section className="mc-grid">
 
-          {/* LEFT COLUMN -------------------------------------------------- */}
-          <article className="mc-card mc-card--tall mc-card-live">
-            <header className="mc-card-header">
-              <h2>Live Carrier Data</h2>
-            </header>
-            <div className="mc-live-body">
-              <div className="mc-live-gauge">
-                <Gauge value={carrierScore} max={100} />
-                <div className="mc-live-score">{carrierScore}</div>
-                <div className="mc-live-label">Carrier Performance Score</div>
+          {/* LEFT COLUMN */}
+          <div className="mc-column mc-column-left">
+            <section className="mc-card mc-card--carrier">
+              <header className="mc-card-header"><h2>Live Carrier Data</h2></header>
+              <div className="mc-live-body">
+                <div className="mc-live-gauge">
+                  <Gauge value={carrierScore} max={100} />
+                  <div className="mc-live-score">{carrierScore}</div>
+                  <div className="mc-live-label">Carrier Performance Score</div>
+                </div>
+                <ul className="mc-metric-list">
+                  <li>
+                    <span>Live Carriers</span>
+                    <strong>{liveCarriers.toLocaleString()}</strong>
+                  </li>
+                  <li>
+                    <span>Insurance Alerts</span>
+                    <strong>{insuranceAlerts}</strong>
+                  </li>
+                  <li>
+                    <span>Compliance Warnings</span>
+                    <strong>{complianceWarnings}</strong>
+                  </li>
+                </ul>
               </div>
-              <ul className="mc-metric-list">
-                <li>
-                  <span>Live Carriers</span>
-                  <strong>{liveCarriers.toLocaleString()}</strong>
-                </li>
-                <li>
-                  <span>Insurance Alerts</span>
-                  <strong>{insuranceAlerts}</strong>
-                </li>
-                <li>
-                  <span>Compliance Warnings</span>
-                  <strong>{complianceWarnings}</strong>
-                </li>
-              </ul>
-            </div>
-          </article>
+            </section>
 
-          <article className="mc-card mc-card-weather">
-            <header className="mc-card-header">
-              <h2>Weather Command</h2>
-            </header>
-            <ul className="mc-metric-list">
-              <li>
-                <span>Active Loads</span>
-                <strong>{activeLoads}</strong>
-              </li>
-              <li>
-                <span>Loads This Week</span>
-                <strong>{loadsThisWeek}</strong>
-              </li>
-              <li>
-                <span>Total Loaded Miles</span>
-                <strong>{totalMiles}</strong>
-              </li>
-              <li>
-                <span>Weather Alerts</span>
-                <strong>{weatherAlerts}</strong>
-              </li>
-            </ul>
-          </article>
+            <section className="mc-card mc-card--weather">
+              <header className="mc-card-header"><h2>Weather Command</h2></header>
+              <WeatherMini />
+            </section>
 
-          <article className="mc-card mc-card-market">
-            <header className="mc-card-header">
-              <h2>Market Command</h2>
-            </header>
-            <div className="mc-market-body">
-              <div className="mc-market-row">
-                <span className="mc-market-label">Market</span>
-                <span className="mc-market-value">Moderate</span>
-              </div>
-              <div className="mc-market-legend">
-                <div className="mc-market-dot mc-market-dot--green" />
-                <span>Cold markers</span>
-              </div>
-              <div className="mc-market-legend">
-                <div className="mc-market-dot mc-market-dot--red" />
-                <span>Volume</span>
-              </div>
-            </div>
-          </article>
-
-          {/* CENTER COLUMN ------------------------------------------------ */}
-          <article className="mc-card mc-card--tall mc-card-load-summary">
-            <header className="mc-card-header">
-              <h2>Load Command Summary</h2>
-            </header>
-            <table className="mc-table">
-              <thead>
-                <tr>
-                  <th>Load ID</th>
-                  <th>Origin</th>
-                  <th>Pickup</th>
-                  <th>Delivery</th>
-                  <th>RPM</th>
-                  <th>Suggested Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loads.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.id}</td>
-                    <td>{row.origin}</td>
-                    <td>{row.pickup}</td>
-                    <td>{row.delivery}</td>
-                    <td>{row.rpm.toFixed(2)}</td>
-                    <td>
-                      <span className={`mc-pill mc-pill--score mc-pill--score-${scoreBucket(row.score)}`}>
-                        {row.score}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </article>
-
-          <article className="mc-card mc-card-priorities">
-            <header className="mc-card-header">
-              <h2>Today's Priorities</h2>
-            </header>
-            <ul className="mc-priority-list">
-              <li><span className="mc-dot mc-dot--orange" />Urgent Loads</li>
-              <li><span className="mc-dot mc-dot--pink" />Check Calls Due</li>
-              <li><span className="mc-dot mc-dot--yellow" />Missing Documents</li>
-              <li><span className="mc-dot mc-dot--green" />Carrier Updates</li>
-            </ul>
-          </article>
-
-          <article className="mc-card mc-card-load-score">
-            <header className="mc-card-header">
-              <h2>Load Score</h2>
-            </header>
-            <div className="mc-gauge-row">
-              <Gauge value={loadScore} max={100} />
-              <div className="mc-gauge-metrics">
-                <div className="mc-gauge-value">{loadScore}</div>
-                <div className="mc-gauge-caption">Revenue Today</div>
-                <div className="mc-gauge-subcaption">{formatCurrency(revenueToday)}</div>
-              </div>
-            </div>
-          </article>
-
-          <article className="mc-card mc-card-revenue-week">
-            <header className="mc-card-header">
-              <h2>Revenue This Week</h2>
-            </header>
-            <div className="mc-gauge-row">
-              <Gauge value={33} max={100} />
-              <div className="mc-gauge-metrics">
-                <div className="mc-gauge-value">33</div>
-                <div className="mc-gauge-caption">Projected</div>
-                <div className="mc-gauge-subcaption">
-                  {formatCurrency(revenueThisWeek)}
+            <section className="mc-card mc-card--market">
+              <header className="mc-card-header"><h2>Market Command</h2></header>
+              <div className="mc-market-body">
+                <div className="mc-market-row">
+                  <span className="mc-market-label">Market</span>
+                  <span className="mc-market-value">Moderate</span>
+                </div>
+                <div className="mc-market-legend">
+                  <div className="mc-market-dot mc-market-dot--green" />
+                  <span>Cold markers</span>
+                </div>
+                <div className="mc-market-legend">
+                  <div className="mc-market-dot mc-market-dot--red" />
+                  <span>Volume</span>
                 </div>
               </div>
+            </section>
+          </div>
+
+          {/* CENTER COLUMN */}
+          <div className="mc-column mc-column-center">
+            <section className="mc-card mc-card--load-summary">
+              <header className="mc-card-header"><h2>Load Command Summary</h2></header>
+              <table className="mc-table">
+                <thead>
+                  <tr>
+                    <th>Load ID</th>
+                    <th>Origin</th>
+                    <th>Pickup</th>
+                    <th>Delivery</th>
+                    <th>RPM</th>
+                    <th>Suggested Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loads.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.id}</td>
+                      <td>{row.origin}</td>
+                      <td>{row.pickup}</td>
+                      <td>{row.delivery}</td>
+                      <td>{row.rpm.toFixed(2)}</td>
+                      <td>
+                        <span className={`mc-pill mc-pill--score mc-pill--score-${scoreBucket(row.score)}`}>
+                          {row.score}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            <section className="mc-card mc-card--priorities">
+              <header className="mc-card-header"><h2>Today's Priorities</h2></header>
+              <ul className="mc-priority-list">
+                <li><span className="mc-dot mc-dot--orange" />Urgent Loads</li>
+                <li><span className="mc-dot mc-dot--pink" />Check Calls Due</li>
+                <li><span className="mc-dot mc-dot--yellow" />Missing Documents</li>
+                <li><span className="mc-dot mc-dot--green" />Carrier Updates</li>
+              </ul>
+            </section>
+
+            <div className="mc-revenue-row">
+              <section className="mc-card mc-card--revenue-today">
+                <header className="mc-card-header"><h2>Revenue Today</h2></header>
+                <div className="mc-card-body mc-revenue-centered">
+                  <div className="mc-revenue-amount">{formatCurrency(revenueToday)}</div>
+                </div>
+              </section>
+
+              <section className="mc-card mc-card--revenue-week">
+                <header className="mc-card-header"><h2>Revenue This Week</h2></header>
+                <div className="mc-card-body mc-revenue-centered">
+                  <div className="mc-revenue-amount">{formatCurrency(revenueThisWeek)}</div>
+                </div>
+              </section>
             </div>
-          </article>
+          </div>
 
-          {/* RIGHT COLUMN ------------------------------------------------- */}
-          <article className="mc-card mc-card--tall mc-card-compliance">
-            <header className="mc-card-header">
-              <h2>Compliance Command</h2>
-            </header>
-            <ul className="mc-compliance-list">
-              <li>
-                <span className="mc-pill mc-pill--green" /> Insurance
-              </li>
-              <li>
-                <span className="mc-pill mc-pill--yellow" /> Permits
-              </li>
-              <li>
-                <span className="mc-pill mc-pill--orange" /> IFTA
-              </li>
-              <li>
-                <span className="mc-pill mc-pill--red" /> Medical
-              </li>
-            </ul>
-          </article>
+          {/* RIGHT COLUMN */}
+          <div className="mc-column mc-column-right">
+            <section className="mc-card mc-card--compliance">
+              <header className="mc-card-header"><h2>Compliance Command</h2></header>
+              <ul className="mc-compliance-list">
+                <li><span className="mc-pill mc-pill--green" /> Insurance</li>
+                <li><span className="mc-pill mc-pill--yellow" /> Permits</li>
+                <li><span className="mc-pill mc-pill--orange" /> IFTA</li>
+                <li><span className="mc-pill mc-pill--red" /> Medical</li>
+              </ul>
+            </section>
 
-          <article className="mc-card mc-card--tall mc-card-alerts">
-            <header className="mc-card-header">
-              <h2>Alerts Feed</h2>
-            </header>
-            <ul className="mc-alerts-list">
-              {alerts.map((a, i) => (
-                <li key={i}>{a}</li>
-              ))}
-            </ul>
-          </article>
+            <section className="mc-card mc-card--alerts">
+              <header className="mc-card-header"><h2>Alerts Feed</h2></header>
+              <Alerts items={alerts} />
+            </section>
+          </div>
+        </section>
 
-          <article className="mc-card mc-card-dtl">
-            <header className="mc-card-header">
-              <h2>DTL</h2>
-            </header>
+        {/* SUB ROW: DTL & HOS left as compact cards below main grid */}
+        <section className="mc-subgrid">
+          <section className="mc-card mc-card-dtl">
+            <header className="mc-card-header"><h2>DTL</h2></header>
             <p className="mc-small-label">Double Triangle Routing</p>
-            <p className="mc-small-copy">
-              Headhaul-first strategy scanning your priority lanes for
-              profitable double-tri options this week.
-            </p>
-          </article>
+            <p className="mc-small-copy">Headhaul-first strategy scanning your priority lanes for profitable double-tri options this week.</p>
+          </section>
 
-          <article className="mc-card mc-card-hos">
-            <header className="mc-card-header">
-              <h2>Hours of Service</h2>
-            </header>
+          <section className="mc-card mc-card-hos">
+            <header className="mc-card-header"><h2>Hours of Service</h2></header>
             <p className="mc-small-label">System Health</p>
-            <p className="mc-small-copy">
-              Live violations, resets, and on-duty trends across all
-              active trucks.
-            </p>
-          </article>
+            <p className="mc-small-copy">Live violations, resets, and on-duty trends across all active trucks.</p>
+          </section>
         </section>
 
         {/* FOOTER ACTIONS */}
@@ -314,9 +256,7 @@ const Dashboard = () => {
           <button className="mc-footer-btn">Add Load</button>
           <button className="mc-footer-btn">Run DTL Scan</button>
           <button className="mc-footer-btn">Sync Sheets</button>
-          <button className="mc-footer-btn mc-footer-btn--danger">
-            Emergency Alert
-          </button>
+          <button className="mc-footer-btn mc-footer-btn--danger">Emergency Alert</button>
         </footer>
       </main>
     </div>
