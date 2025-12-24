@@ -473,3 +473,41 @@
     grid-template-columns: 1fr;
   }
 }
+/* ============================= */
+/* DASHBOARD LAYOUT (PHASE 1) */
+/* ============================= */
+
+.dashboard {
+  padding: 24px;
+  color: #fff;
+  background: #0f1115;
+  min-height: 100vh;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 220px;
+  gap: 20px;
+}
+
+.card {
+  background: #161a22;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.card h3 {
+  margin-bottom: 12px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.gauge-placeholder {
+  font-size: 48px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 20px;
+}
