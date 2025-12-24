@@ -1,19 +1,16 @@
-import Sidebar from "../components/Sidebar";
-import TopNav from "../components/TopNav";
+// src/pages/Dashboard.jsx
 
 export default function Dashboard() {
   return (
-    <div className="dashboard-root">
-      <TopNav />
-
-      <div className="dashboard-body">
-        <Sidebar />
-
-        <main className="dashboard-main">
-          <h1>MOVEN Command Dashboard</h1>
-          <p>Dashboard loaded successfully.</p>
-        </main>
-      </div>
+    <div
+      style={{
+        color: "lime",
+        padding: "40px",
+        fontSize: "28px",
+        fontWeight: "bold",
+      }}
+    >
+      ✅ DASHBOARD V2 LOADED
     </div>
   );
 }
