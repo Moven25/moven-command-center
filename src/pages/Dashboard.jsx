@@ -1,82 +1,141 @@
 import "./Dashboard.css";
 
+function Gauge({ value = 92, label = "Carrier Score", sublabel = "On-time delivery, communication, safety trend." }) {
+  const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+  const radius = 46;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (clamped / 100) * circumference;
+
+  return (
+    <div className="gauge">
+      <svg className="gauge__svg" viewBox="0 0 120 120" aria-label={`${label} ${clamped}`}>
+        <circle className="gauge__track" cx="60" cy="60" r={radius} />
+        <circle
+          className="gauge__value"
+          cx="60"
+          cy="60"
+          r={radius}
+          style={{
+            strokeDasharray: `${circumference} ${circumference}`,
+            strokeDashoffset: offset,
+          }}
+        />
+      </svg>
+
+      <div className="gauge__center">
+        <div className="gauge__number">{clamped}</div>
+        <div className="gauge__label">{label}</div>
+      </div>
+
+      <div className="gauge__sub">{sublabel}</div>
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="stat">
+      <div className="stat__label">{label}</div>
+      <div className="stat__value">{value}</div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   return (
-    <div className="dash">
-      <div className="dash-header">
-        <div>
-          <div className="dash-title">MOVEN Mission Control</div>
-          <div className="dash-subtitle">Command Dashboard</div>
+    <div className="mc-dashboard" data-mockup="dashboard-locked-v2">
+      {/* Top header (matches mockup “Mission Control” bar) */}
+      <div className="mc-header">
+        <div className="mc-header__left">
+          <div className="mc-header__title">MOVEN Mission Control</div>
+          <div className="mc-header__subtitle">Command Dashboard</div>
         </div>
 
-        <div className="dash-actions">
-          <button className="dash-btn">Sync</button>
-          <button className="dash-btn dash-btn-primary">Profile</button>
+        <div className="mc-header__right">
+          <button className="mc-btn" type="button">
+            Sync
+          </button>
+          <button className="mc-btn mc-btn--ghost" type="button">
+            Profile
+          </button>
         </div>
       </div>
 
-      <div className="dash-grid">
-        {/* Row 1 */}
-        <div className="tile tile-gauge">
-          <div className="tile-label">CARRIER SCORE</div>
-          <div className="gauge">
-            <div className="gauge-value">92</div>
-            <div className="gauge-sub">On-time delivery, communication, safety trend.</div>
+      {/* Grid */}
+      <div className="mc-grid">
+        {/* CARRIER SCORE (Gauge) */}
+        <section className="mc-card mc-card--carrier">
+          <div className="mc-card__head">
+            <div className="mc-card__title">CARRIER SCORE</div>
           </div>
-        </div>
+          <div className="mc-card__body">
+            <Gauge value={92} label="Carrier Score" sublabel="On-time delivery, communication, safety trend." />
+          </div>
+        </section>
 
-        <div className="tile tile-wide">
-          <div className="tile-label">LOAD SUMMARY</div>
-          <div className="tile-body">
-            <div className="metric">
-              <div className="metric-title">Active loads</div>
-              <div className="metric-value">18</div>
-            </div>
-            <div className="metric">
-              <div className="metric-title">On-time rate</div>
-              <div className="metric-value">94%</div>
-            </div>
-            <div className="metric">
-              <div className="metric-title">Avg RPM</div>
-              <div className="metric-value">$2.31</div>
+        {/* LOAD SUMMARY */}
+        <section className="mc-card mc-card--load">
+          <div className="mc-card__head">
+            <div className="mc-card__title">LOAD SUMMARY</div>
+          </div>
+          <div className="mc-card__body">
+            <div className="mc-stats">
+              <Stat label="Active loads" value="18" />
+              <Stat label="On-time rate" value="94%" />
+              <Stat label="Avg RPM" value="$2.31" />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="tile">
-          <div className="tile-label">COMPLIANCE</div>
-          <ul className="tile-list">
-            <li>HOS violations: 7%</li>
-            <li>DOT audits: 2</li>
-            <li>Open inspections: 1</li>
-          </ul>
-        </div>
-
-        {/* Row 2 */}
-        <div className="tile tile-wide2">
-          <div className="tile-label">ACTIVE ALERTS</div>
-          <ul className="tile-list">
-            <li>2 loads at risk of late delivery</li>
-            <li>4 carriers require check-in</li>
-            <li>1 weather disruption flagged</li>
-          </ul>
-        </div>
-
-        <div className="tile tile-money">
-          <div className="tile-label">REVENUE TODAY</div>
-          <div className="money">
-            <div className="money-value">$84k</div>
-            <div className="money-sub">Target: $90k</div>
+        {/* COMPLIANCE */}
+        <section className="mc-card mc-card--compliance">
+          <div className="mc-card__head">
+            <div className="mc-card__title">COMPLIANCE</div>
           </div>
-        </div>
-
-        <div className="tile tile-money">
-          <div className="tile-label">REVENUE THIS WEEK</div>
-          <div className="money">
-            <div className="money-value">$412k</div>
-            <div className="money-sub">Target: $450k</div>
+          <div className="mc-card__body">
+            <ul className="mc-list">
+              <li>HOS violations: <strong>7%</strong></li>
+              <li>DOT audits: <strong>2</strong></li>
+              <li>Open inspections: <strong>1</strong></li>
+            </ul>
           </div>
-        </div>
+        </section>
+
+        {/* ACTIVE ALERTS (Wide) */}
+        <section className="mc-card mc-card--alerts">
+          <div className="mc-card__head">
+            <div className="mc-card__title">ACTIVE ALERTS</div>
+          </div>
+          <div className="mc-card__body">
+            <ul className="mc-list">
+              <li>2 loads at risk of late delivery</li>
+              <li>4 carriers require check-in</li>
+              <li>1 weather disruption flagged</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* REVENUE TODAY */}
+        <section className="mc-card mc-card--revToday">
+          <div className="mc-card__head">
+            <div className="mc-card__title">REVENUE TODAY</div>
+          </div>
+          <div className="mc-card__body mc-kpi">
+            <div className="mc-kpi__value">$84k</div>
+            <div className="mc-kpi__sub">Target: $90k</div>
+          </div>
+        </section>
+
+        {/* REVENUE THIS WEEK */}
+        <section className="mc-card mc-card--revWeek">
+          <div className="mc-card__head">
+            <div className="mc-card__title">REVENUE THIS WEEK</div>
+          </div>
+          <div className="mc-card__body mc-kpi">
+            <div className="mc-kpi__value">$412k</div>
+            <div className="mc-kpi__sub">Target: $450k</div>
+          </div>
+        </section>
       </div>
     </div>
   );
