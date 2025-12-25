@@ -44,18 +44,7 @@ export const handler = async (event) => {
     // ---- Fetch the CSV from Zoho ----
     const response = await fetch(url);
 
-      brokers:
-        "https://sheet.zohopublic.com/sheet/published/r5bi8514462e4b06047a389067c81fc922a9d?download=csv&sheetname=brokers",
-
-      factoring:
-        "https://sheet.zohopublic.com/sheet/published/r5bi89708d8394fc448fb8a09f9e795af0666?download=csv&sheetname=factoring",
-
-      compliance:
-        "https://sheet.zohopublic.com/sheet/published/r5bi8909cd72a89b04bfe862b1f7fb9d39893?download=csv&sheetname=compliance",
-    };
-
-    // If sheet key doesn't exist
-    if (!SHEETS[sheet]) {
+    if (!response.ok) {
       return {
         statusCode: response.status,
         body: `Error fetching ${sheet} CSV: ${response.statusText}`,
@@ -80,3 +69,4 @@ export const handler = async (event) => {
     };
   }
 
+ 
