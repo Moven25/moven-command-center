@@ -2,48 +2,81 @@ import "./Dashboard.css";
 
 export default function Dashboard() {
   return (
-    <div className="dashboard">
-      <div className="dashboard-grid">
-
-        <div className="card carrier-score">
-          <h3>Live Carrier Data</h3>
-          <div className="gauge-placeholder">84</div>
-          <p>Carrier Performance Score</p>
+    <div className="dash">
+      <div className="dash-header">
+        <div>
+          <div className="dash-title">MOVEN Mission Control</div>
+          <div className="dash-subtitle">Command Dashboard</div>
         </div>
 
-        <div className="card load-summary">
-          <h3>Load Command Summary</h3>
-          <ul>
-            <li>Chicago → TX</li>
-            <li>Atlanta → FL</li>
-            <li>NY → IL</li>
+        <div className="dash-actions">
+          <button className="dash-btn">Sync</button>
+          <button className="dash-btn dash-btn-primary">Profile</button>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        {/* Row 1 */}
+        <div className="tile tile-gauge">
+          <div className="tile-label">CARRIER SCORE</div>
+          <div className="gauge">
+            <div className="gauge-value">92</div>
+            <div className="gauge-sub">On-time delivery, communication, safety trend.</div>
+          </div>
+        </div>
+
+        <div className="tile tile-wide">
+          <div className="tile-label">LOAD SUMMARY</div>
+          <div className="tile-body">
+            <div className="metric">
+              <div className="metric-title">Active loads</div>
+              <div className="metric-value">18</div>
+            </div>
+            <div className="metric">
+              <div className="metric-title">On-time rate</div>
+              <div className="metric-value">94%</div>
+            </div>
+            <div className="metric">
+              <div className="metric-title">Avg RPM</div>
+              <div className="metric-value">$2.31</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="tile">
+          <div className="tile-label">COMPLIANCE</div>
+          <ul className="tile-list">
+            <li>HOS violations: 7%</li>
+            <li>DOT audits: 2</li>
+            <li>Open inspections: 1</li>
           </ul>
         </div>
 
-        <div className="card compliance">
-          <h3>Compliance Command</h3>
-          <ul>
-            <li>Insurance ✔</li>
-            <li>IFTA ⚠</li>
-            <li>Medical ✖</li>
+        {/* Row 2 */}
+        <div className="tile tile-wide2">
+          <div className="tile-label">ACTIVE ALERTS</div>
+          <ul className="tile-list">
+            <li>2 loads at risk of late delivery</li>
+            <li>4 carriers require check-in</li>
+            <li>1 weather disruption flagged</li>
           </ul>
         </div>
 
-        <div className="card alerts">
-          <h3>Alerts Feed</h3>
-          <p>No critical alerts</p>
+        <div className="tile tile-money">
+          <div className="tile-label">REVENUE TODAY</div>
+          <div className="money">
+            <div className="money-value">$84k</div>
+            <div className="money-sub">Target: $90k</div>
+          </div>
         </div>
 
-        <div className="card revenue-today">
-          <h3>Revenue Today</h3>
-          <div className="gauge-placeholder">73</div>
+        <div className="tile tile-money">
+          <div className="tile-label">REVENUE THIS WEEK</div>
+          <div className="money">
+            <div className="money-value">$412k</div>
+            <div className="money-sub">Target: $450k</div>
+          </div>
         </div>
-
-        <div className="card revenue-week">
-          <h3>Revenue This Week</h3>
-          <div className="gauge-placeholder">33</div>
-        </div>
-
       </div>
     </div>
   );
