@@ -1,116 +1,145 @@
-/* ================================
-   MOVEN DASHBOARD – FINAL STYLES
-   ================================ */
-
-/* Root dashboard container */
-.dashboard {
-  padding: 24px;
-  color: #ffffff;
-  background: #0f1115;
+.dash {
+  padding: 18px 18px 28px;
   min-height: 100vh;
-  width: 100%;
-  box-sizing: border-box;
-  overflow-x: hidden;
+  color: #e8eef7;
+  background: #0f1115;
 }
 
-/* Main grid layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 220px;
-  gap: 20px;
-  width: 100%;
-}
-
-/* Card base */
-.card {
-  background: #161a22;
-  border-radius: 12px;
-  padding: 16px;
-  box-sizing: border-box;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+.dash-header {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-/* Card headers */
-.card h3 {
-  margin: 0 0 12px 0;
+.dash-title {
   font-size: 14px;
   letter-spacing: 0.6px;
-  text-transform: uppercase;
   opacity: 0.9;
-}
-
-/* Lists inside cards */
-.card ul {
-  margin: 0;
-  padding-left: 16px;
-}
-
-.card li {
-  margin-bottom: 6px;
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-/* Text inside cards */
-.card p {
-  font-size: 14px;
-  opacity: 0.85;
-}
-
-/* Gauge placeholder (temporary numbers) */
-.gauge-placeholder {
-  font-size: 48px;
   font-weight: 700;
-  text-align: center;
-  margin-top: 20px;
+}
+
+.dash-subtitle {
+  font-size: 12px;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
+.dash-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dash-btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: #e8eef7;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dash-btn-primary {
+  background: rgba(255,255,255,0.07);
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.8fr 1.1fr;
+  grid-auto-rows: 160px;
+  gap: 14px;
+}
+
+.tile {
+  background: #161a22;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tile-label {
+  font-size: 11px;
+  letter-spacing: 0.7px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.tile-wide {
+  grid-column: 2 / 3;
+}
+
+.tile-wide2 {
+  grid-column: 1 / 3;
+}
+
+.tile-gauge .gauge {
+  margin-top: 4px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.gauge-value {
+  font-size: 44px;
+  font-weight: 800;
   line-height: 1;
 }
 
-/* ================================
-   CARD SIZING (MOCKUP ACCURATE)
-   ================================ */
-
-/* Larger primary cards */
-.card.carrier-score {
-  grid-column: span 1;
+.gauge-sub {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 8px;
+  max-width: 280px;
 }
 
-.card.load-summary {
-  grid-column: span 2;
+.tile-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 2px;
+  height: 100%;
+  align-items: center;
 }
 
-.card.compliance {
-  grid-column: span 1;
+.metric-title {
+  font-size: 12px;
+  opacity: 0.7;
 }
 
-.card.alerts {
-  grid-column: span 2;
+.metric-value {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 6px;
 }
 
-.card.revenue-today {
-  grid-column: span 1;
+.tile-list {
+  padding-left: 16px;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.85;
 }
 
-.card.revenue-week {
-  grid-column: span 1;
+.tile-money .money {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
 }
 
-/* ================================
-   RESPONSIVE FALLBACKS
-   ================================ */
-
-@media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.money-value {
+  font-size: 34px;
+  font-weight: 900;
 }
 
-@media (max-width: 700px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+.money-sub {
+  font-size: 12px;
+  opacity: 0.7;
 }
