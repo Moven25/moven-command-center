@@ -1,78 +1,87 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import Sidebar from "./Sidebar";
+import React, { useCallback, useEffect, useState } from "react";
+import Dashboard from "../pages/Dashboard";
 import "./AppShell.css";
 
-// Small CSV parser (no libraries)
-function parseCSV(csvText = "") {
-  const text = (csvText || "").trim();
-  if (!text) return [];
+/**
+ * AppShell = global wrapper
+ * - Owns activeCommand state
+ * - Loads data (AUTO)
+ * - Provides refreshAllSheets + addCarrierLocal
+ */
+async function fetchSheet(sheet) {
+  const res = await fetch(`/.netlify/functions/fetch-sheets?sheet=${encodeURIComponent(sheet)}`);
 
-  const rows = [];
-  let row = [];
-  let cell = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    const next = text[i + 1];
-
-    if (c === '"' && inQuotes && next === '"') {
-      cell += '"';
-      i++;
-      continue;
-    }
-
-    if (c === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (c === "," && !inQuotes) {
-      row.push(cell);
-      cell = "";
-      continue;
-    }
-
-    if ((c === "\n" || c === "\r") && !inQuotes) {
-      if (c === "\r" && next === "\n") i++;
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-
-    cell += c;
-  }
-
-  // last cell
-  row.push(cell);
-  rows.push(row);
-
-  const headers = (rows.shift() || []).map((h) => (h || "").trim());
-  return rows
-    .filter((r) => r.some((v) => (v || "").trim() !== ""))
-    .map((r) => {
-      const obj = {};
-      headers.forEach((h, idx) => {
-        obj[h || `col_${idx}`] = (r[idx] ?? "").trim();
-      });
-      return obj;
-    });
-}
-
-async function fetchSheet(sheetName) {
-  const res = await fetch(`/.netlify/functions/fetch-sheets?sheet=${encodeURIComponent(sheetName)}`);
   if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(`fetch-sheets failed for "${sheetName}": ${res.status} ${msg}`);
+    const text = await res.text();
+    throw new Error(`fetch-sheets failed for "${sheet}": ${res.status} ${text || ""}`.trim());
   }
+
+  // handler should return CSV or JSON – we support both
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const json = await res.json();
+    // support { rows: [...] } or [...]
+    return Array.isArray(json) ? json : Array.isArray(json.rows) ? json.rows : [];
+  }
+
+  // CSV fallback – minimal parser
   const csv = await res.text();
   return parseCSV(csv);
 }
 
-export default function AppShell({ children }) {
-  // command switching state (already working)
+function parseCSV(csvText) {
+  if (!csvText) return [];
+  const lines = csvText.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const headers = splitCSVLine(lines[0]).map((h) => h.trim());
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => {
+      obj[h] = (cols[idx] ?? "").trim();
+    });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"' && line[i + 1] === '"') {
+      cur += '"';
+      i++;
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (ch === "," && !inQuotes) {
+      out.push(cur);
+      cur = "";
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  out.push(cur);
+  return out;
+}
+
+export default function AppShell() {
+  // command switching state (sidebar/top)
   const [activeCommand, setActiveCommand] = useState("mission");
 
   // data state (AUTO load)
@@ -90,20 +99,27 @@ export default function AppShell({ children }) {
     lastSyncAt: null,
   });
 
+  // Option A: add carrier locally (no backend yet)
+  const addCarrierLocal = (newCarrier) => {
+    setData((prev) => ({
+      ...prev,
+      carriers: [newCarrier, ...(prev.carriers || [])],
+    }));
+  };
+
   const refreshAllSheets = useCallback(async () => {
     setSyncState((s) => ({ ...s, loading: true, error: null }));
     try {
-     // TEMP: carriers only (until other sheets are wired)
-const carriers = await fetchSheet("carriers");
+      // Load in parallel
+      const [carriers, loads, brokers, compliance, factoring] = await Promise.all([
+        fetchSheet("carriers"),
+        fetchSheet("loads"),
+        fetchSheet("brokers"),
+        fetchSheet("compliance"),
+        fetchSheet("factoring"),
+      ]);
 
-setData({
-  carriers,
-  loads: [],
-  brokers: [],
-  compliance: [],
-  factoring: [],
-});
-
+      setData({ carriers, loads, brokers, compliance, factoring });
       setSyncState({
         loading: false,
         error: null,
@@ -119,31 +135,21 @@ setData({
     }
   }, []);
 
-  // ✅ AUTO: load once on first mount
+  // AUTO load once
   useEffect(() => {
     refreshAllSheets();
   }, [refreshAllSheets]);
 
-  const injectedProps = useMemo(
-    () => ({
-      activeCommand,
-      onCommandChange: setActiveCommand,
-      movenData: data,
-      movenSync: syncState,
-      refreshAllSheets,
-    }),
-    [activeCommand, data, syncState, refreshAllSheets]
-  );
-
   return (
-    <div className="app-shell">
-      <Sidebar activeCommand={activeCommand} onCommandChange={setActiveCommand} />
-
-      <main className="app-main">
-        {React.isValidElement(children)
-          ? React.cloneElement(children, injectedProps)
-          : children}
-      </main>
+    <div className="appShell">
+      <Dashboard
+        activeCommand={activeCommand}
+        onCommandChange={setActiveCommand}
+        movenData={data}
+        movenSync={syncState}
+        refreshAllSheets={refreshAllSheets}
+        addCarrierLocal={addCarrierLocal}
+      />
     </div>
   );
 }
