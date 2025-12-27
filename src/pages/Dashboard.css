@@ -348,3 +348,79 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   box-shadow: inset 0 0 0 1px rgba(225, 27, 34, 0.5),
               0 0 14px rgba(225, 27, 34, 0.35);
 }
+/* ===============================
+   DTL TILE (VISUAL ONLY)
+================================ */
+.dtlTile {
+  position: relative;
+}
+
+.dtlTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dtlStatus {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: rgba(255,255,255,.85);
+  border: 1px solid rgba(225, 27, 34, 0.35);
+  background: rgba(0,0,0,.25);
+}
+
+.dtlMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.dtlLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(255,255,255,.78);
+}
+
+.dtlLabel {
+  color: rgba(255,255,255,.55);
+  font-weight: 700;
+}
+
+.dtlValue {
+  color: rgba(255,255,255,.9);
+  font-weight: 800;
+}
+
+.dtlFooter {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dtlBtn {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.85);
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dtlBtn:hover {
+  border-color: rgba(225, 27, 34, 0.45);
+  background: rgba(225, 27, 34, 0.12);
+}
+
+.dtlBtnPrimary {
+  border-color: rgba(225, 27, 34, 0.55);
+  background: rgba(225, 27, 34, 0.18);
+}
