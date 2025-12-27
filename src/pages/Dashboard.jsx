@@ -1,17 +1,35 @@
-// src/pages/Dashboard.jsx
 import React from "react";
 import "./Dashboard.css";
+
+function safeCount(arr) {
+  return Array.isArray(arr) ? arr.length : 0;
+}
+
+function formatNumber(n) {
+  if (typeof n !== "number" || Number.isNaN(n)) return "—";
+  return n.toLocaleString();
+}
+
+function formatSyncTime(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString();
+  } catch {
+    return "—";
+  }
+}
 
 function PlaceholderGrid({
   title,
   subtitle,
   activeCommand,
   onCommandChange,
-  primaryActions = [],
-  kpis = [],
+  movenData,
+  movenSync,
+  refreshAllSheets,
   tableTitle = "Command Queue",
   tableCols = ["Item", "Status", "Owner", "Priority", "Updated", "Score"],
-  tableRows = [],
   rightTitle = "Intel Feed",
   rightItems = [],
 }) {
@@ -19,30 +37,22 @@ function PlaceholderGrid({
   const topBtnClass = (key) =>
     activeCommand === key ? "top-command-btn active" : "top-command-btn";
 
+  const carriersCount = safeCount(movenData?.carriers);
+  const loadsCount = safeCount(movenData?.loads);
+
   return (
     <div className="dashRoot">
-      {/* Top Bar */}
       <header className="dashTopbar">
         <div className="brand">
           <span className="brandText">MOVEN COMMAND</span>
         </div>
 
         <div className="top-command-bar">
-          <button className={topBtnClass("mission")} onClick={setCmd("mission")}>
-            Mission Control
-          </button>
-          <button className={topBtnClass("carrier")} onClick={setCmd("carrier")}>
-            Carrier Command
-          </button>
-          <button className={topBtnClass("load")} onClick={setCmd("load")}>
-            Load Command
-          </button>
-          <button className={topBtnClass("weather")} onClick={setCmd("weather")}>
-            Weather Command
-          </button>
-          <button className={topBtnClass("learning")} onClick={setCmd("learning")}>
-            Learning Command
-          </button>
+          <button className={topBtnClass("mission")} onClick={setCmd("mission")}>Mission Control</button>
+          <button className={topBtnClass("carrier")} onClick={setCmd("carrier")}>Carrier Command</button>
+          <button className={topBtnClass("load")} onClick={setCmd("load")}>Load Command</button>
+          <button className={topBtnClass("weather")} onClick={setCmd("weather")}>Weather Command</button>
+          <button className={topBtnClass("learning")} onClick={setCmd("learning")}>Learning Command</button>
         </div>
 
         <div className="topIcons">
@@ -51,9 +61,7 @@ function PlaceholderGrid({
         </div>
       </header>
 
-      {/* Main Grid (MATCHES Mission Control) */}
       <main className="dashGrid">
-        {/* Left Column */}
         <section className="colLeft">
           <div className="card glass tall">
             <div className="cardTitle">{title}</div>
@@ -62,122 +70,95 @@ function PlaceholderGrid({
             </div>
 
             <div className="statsList" style={{ marginTop: 14 }}>
-              {kpis.length ? (
-                kpis.map((k) => (
-                  <div className="statRow" key={k.label}>
-                    <span>{k.label}</span>
-                    <span className="statVal">{k.value}</span>
-                  </div>
-                ))
-              ) : (
-                <>
-                  <div className="statRow">
-                    <span>Status</span>
-                    <span className="statVal">Ready</span>
-                  </div>
-                  <div className="statRow">
-                    <span>Last Sync</span>
-                    <span className="statVal">—</span>
-                  </div>
-                  <div className="statRow">
-                    <span>Next Step</span>
-                    <span className="statVal">Wire Data</span>
-                  </div>
-                </>
-              )}
+              <div className="statRow">
+                <span>Live Carriers</span>
+                <span className="statVal">{formatNumber(carriersCount)}</span>
+              </div>
+              <div className="statRow">
+                <span>Loads</span>
+                <span className="statVal">{formatNumber(loadsCount)}</span>
+              </div>
+              <div className="statRow">
+                <span>Last Sync</span>
+                <span className="statVal">{formatSyncTime(movenSync?.lastSyncAt)}</span>
+              </div>
             </div>
+
+            {movenSync?.error ? (
+              <div style={{ marginTop: 12, color: "rgba(255,90,90,.95)", fontWeight: 700 }}>
+                Sync error: {movenSync.error}
+              </div>
+            ) : null}
           </div>
 
           <div className="card glass">
             <div className="cardTitle">Quick Actions</div>
             <div className="prioList">
-              {(primaryActions.length ? primaryActions : ["Run Primary Action", "Sync Data", "Review Alerts"]).map(
-                (a) => (
-                  <div className="prio" key={a}>
-                    <span className="prioSwatch green" /> {a}
-                  </div>
-                )
-              )}
+              <div className="prio"><span className="prioSwatch green" /> Review Queue</div>
+              <div className="prio"><span className="prioSwatch lime" /> Run Scan</div>
+              <div className="prio"><span className="prioSwatch pink" /> Check Alerts</div>
             </div>
           </div>
 
           <div className="card glass">
             <div className="cardTitle">System Notes</div>
             <div style={{ color: "rgba(255,255,255,.70)", lineHeight: 1.45 }}>
-              This command panel is live and styled. Next we’ll connect it to real data + actions.
+              This command page matches Mission Control layout. Next we’ll connect real workflows and actions.
             </div>
           </div>
         </section>
 
-        {/* Center Column */}
         <section className="colCenter">
           <div className="card glass wide">
             <div className="cardTitle">{tableTitle}</div>
 
             <div className="tableHead">
-              {tableCols.map((c) => (
-                <span key={c}>{c}</span>
-              ))}
+              {tableCols.map((c) => <span key={c}>{c}</span>)}
             </div>
 
-            {(tableRows.length ? tableRows : [
-              { a: "Queue Item 001", b: "Open", c: "Owner", d: "High", e: "—", f: "—" },
-              { a: "Queue Item 002", b: "Pending", c: "Owner", d: "Med", e: "—", f: "—" },
-              { a: "Queue Item 003", b: "Done", c: "Owner", d: "Low", e: "—", f: "—" },
-              { a: "Queue Item 004", b: "Open", c: "Owner", d: "High", e: "—", f: "—" },
-            ]).map((r, idx) => (
-              <div className="tableRow" key={idx}>
-                <span className="bold">{r.a}</span>
-                <span>{r.b}</span>
-                <span>{r.c}</span>
-                <span>{r.d}</span>
-                <span>{r.e}</span>
-                <span className="scorePill green">{r.f === "—" ? "—" : r.f}</span>
-              </div>
-            ))}
+            {/* placeholder rows (we’ll replace with real data next) */}
+            <div className="tableRow">
+              <span className="bold">Queue Item 001</span><span>Open</span><span>Owner</span><span>High</span><span>—</span>
+              <span className="scorePill green">—</span>
+            </div>
+            <div className="tableRow">
+              <span className="bold">Queue Item 002</span><span>Pending</span><span>Owner</span><span>Med</span><span>—</span>
+              <span className="scorePill green">—</span>
+            </div>
+            <div className="tableRow">
+              <span className="bold">Queue Item 003</span><span>Done</span><span>Owner</span><span>Low</span><span>—</span>
+              <span className="scorePill green">—</span>
+            </div>
           </div>
 
           <div className="rowTwo">
             <div className="card glass">
               <div className="cardTitle">Command Focus</div>
               <div style={{ color: "rgba(255,255,255,.70)", lineHeight: 1.45 }}>
-                Keep this command tight: build the workflow first, then automate.
+                Build the workflow first, then automate.
               </div>
             </div>
 
             <div className="card glass">
-              <div className="cardTitle">Today</div>
-              <div className="money">$—</div>
-              <div className="subtle">Live metrics will appear after data wiring.</div>
+              <div className="cardTitle">Live Totals</div>
+              <div className="money">{formatNumber(loadsCount)}</div>
+              <div className="subtle">Loads in system</div>
             </div>
 
             <div className="card glass dtlTile">
               <div className="dtlTop">
-                <div className="cardTitle" style={{ marginBottom: 0 }}>
-                  DTL Command
-                </div>
+                <div className="cardTitle" style={{ marginBottom: 0 }}>DTL Command</div>
                 <span className="dtlStatus">{activeCommand === "dtl" ? "Active" : "Idle"}</span>
               </div>
 
               <div className="dtlMeta">
-                <div className="dtlLine">
-                  <span className="dtlLabel">Best Lane</span>
-                  <span className="dtlValue">—</span>
-                </div>
-                <div className="dtlLine">
-                  <span className="dtlLabel">Projected RPM</span>
-                  <span className="dtlValue">—</span>
-                </div>
-                <div className="dtlLine">
-                  <span className="dtlLabel">Confidence</span>
-                  <span className="dtlValue">—</span>
-                </div>
+                <div className="dtlLine"><span className="dtlLabel">Best Lane</span><span className="dtlValue">—</span></div>
+                <div className="dtlLine"><span className="dtlLabel">Projected RPM</span><span className="dtlValue">—</span></div>
+                <div className="dtlLine"><span className="dtlLabel">Confidence</span><span className="dtlValue">—</span></div>
               </div>
 
               <div className="dtlFooter">
-                <button className="dtlBtn" onClick={setCmd("dtl")}>
-                  View DTL
-                </button>
+                <button className="dtlBtn" onClick={setCmd("dtl")}>View DTL</button>
                 <button className="dtlBtn dtlBtnPrimary" onClick={() => console.log("[MOVEN] Run DTL (stub)")}>
                   Run Scan
                 </button>
@@ -186,31 +167,26 @@ function PlaceholderGrid({
           </div>
 
           <div className="actionBar">
-            <button className="actionBtn" onClick={setCmd("mission")}>
-              Back to Mission Control
+            <button className="actionBtn" onClick={setCmd("mission")}>Back to Mission Control</button>
+
+            <button className="actionBtn" onClick={refreshAllSheets} disabled={!!movenSync?.loading}>
+              {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
             </button>
-            <button className="actionBtn" onClick={() => console.log("[MOVEN] Primary action (stub)")}>
-              Primary Action
-            </button>
-            <button className="actionBtn" onClick={() => console.log("[MOVEN] Sync (stub)")}>
-              Sync Sheets
-            </button>
+
             <button className="actionBtn danger" onClick={() => console.log("[MOVEN] Emergency (stub)")}>
               Emergency Alert
             </button>
           </div>
         </section>
 
-        {/* Right Column */}
         <section className="colRight">
           <div className="card glass">
             <div className="cardTitle">{rightTitle}</div>
             <div className="alerts">
               {(rightItems.length ? rightItems : [
-                "No live alerts yet — connect the data layer.",
-                "Once wired, this feed becomes your command brain.",
-                "DTL opportunities will post here automatically.",
-                "Compliance deadlines will auto-alert here.",
+                movenSync?.loading ? "Syncing sheets now..." : "Sheets loaded. Next: real alerts.",
+                `Carriers loaded: ${formatNumber(carriersCount)}`,
+                `Loads loaded: ${formatNumber(loadsCount)}`,
               ]).map((t, i) => (
                 <div className="alert" key={i}>{t}</div>
               ))}
@@ -226,7 +202,7 @@ function PlaceholderGrid({
               </div>
               <div className="healthRow">
                 <span>Data Layer</span>
-                <span className="healthBar"><i style={{ width: "35%" }} /></span>
+                <span className="healthBar"><i style={{ width: movenSync?.error ? "20%" : "65%" }} /></span>
               </div>
             </div>
           </div>
@@ -234,7 +210,7 @@ function PlaceholderGrid({
           <div className="card glass">
             <div className="cardTitle">Command Tip</div>
             <div style={{ color: "rgba(255,255,255,.70)", lineHeight: 1.45 }}>
-              Next build: wire <b>Sync Sheets</b> → state → tiles update instantly.
+              Next step: replace each table with real rows from your sheets.
             </div>
           </div>
         </section>
@@ -243,12 +219,22 @@ function PlaceholderGrid({
   );
 }
 
-export default function Dashboard({ activeCommand = "mission", onCommandChange }) {
+export default function Dashboard({
+  activeCommand = "mission",
+  onCommandChange,
+  movenData,
+  movenSync,
+  refreshAllSheets,
+}) {
   const setCmd = (key) => () => onCommandChange?.(key);
   const topBtnClass = (key) =>
     activeCommand === key ? "top-command-btn active" : "top-command-btn";
 
-  // === NON-MISSION COMMANDS: now they MATCH the full dashboard grid ===
+  // REAL counts (now live)
+  const carriersCount = safeCount(movenData?.carriers);
+  const loadsCount = safeCount(movenData?.loads);
+
+  // === NON-MISSION COMMANDS: match the full grid layout ===
   if (activeCommand !== "mission") {
     const configs = {
       carrier: {
@@ -257,15 +243,21 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         tableTitle: "Carrier Queue",
         tableCols: ["Carrier", "Status", "MC#", "Plan", "Updated", "Score"],
         rightTitle: "Carrier Alerts",
-        rightItems: ["Insurance expiring (stub)", "Missing docs (stub)", "New carrier lead (stub)"],
+        rightItems: [
+          movenSync?.loading ? "Syncing carriers..." : `Carriers loaded: ${formatNumber(carriersCount)}`,
+          movenSync?.error ? `Sync error: ${movenSync.error}` : "Next: show carriers list + compliance warnings.",
+        ],
       },
       load: {
         title: "Load Command",
-        subtitle: "Load pipeline, load scoring, booking workflow, check-calls, and lane intelligence will live here.",
+        subtitle: "Load pipeline, scoring, booking workflow, check-calls, and lane intelligence will live here.",
         tableTitle: "Load Pipeline",
         tableCols: ["Load", "Origin", "Pickup", "Delivery", "RPM", "Score"],
         rightTitle: "Load Alerts",
-        rightItems: ["Late pickup risk (stub)", "Rate confirmation missing (stub)", "Reload opportunity (stub)"],
+        rightItems: [
+          movenSync?.loading ? "Syncing loads..." : `Loads loaded: ${formatNumber(loadsCount)}`,
+          movenSync?.error ? `Sync error: ${movenSync.error}` : "Next: render loads table from live data.",
+        ],
       },
       weather: {
         title: "Weather Command",
@@ -273,7 +265,7 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         tableTitle: "Weather Risk Queue",
         tableCols: ["Zone", "Impact", "Window", "Trucks", "Action", "Risk"],
         rightTitle: "Weather Alerts",
-        rightItems: ["Storm watch (stub)", "I-xx corridor risk (stub)", "Freeze warning (stub)"],
+        rightItems: ["Next: wire weather API by truck/lane.", "This panel is ready."],
       },
       learning: {
         title: "Learning Command",
@@ -281,7 +273,7 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         tableTitle: "Learning Modules",
         tableCols: ["Module", "Type", "Level", "Owner", "Updated", "Progress"],
         rightTitle: "Learning Notes",
-        rightItems: ["Add Quick Start (stub)", "Add walkthroughs (stub)", "Owner training (stub)"],
+        rightItems: ["Next: Quick Start + walkthroughs + owner-only lessons."],
       },
       dtl: {
         title: "DTL Command",
@@ -289,15 +281,15 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         tableTitle: "DTL Opportunities",
         tableCols: ["Route", "Legs", "Miles", "RPM", "Net", "Score"],
         rightTitle: "DTL Alerts",
-        rightItems: ["DTL scan ready (stub)", "Triangle start window (stub)", "Headhaul signal (stub)"],
+        rightItems: ["Next: scan loads → populate Best Lane/RPM/Confidence."],
       },
       settings: {
         title: "Settings",
         subtitle: "System settings, integrations, diagnostics, and utilities will live here.",
-        tableTitle: "Settings Queue",
+        tableTitle: "Settings",
         tableCols: ["Setting", "Value", "Scope", "Owner", "Updated", "Status"],
         rightTitle: "System Messages",
-        rightItems: ["Integration status (stub)", "Webhooks (stub)", "Diagnostics (stub)"],
+        rightItems: ["Next: add integration toggles + diagnostics."],
       },
       admin: {
         title: "Admin",
@@ -305,7 +297,7 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         tableTitle: "Admin Queue",
         tableCols: ["Item", "Type", "Scope", "Owner", "Updated", "Status"],
         rightTitle: "Admin Alerts",
-        rightItems: ["Permission change (stub)", "Audit log (stub)", "User access request (stub)"],
+        rightItems: ["Next: user access control + audit logs."],
       },
     };
 
@@ -317,51 +309,31 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         subtitle={cfg.subtitle}
         activeCommand={activeCommand}
         onCommandChange={onCommandChange}
+        movenData={movenData}
+        movenSync={movenSync}
+        refreshAllSheets={refreshAllSheets}
         tableTitle={cfg.tableTitle}
         tableCols={cfg.tableCols}
         rightTitle={cfg.rightTitle}
         rightItems={cfg.rightItems}
-        primaryActions={[
-          "Open Queue",
-          "Run Review",
-          "Sync Data",
-        ]}
-        kpis={[
-          { label: "Status", value: "Ready" },
-          { label: "Data", value: "Not Wired" },
-          { label: "Next", value: "Connect Fetch" },
-        ]}
       />
     );
   }
 
-  // === MISSION CONTROL (UNCHANGED UI) ===
-  const handleStub = (label) => () => console.log(`[MOVEN] Clicked: ${label}`);
-
+  // === MISSION CONTROL (YOUR DASHBOARD) ===
   return (
     <div className="dashRoot">
-      {/* Top Bar */}
       <header className="dashTopbar">
         <div className="brand">
           <span className="brandText">MOVEN COMMAND</span>
         </div>
 
         <div className="top-command-bar">
-          <button className={topBtnClass("mission")} onClick={setCmd("mission")}>
-            Mission Control
-          </button>
-          <button className={topBtnClass("carrier")} onClick={setCmd("carrier")}>
-            Carrier Command
-          </button>
-          <button className={topBtnClass("load")} onClick={setCmd("load")}>
-            Load Command
-          </button>
-          <button className={topBtnClass("weather")} onClick={setCmd("weather")}>
-            Weather Command
-          </button>
-          <button className={topBtnClass("learning")} onClick={setCmd("learning")}>
-            Learning Command
-          </button>
+          <button className={topBtnClass("mission")} onClick={setCmd("mission")}>Mission Control</button>
+          <button className={topBtnClass("carrier")} onClick={setCmd("carrier")}>Carrier Command</button>
+          <button className={topBtnClass("load")} onClick={setCmd("load")}>Load Command</button>
+          <button className={topBtnClass("weather")} onClick={setCmd("weather")}>Weather Command</button>
+          <button className={topBtnClass("learning")} onClick={setCmd("learning")}>Learning Command</button>
         </div>
 
         <div className="topIcons">
@@ -370,7 +342,6 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
         </div>
       </header>
 
-      {/* Main Grid */}
       <main className="dashGrid">
         {/* Left Column */}
         <section className="colLeft">
@@ -385,19 +356,34 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
             </div>
 
             <div className="statsList">
-              <div className="statRow"><span>Live Carriers</span><span className="statVal">1280</span></div>
-              <div className="statRow"><span>Insurance Alerts</span><span className="statVal">6</span></div>
-              <div className="statRow"><span>Compliance Warnings</span><span className="statVal">8</span></div>
+              <div className="statRow">
+                <span>Live Carriers</span>
+                <span className="statVal">{formatNumber(carriersCount)}</span>
+              </div>
+              <div className="statRow">
+                <span>Insurance Alerts</span>
+                <span className="statVal">—</span>
+              </div>
+              <div className="statRow">
+                <span>Compliance Warnings</span>
+                <span className="statVal">—</span>
+              </div>
             </div>
+
+            {movenSync?.error ? (
+              <div style={{ marginTop: 10, color: "rgba(255,90,90,.95)", fontWeight: 800 }}>
+                Sync error: {movenSync.error}
+              </div>
+            ) : null}
           </div>
 
           <div className="card glass">
             <div className="cardTitle">Weather Command</div>
             <div className="statsList">
-              <div className="statRow"><span>Active Loads</span><span className="statVal">340</span></div>
-              <div className="statRow"><span>Loads This Week</span><span className="statVal">799</span></div>
-              <div className="statRow"><span>Total Loaded Miles</span><span className="statVal">1.28M</span></div>
-              <div className="statRow"><span>Weather Alerts</span><span className="statVal">8</span></div>
+              <div className="statRow"><span>Active Loads</span><span className="statVal">{formatNumber(loadsCount)}</span></div>
+              <div className="statRow"><span>Loads This Week</span><span className="statVal">{formatNumber(loadsCount)}</span></div>
+              <div className="statRow"><span>Total Loaded Miles</span><span className="statVal">—</span></div>
+              <div className="statRow"><span>Weather Alerts</span><span className="statVal">—</span></div>
             </div>
           </div>
 
@@ -424,6 +410,7 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
               <span className="right">Suggested Score</span>
             </div>
 
+            {/* Still placeholder rows for now (next step is real rows from movenData.loads) */}
             <div className="tableRow">
               <span className="bold">53081</span><span>Chicago</span><span>Dec. 5</span><span>Feb. 7</span><span>2.97</span>
               <span className="scorePill green">82</span>
@@ -455,11 +442,10 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
 
             <div className="card glass">
               <div className="cardTitle">Revenue Today</div>
-              <div className="money">$36,847</div>
-              <div className="subtle">Last Sync • —</div>
+              <div className="money">$—</div>
+              <div className="subtle">Last Sync • {formatSyncTime(movenSync?.lastSyncAt)}</div>
             </div>
 
-            {/* DTL TILE (Visual Only) */}
             <div className="card glass dtlTile">
               <div className="dtlTop">
                 <div className="cardTitle" style={{ marginBottom: 0 }}>DTL Command</div>
@@ -474,56 +460,36 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
 
               <div className="dtlFooter">
                 <button className="dtlBtn" onClick={setCmd("dtl")}>View DTL</button>
-                <button className="dtlBtn dtlBtnPrimary" onClick={handleStub("Run DTL Scan")}>Run Scan</button>
+                <button className="dtlBtn dtlBtnPrimary" onClick={() => console.log("[MOVEN] Run DTL Scan (next)")}>
+                  Run Scan
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Bottom Action Bar */}
           <div className="actionBar">
-            <button className="actionBtn" onClick={handleStub("Add Carrier")}>Add Carrier</button>
-            <button className="actionBtn" onClick={handleStub("Add Load")}>Add Load</button>
-            <button className="actionBtn" onClick={setCmd("dtl")}>Run DTL Scan</button>
-            <button className="actionBtn" onClick={handleStub("Sync Sheets")}>Sync Sheets</button>
-            <button className="actionBtn danger" onClick={handleStub("Emergency Alert")}>Emergency Alert</button>
+            <button className="actionBtn" onClick={setCmd("carrier")}>Add Carrier</button>
+            <button className="actionBtn" onClick={setCmd("load")}>Add Load</button>
+
+            <button className="actionBtn" onClick={refreshAllSheets} disabled={!!movenSync?.loading}>
+              {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
+            </button>
+
+            <button className="actionBtn danger" onClick={() => console.log("[MOVEN] Emergency Alert (next)")}>
+              Emergency Alert
+            </button>
           </div>
         </section>
 
         {/* Right Column */}
         <section className="colRight">
           <div className="card glass">
-            <div className="cardTitle">Compliance Command</div>
-            <div className="complianceList">
-              <div className="comp"><span className="sq green" /> Insurance</div>
-              <div className="comp"><span className="sq green" /> Permits</div>
-              <div className="comp"><span className="sq amber" /> IFTA</div>
-              <div className="comp"><span className="sq red" /> Medical</div>
-            </div>
-          </div>
-
-          <div className="card glass">
             <div className="cardTitle">Alerts Feed</div>
             <div className="alerts">
-              <div className="alert">Weather alert on …</div>
-              <div className="alert">Road 53095 late at pickup</div>
-              <div className="alert">Carrier HF995 Insurance expiring</div>
-              <div className="alert">New DTL opportunity detected</div>
-            </div>
-          </div>
-
-          <div className="card glass">
-            <div className="cardTitle">Load Score</div>
-            <div className="gaugeWrap small">
-              <div className="gauge gaugeRed"><div className="gaugeValue">73</div></div>
-              <div className="gaugeLabel">Revenue Today</div>
-            </div>
-          </div>
-
-          <div className="card glass">
-            <div className="cardTitle">Revenue This Week</div>
-            <div className="gaugeWrap small">
-              <div className="gauge gaugeGreen"><div className="gaugeValue">33</div></div>
-              <div className="gaugeLabel">Revenue This Week</div>
+              <div className="alert">{movenSync?.loading ? "Syncing sheets..." : "Sheets loaded. Next: real alerts."}</div>
+              <div className="alert">Carriers: {formatNumber(carriersCount)}</div>
+              <div className="alert">Loads: {formatNumber(loadsCount)}</div>
+              {movenSync?.error ? <div className="alert">Error: {movenSync.error}</div> : null}
             </div>
           </div>
 
@@ -531,7 +497,14 @@ export default function Dashboard({ activeCommand = "mission", onCommandChange }
             <div className="cardTitle">System Health</div>
             <div className="healthRows">
               <div className="healthRow"><span>Screen</span><span className="healthBar"><i style={{ width: "78%" }} /></span></div>
-              <div className="healthRow"><span>Load Board Sync</span><span className="healthBar"><i style={{ width: "62%" }} /></span></div>
+              <div className="healthRow"><span>Sheet Sync</span><span className="healthBar"><i style={{ width: movenSync?.error ? "20%" : "70%" }} /></span></div>
+            </div>
+          </div>
+
+          <div className="card glass">
+            <div className="cardTitle">Command Tip</div>
+            <div style={{ color: "rgba(255,255,255,.70)", lineHeight: 1.45 }}>
+              Next: render the Load Command Summary table from your real loads sheet.
             </div>
           </div>
         </section>
