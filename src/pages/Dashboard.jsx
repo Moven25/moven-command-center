@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "./Dashboard.css";
 
 function safeCount(arr) {
@@ -25,399 +25,223 @@ export default function Dashboard({
   movenData,
   movenSync,
   refreshAllSheets,
-  addCarrierLocal,
 }) {
-  const setCmd = (key) => onCommandChange?.(key);
-
-  // REAL counts
   const carriersCount = safeCount(movenData?.carriers);
   const loadsCount = safeCount(movenData?.loads);
 
-  // Modal state (Option A)
-  const [showAddCarrier, setShowAddCarrier] = React.useState(false);
-  const [carrierForm, setCarrierForm] = React.useState({
-    carrierName: "",
-    mc: "",
-    dot: "",
-    phone: "",
-    email: "",
-  });
+  // pick a few loads for the summary table
+  const loadRows = useMemo(() => {
+    const rows = Array.isArray(movenData?.loads) ? movenData.loads : [];
+    return rows.slice(0, 6);
+  }, [movenData]);
 
-  const onCarrierField = (key, val) =>
-    setCarrierForm((p) => ({ ...p, [key]: val }));
-
-  const submitCarrier = (e) => {
-    e.preventDefault();
-
-    const payload = {
-      id: (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now())),
-      carrierName: carrierForm.carrierName.trim(),
-      mc: carrierForm.mc.trim(),
-      dot: carrierForm.dot.trim(),
-      phone: carrierForm.phone.trim(),
-      email: carrierForm.email.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    if (!payload.carrierName) return alert("Carrier Name is required.");
-
-    addCarrierLocal?.(payload);
-    setShowAddCarrier(false);
-    setCarrierForm({ carrierName: "", mc: "", dot: "", phone: "", email: "" });
-  };
-
-  const carriers = Array.isArray(movenData?.carriers) ? movenData.carriers : [];
-  const loads = Array.isArray(movenData?.loads) ? movenData.loads : [];
-
-  // Simple “Top Command” buttons should match the side style
-  const TopCmdBtn = ({ id, label }) => (
-    <button
-      className={`topCommandBtn ${activeCommand === id ? "active" : ""}`}
-      onClick={() => setCmd(id)}
-      type="button"
-    >
-      {label}
-    </button>
-  );
+  const topButtons = [
+    { key: "mission", label: "Mission Control" },
+    { key: "carrier", label: "Carrier Command" },
+    { key: "load", label: "Load Command" },
+    { key: "weather", label: "Weather Command" },
+    { key: "learning", label: "Learning Command" },
+  ];
 
   return (
-    <div className="dashRoot liquidBg">
-      {/* Sidebar */}
-      <aside className="mcSidebar">
-        <div className="mcSidebarBrand">
-          <div className="mcSidebarBrandTop">MOVEN</div>
-          <div className="mcSidebarBrandBottom">LOGISTICS</div>
+    <div className="dashRoot">
+      <header className="dashTopbar">
+        <div className="brandText">MOVEN COMMAND</div>
+
+        <div className="topCommands">
+          {topButtons.map((b) => (
+            <button
+              key={b.key}
+              className={`top-command-btn ${activeCommand === b.key ? "active" : ""}`}
+              onClick={() => onCommandChange?.(b.key)}
+              type="button"
+            >
+              {b.label}
+            </button>
+          ))}
         </div>
 
-        <nav className="mcSidebarNav">
-          <button className={`sideBtn ${activeCommand === "mission" ? "active" : ""}`} onClick={() => setCmd("mission")} type="button">
-            Mission Control
+        <div className="topIcons">
+          <button className="iconBtn" type="button" title="Tools">
+            ⚙️
           </button>
-          <button className={`sideBtn ${activeCommand === "carrier" ? "active" : ""}`} onClick={() => setCmd("carrier")} type="button">
-            Carrier Command
+          <button className="iconBtn" type="button" title="Panel">
+            ⬛
           </button>
-          <button className={`sideBtn ${activeCommand === "load" ? "active" : ""}`} onClick={() => setCmd("load")} type="button">
-            Load Command
-          </button>
-          <button className={`sideBtn ${activeCommand === "weather" ? "active" : ""}`} onClick={() => setCmd("weather")} type="button">
-            Weather Command
-          </button>
-          <button className={`sideBtn ${activeCommand === "learning" ? "active" : ""}`} onClick={() => setCmd("learning")} type="button">
-            Learning Command
-          </button>
+        </div>
+      </header>
 
-          <div className="sideDivider" />
+      {/* Mission Control renders the exact dashboard grid like your screenshot */}
+      <div className="pageInner">
+        {/* LEFT COLUMN */}
+        <section className="colLeft">
+          <div className="card glass">
+            <div className="cardTitle">Live Carrier Data</div>
 
-          <button className={`sideBtn ${activeCommand === "dtl" ? "active" : ""}`} onClick={() => setCmd("dtl")} type="button">
-            DTL
-          </button>
-
-          <button className={`sideBtn ${activeCommand === "settings" ? "active" : ""}`} onClick={() => setCmd("settings")} type="button">
-            Settings
-          </button>
-          <button className={`sideBtn ${activeCommand === "admin" ? "active" : ""}`} onClick={() => setCmd("admin")} type="button">
-            Admin
-          </button>
-        </nav>
-
-        <div className="mcSidebarFooter">Owner</div>
-      </aside>
-
-      {/* Main */}
-      <main className="dashMain">
-        <header className="dashTopbar">
-          <div className="topBrand">MOVEN COMMAND</div>
-
-          <div className="topCommands">
-            <TopCmdBtn id="mission" label="Mission Control" />
-            <TopCmdBtn id="carrier" label="Carrier Command" />
-            <TopCmdBtn id="load" label="Load Command" />
-            <TopCmdBtn id="weather" label="Weather Command" />
-            <TopCmdBtn id="learning" label="Learning Command" />
-          </div>
-
-          <div className="topActions">
-            <button className="iconBtn" type="button" title="Info">i</button>
-            <button className="iconBtn" type="button" title="Settings">⚙</button>
-          </div>
-        </header>
-
-        {/* ====== MISSION CONTROL (counts + summary tiles) ====== */}
-        {activeCommand === "mission" && (
-          <div className="pageInner">
-            <section className="grid">
-              <div className="card glass">
-                <div className="cardTitle">Live Carrier Data</div>
-                <div className="bigNumber">{carriersCount}</div>
-                <div className="subtle">Live Carriers</div>
-                <div className="miniStats">
-                  <div>Insurance Alerts <span>—</span></div>
-                  <div>Compliance Warnings <span>—</span></div>
-                </div>
-              </div>
-
-              <div className="card glass span2">
-                <div className="cardTitle">Load Command Summary</div>
-                <div className="subtle">Showing sample rows until we map your real columns perfectly.</div>
-
-                <div className="tableWrap">
-                  <table className="miniTable">
-                    <thead>
-                      <tr>
-                        <th>Load ID</th>
-                        <th>Origin</th>
-                        <th>Pickup</th>
-                        <th>Delivery</th>
-                        <th>RPM</th>
-                        <th>Score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(loads.slice(0, 5).length ? loads.slice(0, 5) : [{}, {}, {}, {}, {}]).map((row, idx) => (
-                        <tr key={idx}>
-                          <td>{row.LoadID || row.loadId || row.id || "—"}</td>
-                          <td>{row.Origin || row.origin || "—"}</td>
-                          <td>{row.Pickup || row.pickup || "—"}</td>
-                          <td>{row.Delivery || row.delivery || "—"}</td>
-                          <td>{row.RPM || row.rpm || "—"}</td>
-                          <td>{row.Score || row.score || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="card glass">
-                <div className="cardTitle">Alerts Feed</div>
-                <div className="alerts">
-                  <div className="alertLine">
-                    {movenSync?.loading ? "Syncing sheets now..." : "Sheets loaded. Next: real alerts."}
-                  </div>
-                  <div className="alertLine">Carriers: <b>{carriersCount}</b></div>
-                  <div className="alertLine">Loads: <b>{loadsCount}</b></div>
-                  {movenSync?.error ? (
-                    <div className="alertLine dangerText">Sync Error: {movenSync.error}</div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="card glass">
-                <div className="cardTitle">Revenue Today</div>
-                <div className="money">$—</div>
-                <div className="subtle">Last Sync: {formatSyncTime(movenSync?.lastSyncAt)}</div>
-              </div>
-
-              <div className="card glass">
-                <div className="cardTitle">DTL Command</div>
-                <div className="subtle">Best Lane</div>
-                <div className="subtle">Projected RPM</div>
-                <div className="subtle">Confidence</div>
-                <div className="btnRow">
-                  <button className="actionBtn" onClick={() => setCmd("dtl")} type="button">View DTL</button>
-                  <button className="actionBtn primary" onClick={() => console.log("[MOVEN] Run DTL (stub)")} type="button">
-                    Run Scan
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <div className="actionBar">
-              <button className="actionBtn" type="button" onClick={() => setShowAddCarrier(true)}>
-                Add Carrier
-              </button>
-
-              <button
-                className="actionBtn"
-                type="button"
-                onClick={refreshAllSheets}
-                disabled={!!movenSync?.loading}
-              >
-                {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
-              </button>
-
-              <button className="actionBtn danger" type="button" onClick={() => console.log("[MOVEN] Emergency (stub)")}>
-                Emergency Alert
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ====== CARRIER COMMAND (FULL: list + add carrier) ====== */}
-        {activeCommand === "carrier" && (
-          <div className="pageInner">
-            <div className="card glass" style={{ marginBottom: 14 }}>
-              <div className="cardTitle">Carrier Command</div>
-              <div className="subtle">
-                Total carriers: <b>{carriersCount}</b>
-              </div>
-
-              <div className="btnRow" style={{ marginTop: 12 }}>
-                <button className="actionBtn" type="button" onClick={() => setShowAddCarrier(true)}>
-                  Add Carrier
-                </button>
-                <button
-                  className="actionBtn"
-                  type="button"
-                  onClick={refreshAllSheets}
-                  disabled={!!movenSync?.loading}
-                >
-                  {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
-                </button>
+            <div className="gaugeWrap">
+              <div className="gaugeCircle">
+                <div className="gaugeValue">84</div>
               </div>
             </div>
 
-            <div className="card glass">
-              <div className="cardTitle">Carrier List</div>
+            <div className="metric"><span>Carrier Performance Score</span><span>—</span></div>
+            <div className="metric"><span>Live Carriers</span><span>{carriersCount}</span></div>
+            <div className="metric"><span>Insurance Alerts</span><span>—</span></div>
+            <div className="metric"><span>Compliance Warnings</span><span>—</span></div>
+          </div>
 
-              <div className="tableWrap">
-                <table className="miniTable">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>MC</th>
-                      <th>DOT</th>
-                      <th>Phone</th>
-                      <th>Email</th>
+          <div className="card glass">
+            <div className="cardTitle">Weather Command</div>
+            <div className="metric"><span>Active Loads</span><span>—</span></div>
+            <div className="metric"><span>Loads This Week</span><span>—</span></div>
+            <div className="metric"><span>Total Loaded Miles</span><span>—</span></div>
+            <div className="metric"><span>Weather Alerts</span><span>—</span></div>
+          </div>
+
+          <div className="card glass">
+            <div className="cardTitle">Market Command</div>
+            <div className="marketRow">
+              <span className="pill">Moderate</span>
+            </div>
+            <div className="dotRow"><span className="dot green" /> Cold Markets</div>
+            <div className="dotRow"><span className="dot red" /> Volume</div>
+          </div>
+        </section>
+
+        {/* CENTER COLUMN */}
+        <section className="colCenter">
+          <div className="card glass">
+            <div className="cardTitle">Load Command Summary</div>
+
+            <table className="miniTable">
+              <thead>
+                <tr>
+                  <th>Load ID</th>
+                  <th>Origin</th>
+                  <th>Pickup</th>
+                  <th>Delivery</th>
+                  <th>RPM</th>
+                  <th>Suggested Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadRows.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="subtle">
+                      No loads found yet (sync your Zoho loads sheet).
+                    </td>
+                  </tr>
+                ) : (
+                  loadRows.map((r, idx) => (
+                    <tr key={idx}>
+                      <td>{r.LoadID || r["Load ID"] || r.id || "—"}</td>
+                      <td>{r.Origin || r.origin || "—"}</td>
+                      <td>{r.Pickup || r.pickup || "—"}</td>
+                      <td>{r.Delivery || r.delivery || "—"}</td>
+                      <td>{r.RPM || r.rpm || "—"}</td>
+                      <td>
+                        <span className="scorePill green">{r.Score || r.score || "—"}</span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {carriersCount === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="subtle">
-                          No carriers yet. Click <b>Add Carrier</b>.
-                        </td>
-                      </tr>
-                    ) : (
-                      carriers.map((c, idx) => (
-                        <tr key={c.id || c.MC || c.DOT || c.mc || c.dot || idx}>
-                          <td>{c.carrierName || c.Carrier || c.name || "—"}</td>
-                          <td>{c.mc || c.MC || "—"}</td>
-                          <td>{c.dot || c.DOT || "—"}</td>
-                          <td>{c.phone || c.Phone || "—"}</td>
-                          <td>{c.email || c.Email || "—"}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="subtle" style={{ marginTop: 10 }}>
-                If your Zoho headers are different, we’ll map them next so the table fills perfectly.
-              </div>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
 
-        {/* ====== Load / Weather / Learning placeholders (wired) ====== */}
-        {activeCommand === "load" && (
-          <div className="pageInner">
+          <div className="midRow">
             <div className="card glass">
-              <div className="cardTitle">Load Command</div>
-              <div className="subtle">
-                Loaded loads: <b>{formatNumber(loadsCount)}</b>
-              </div>
-              <div className="subtle">
-                Next: map your real loads columns into the table.
-              </div>
+              <div className="cardTitle">Today’s Priorities</div>
+              <div className="prioRow"><span className="dot yellow" /> Urgent Loads</div>
+              <div className="prioRow"><span className="dot green" /> Check Calls Due</div>
+              <div className="prioRow"><span className="dot red" /> Missing Documents</div>
+              <div className="prioRow"><span className="dot green" /> Carrier Updates</div>
             </div>
-          </div>
-        )}
 
-        {activeCommand === "weather" && (
-          <div className="pageInner">
             <div className="card glass">
-              <div className="cardTitle">Weather Command</div>
-              <div className="subtle">Next: connect lane/truck locations to weather lookups.</div>
+              <div className="cardTitle">Revenue Today</div>
+              <div className="money">$—</div>
+              <div className="subtle">Last Sync: {formatSyncTime(movenSync?.lastSyncAt)}</div>
             </div>
-          </div>
-        )}
 
-        {activeCommand === "learning" && (
-          <div className="pageInner">
-            <div className="card glass">
-              <div className="cardTitle">Learning Command</div>
-              <div className="subtle">Next: Quick Start + walkthrough modules.</div>
-            </div>
-          </div>
-        )}
-
-        {activeCommand === "dtl" && (
-          <div className="pageInner">
-            <div className="card glass">
-              <div className="cardTitle">DTL Command</div>
-              <div className="subtle">Next: DTL scan logic + best lane suggestions.</div>
-            </div>
-          </div>
-        )}
-
-        {activeCommand === "settings" && (
-          <div className="pageInner">
-            <div className="card glass">
-              <div className="cardTitle">Settings</div>
-              <div className="subtle">Owner controls + diagnostics next.</div>
-            </div>
-          </div>
-        )}
-
-        {activeCommand === "admin" && (
-          <div className="pageInner">
-            <div className="card glass">
-              <div className="cardTitle">Admin</div>
-              <div className="subtle">Admin functions next.</div>
-            </div>
-          </div>
-        )}
-
-        {/* ====== Modal ====== */}
-        {showAddCarrier && (
-          <div className="modalOverlay" onMouseDown={() => setShowAddCarrier(false)}>
-            <div className="modalCard glass" onMouseDown={(e) => e.stopPropagation()}>
-              <div className="cardTitle">Add Carrier</div>
-
-              <form onSubmit={submitCarrier} style={{ marginTop: 10 }}>
-                <div className="formGrid">
-                  <input
-                    placeholder="Carrier Name *"
-                    value={carrierForm.carrierName}
-                    onChange={(e) => onCarrierField("carrierName", e.target.value)}
-                  />
-                  <input
-                    placeholder="MC #"
-                    value={carrierForm.mc}
-                    onChange={(e) => onCarrierField("mc", e.target.value)}
-                  />
-                  <input
-                    placeholder="DOT #"
-                    value={carrierForm.dot}
-                    onChange={(e) => onCarrierField("dot", e.target.value)}
-                  />
-                  <input
-                    placeholder="Phone"
-                    value={carrierForm.phone}
-                    onChange={(e) => onCarrierField("phone", e.target.value)}
-                  />
-                  <input
-                    placeholder="Email"
-                    value={carrierForm.email}
-                    onChange={(e) => onCarrierField("email", e.target.value)}
-                  />
+            <div className="card glass dtlCard">
+              <div className="dtlTitle">
+                <div className="cardTitle" style={{ marginBottom: 0 }}>
+                  DTL Command
                 </div>
+                <span className="dtlStatus">{activeCommand === "dtl" ? "Active" : "Idle"}</span>
+              </div>
 
-                <div className="btnRow" style={{ marginTop: 12 }}>
-                  <button className="actionBtn primary" type="submit">
-                    Save
-                  </button>
-                  <button className="actionBtn danger" type="button" onClick={() => setShowAddCarrier(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              <div className="dtlLine"><span>Best Lane</span><span>—</span></div>
+              <div className="dtlLine"><span>Projected RPM</span><span>—</span></div>
+              <div className="dtlLine"><span>Confidence</span><span>—</span></div>
+
+              <div className="dtlFooter">
+                <button className="dtlBtn" type="button" onClick={() => onCommandChange?.("dtl")}>
+                  View DTL
+                </button>
+                <button className="dtlBtn dtlBtnPrimary" type="button" onClick={() => console.log("Run scan (stub)")}>
+                  Run Scan
+                </button>
+              </div>
             </div>
           </div>
-        )}
-      </main>
+
+          <div className="actionBar">
+            <button className="actionBtn" type="button" onClick={() => console.log("Add Carrier (next step)")}>
+              Add Carrier
+            </button>
+            <button className="actionBtn" type="button" onClick={() => console.log("Add Load (next step)")}>
+              Add Load
+            </button>
+            <button
+              className="actionBtn primary"
+              type="button"
+              onClick={refreshAllSheets}
+              disabled={!!movenSync?.loading}
+            >
+              {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
+            </button>
+            <button className="actionBtn danger" type="button" onClick={() => console.log("Emergency (stub)")}>
+              Emergency Alert
+            </button>
+          </div>
+        </section>
+
+        {/* RIGHT COLUMN */}
+        <section className="colRight">
+          <div className="card glass">
+            <div className="cardTitle">Alerts Feed</div>
+            <div className="alerts">
+              <div>Sheets loaded. Next: real alerts.</div>
+              <div>Carriers: {formatNumber(carriersCount)}</div>
+              <div>Loads: {formatNumber(loadsCount)}</div>
+              {movenSync?.error ? (
+                <div className="alertError">Sync Error: {movenSync.error}</div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="card glass">
+            <div className="cardTitle">System Health</div>
+            <div className="healthRow">
+              <span>Screen</span>
+              <div className="healthBar"><div className="healthFill" style={{ width: "92%" }} /></div>
+            </div>
+            <div className="healthRow">
+              <span>Sheet Sync</span>
+              <div className="healthBar"><div className="healthFill" style={{ width: movenSync?.error ? "35%" : "80%" }} /></div>
+            </div>
+          </div>
+
+          <div className="card glass">
+            <div className="cardTitle">Command Tip</div>
+            <div className="subtle">
+              Next: render real Carrier + Load tables from your sheets, and wire up “Add Carrier”.
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

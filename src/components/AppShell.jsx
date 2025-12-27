@@ -1,90 +1,34 @@
-import React, { useCallback, useEffect, useState } from "react";
-import Dashboard from "../pages/Dashboard";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Sidebar from "./Sidebar";
 import "./AppShell.css";
+import Dashboard from "../pages/Dashboard";
 
-/**
- * AppShell = global wrapper
- * - Owns activeCommand state
- * - Loads data (AUTO)
- * - Provides refreshAllSheets + addCarrierLocal
- */
 async function fetchSheet(sheet) {
   const res = await fetch(`/.netlify/functions/fetch-sheets?sheet=${encodeURIComponent(sheet)}`);
-
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`fetch-sheets failed for "${sheet}": ${res.status} ${text || ""}`.trim());
+    throw new Error(`fetch-sheets failed for "${sheet}": ${res.status} ${text}`);
   }
-
-  // handler should return CSV or JSON – we support both
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    const json = await res.json();
-    // support { rows: [...] } or [...]
-    return Array.isArray(json) ? json : Array.isArray(json.rows) ? json.rows : [];
-  }
-
-  // CSV fallback – minimal parser
   const csv = await res.text();
-  return parseCSV(csv);
-}
 
-function parseCSV(csvText) {
-  if (!csvText) return [];
-  const lines = csvText.split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return [];
+  // very lightweight CSV parse (good enough for now)
+  const lines = csv.split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headers = lines[0].split(",").map((h) => h.trim());
 
-  const headers = splitCSVLine(lines[0]).map((h) => h.trim());
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const cols = splitCSVLine(lines[i]);
+  return lines.slice(1).map((row) => {
+    const cols = row.split(",");
     const obj = {};
-    headers.forEach((h, idx) => {
-      obj[h] = (cols[idx] ?? "").trim();
-    });
-    rows.push(obj);
-  }
-  return rows;
-}
-
-function splitCSVLine(line) {
-  const out = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-
-    if (ch === '"' && line[i + 1] === '"') {
-      cur += '"';
-      i++;
-      continue;
-    }
-
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (ch === "," && !inQuotes) {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  out.push(cur);
-  return out;
+    headers.forEach((h, i) => (obj[h] = (cols[i] ?? "").trim()));
+    return obj;
+  });
 }
 
 export default function AppShell() {
-  // command switching state (sidebar/top)
+  // Command switching state (matches your UI)
   const [activeCommand, setActiveCommand] = useState("mission");
 
-  // data state (AUTO load)
+  // Data state (AUTO load)
   const [data, setData] = useState({
     carriers: [],
     loads: [],
@@ -99,18 +43,9 @@ export default function AppShell() {
     lastSyncAt: null,
   });
 
-  // Option A: add carrier locally (no backend yet)
-  const addCarrierLocal = (newCarrier) => {
-    setData((prev) => ({
-      ...prev,
-      carriers: [newCarrier, ...(prev.carriers || [])],
-    }));
-  };
-
   const refreshAllSheets = useCallback(async () => {
     setSyncState((s) => ({ ...s, loading: true, error: null }));
     try {
-      // Load in parallel
       const [carriers, loads, brokers, compliance, factoring] = await Promise.all([
         fetchSheet("carriers"),
         fetchSheet("loads"),
@@ -120,36 +55,45 @@ export default function AppShell() {
       ]);
 
       setData({ carriers, loads, brokers, compliance, factoring });
-      setSyncState({
-        loading: false,
-        error: null,
-        lastSyncAt: new Date().toISOString(),
-      });
+      setSyncState({ loading: false, error: null, lastSyncAt: new Date().toISOString() });
     } catch (err) {
       console.error(err);
       setSyncState((s) => ({
         ...s,
         loading: false,
-        error: err?.message || "Sync failed",
+        error: err.message || "Sync failed",
       }));
     }
   }, []);
 
-  // AUTO load once
+  // AUTO load once at startup
   useEffect(() => {
     refreshAllSheets();
   }, [refreshAllSheets]);
 
+  const onCommandChange = useCallback((key) => {
+    setActiveCommand(key);
+  }, []);
+
+  const shellProps = useMemo(
+    () => ({
+      activeCommand,
+      onCommandChange,
+      movenData: data,
+      movenSync: syncState,
+      refreshAllSheets,
+    }),
+    [activeCommand, onCommandChange, data, syncState, refreshAllSheets]
+  );
+
   return (
-    <div className="appShell">
-      <Dashboard
-        activeCommand={activeCommand}
-        onCommandChange={setActiveCommand}
-        movenData={data}
-        movenSync={syncState}
-        refreshAllSheets={refreshAllSheets}
-        addCarrierLocal={addCarrierLocal}
-      />
+    <div className="shell">
+      <Sidebar activeCommand={activeCommand} onCommandChange={onCommandChange} />
+
+      <main className="shellMain">
+        <Dashboard {...shellProps} />
+      </main>
     </div>
   );
 }
+
