@@ -9,14 +9,14 @@ export default function Dashboard() {
         <div className="brand">
           <span className="brandText">MOVEN</span>
         </div>
+<div className="top-command-bar">
+  <button className="top-command-btn active">Mission Control</button>
+  <button className="top-command-btn">Carrier Command</button>
+  <button className="top-command-btn">Load Command</button>
+  <button className="top-command-btn">Weather Command</button>
+  <button className="top-command-btn">Learning Command</button>
+</div>
 
-        <nav className="dashNav">
-          <a className="navItem active" href="#mission">Mission Control</a>
-          <a className="navItem" href="#carrier">Carrier Command</a>
-          <a className="navItem" href="#load">Load Command</a>
-          <a className="navItem" href="#weather">Weather Command</a>
-          <a className="navItem" href="#learning">Learning Command</a>
-        </nav>
 
         <div className="topIcons">
           <div className="topIcon" title="Notes">📓</div>
