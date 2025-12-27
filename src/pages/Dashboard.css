@@ -1,287 +1,236 @@
 /* =========================
-   MOVEN Dashboard (Locked UI)
-   Goal: match "first picture" layout + background RED + BLACK (no green)
+   MOVEN Dashboard (LOCKED)
+   Red/Black background + glass UI
    ========================= */
 
 :root{
-  --bg-0: #07090d;
-  --bg-1: #0b0f16;
-  --bg-2: #0e1420;
-
-  --panel: rgba(18, 24, 34, 0.72);
-  --panel2: rgba(18, 24, 34, 0.62);
+  --bg-0: #070a10;
+  --bg-1: #0b1220;
+  --panel: rgba(18, 26, 40, 0.72);
+  --panel-2: rgba(18, 26, 40, 0.55);
   --stroke: rgba(255,255,255,0.10);
-  --stroke2: rgba(255,255,255,0.14);
-
+  --stroke-2: rgba(255,255,255,0.06);
   --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.68);
-
-  --red: #ff3b3b;
-  --red2: #b01010;
-  --chip: rgba(255, 59, 59, 0.10);
-  --chipStroke: rgba(255, 59, 59, 0.55);
-
-  --shadow: 0 10px 28px rgba(0,0,0,0.55);
-  --shadow2: 0 6px 18px rgba(0,0,0,0.45);
-
-  --radius: 14px;
+  --muted: rgba(255,255,255,0.70);
+  --accent: #e53935; /* MOVEN red */
 }
 
-/* Root wrapper */
-.dashRoot{
-  min-height: calc(100vh - 0px);
+*{ box-sizing: border-box; }
+
+html, body{
+  height: 100%;
+  margin: 0;
+  background: var(--bg-0);
   color: var(--text);
-  position: relative;
-  overflow: hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* === BACKGROUND LAYER ===
-   Red glow on left + BLACK/charcoal on right (replaces green)
-*/
-.dashRoot::before{
-  content:"";
-  position:absolute;
-  inset:-40px;
-  z-index:0;
-
-  /* The order matters: topmost gradients first */
+.dashRoot{
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 250px 1fr;
   background:
-    /* subtle vignette */
-    radial-gradient(1100px 600px at 70% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.95) 70%),
-    /* RIGHT SIDE: black/charcoal glow (THIS REPLACES GREEN) */
-    radial-gradient(900px 520px at 78% 62%, rgba(20, 26, 36, 0.90) 0%, rgba(7, 9, 13, 0.98) 62%),
-    /* LEFT/BOTTOM: red glow */
-    radial-gradient(900px 520px at 22% 78%, rgba(255, 30, 30, 0.35) 0%, rgba(255, 30, 30, 0.06) 55%, rgba(0,0,0,0) 70%),
-    /* base */
-    linear-gradient(180deg, var(--bg-2) 0%, var(--bg-0) 100%);
-
-  filter: saturate(0.95) contrast(1.05);
+    radial-gradient(900px 600px at 15% 80%, rgba(229,57,53,0.42), rgba(0,0,0,0) 60%),
+    radial-gradient(900px 600px at 70% 70%, rgba(0,0,0,0.55), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, #070a10 0%, #05070c 100%);
 }
 
-/* Content sits above background */
-.dashRoot > *{
-  position: relative;
-  z-index: 1;
-}
-
-/* Top bar */
-.dashTopbar{
-  height: 54px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: rgba(10, 13, 20, 0.55);
-  backdrop-filter: blur(10px);
-}
-
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-}
-.brandText{
-  font-size: 14px;
-  text-transform: uppercase;
-}
-
-/* Top command buttons */
-.topCommands{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap: wrap;
-}
-.top-command-btn{
-  border-radius: 8px;
-  padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(18, 24, 34, 0.45);
-  color: rgba(255,255,255,0.85);
-  font-size: 12px;
-  cursor:pointer;
-  transition: 120ms ease;
-}
-.top-command-btn:hover{
-  border-color: rgba(255,255,255,0.18);
-  transform: translateY(-1px);
-}
-.top-command-btn.active{
-  border-color: var(--chipStroke);
-  background: rgba(255, 59, 59, 0.12);
-  color: rgba(255,255,255,0.95);
-}
-
-/* Main layout: sidebar + canvas */
-.dashLayout{
-  display:grid;
-  grid-template-columns: 220px 1fr;
-  min-height: calc(100vh - 54px);
-}
-
-/* Left sidebar (if you render it inside Dashboard.jsx) */
-.side{
-  border-right: 1px solid rgba(255,255,255,0.06);
-  background: rgba(10, 13, 20, 0.55);
-  backdrop-filter: blur(10px);
+/* ===== Sidebar ===== */
+.sidebar{
   padding: 14px 12px;
+  border-right: 1px solid var(--stroke-2);
+  background: rgba(10,14,22,0.85);
 }
-.sideTitle{
+
+.brandBlock{
+  margin-bottom: 10px;
+  padding: 10px 10px 6px;
+}
+
+.brandName{
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  line-height: 1.1;
+}
+
+.navList{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.navBtn{
+  width: 100%;
+  border: 1px solid rgba(229,57,53,0.25);
+  background: rgba(18, 26, 40, 0.45);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 650;
+}
+
+.navBtn:hover{
+  border-color: rgba(229,57,53,0.55);
+  background: rgba(18, 26, 40, 0.65);
+}
+
+.navBtn.active{
+  border-color: rgba(229,57,53,0.85);
+  box-shadow: 0 0 0 1px rgba(229,57,53,0.25) inset;
+}
+
+/* ===== Main ===== */
+.main{
+  padding: 14px 16px 18px;
+}
+
+.dashTopbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pageTitle{
   font-weight: 900;
   letter-spacing: 0.6px;
-  text-transform: uppercase;
-  font-size: 12px;
-  opacity: 0.9;
-  margin-bottom: 10px;
 }
 
-.sideBtn{
-  width: 100%;
-  text-align: left;
-  border-radius: 8px;
-  padding: 9px 10px;
-  margin: 6px 0;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(18, 24, 34, 0.40);
-  color: rgba(255,255,255,0.86);
-  cursor:pointer;
-  transition: 120ms ease;
-}
-.sideBtn:hover{
-  border-color: rgba(255,255,255,0.18);
-}
-.sideBtn.active{
-  border-color: var(--chipStroke);
-  background: rgba(255, 59, 59, 0.12);
+.topCmds{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* Canvas area */
-.dashCanvas{
-  padding: 16px 18px 18px;
+.topCmdBtn{
+  border: 1px solid rgba(229,57,53,0.35);
+  background: rgba(18, 26, 40, 0.45);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
 }
 
-/* The “glass” cards */
-.card.glass{
+.topCmdBtn.active{
+  border-color: rgba(229,57,53,0.95);
+  box-shadow: 0 0 0 1px rgba(229,57,53,0.25) inset;
+}
+
+/* ===== Grid Layout (LOCKED) ===== */
+.grid{
+  display: grid;
+  grid-template-columns: 1.05fr 1.65fr 0.95fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* “Glass card” */
+.card{
   background: var(--panel);
   border: 1px solid var(--stroke);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow2);
+  border-radius: 14px;
+  padding: 12px;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-/* Card titles */
 .cardTitle{
-  font-weight: 800;
-  font-size: 13px;
-  opacity: 0.95;
+  font-weight: 900;
   margin-bottom: 8px;
 }
 
-/* === MAIN GRID (matches your first picture proportions) === */
-.grid{
-  display:grid;
-  grid-template-columns: 1.05fr 1.35fr 0.95fr;
-  gap: 14px;
-  align-items:start;
+.smallMuted{ color: var(--muted); font-size: 12px; }
+
+/* Left column stacks */
+.colLeft{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Columns */
-.colLeft, .colMid, .colRight{
-  display:flex;
-  flex-direction:column;
-  gap: 14px;
+/* Center column */
+.colCenter{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Inside cards */
-.cardPad{
-  padding: 12px 12px 10px;
-}
-
-.muted{
-  color: var(--muted);
-}
-
-/* Gauge styles (basic – keeps look) */
-.gaugeWrap{
-  display:flex;
-  align-items:center;
-  gap: 14px;
-}
-.gaugeNum{
-  font-size: 34px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-}
-
-/* Small chips / status pills */
-.pill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
-  font-size: 11px;
-  color: rgba(255,255,255,0.85);
-}
-.pill.red{
-  border-color: var(--chipStroke);
-  background: rgba(255, 59, 59, 0.12);
+/* Right column stacks */
+.colRight{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* Action bar buttons */
 .actionBar{
-  display:flex;
+  display: flex;
   gap: 10px;
-  margin-top: 12px;
-}
-.actionBtn{
-  border-radius: 10px;
-  padding: 10px 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(18, 24, 34, 0.35);
-  color: rgba(255,255,255,0.9);
-  font-weight: 700;
-  font-size: 12px;
-  cursor:pointer;
-  transition: 120ms ease;
-}
-.actionBtn:hover{
-  border-color: rgba(255,255,255,0.18);
-  transform: translateY(-1px);
-}
-.actionBtn.danger{
-  border-color: rgba(255, 59, 59, 0.55);
-  background: rgba(255, 59, 59, 0.14);
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
-/* DTL card buttons */
-.dtlFooter{
-  display:flex;
-  gap:10px;
-  margin-top: 10px;
+.actionBtn{
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(18, 26, 40, 0.55);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 750;
 }
-.dtlBtn{
-  border-radius: 10px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(18, 24, 34, 0.35);
-  color: rgba(255,255,255,0.92);
+
+.actionBtn.danger{
+  border-color: rgba(229,57,53,0.65);
+  background: rgba(229,57,53,0.20);
+}
+
+/* Table look (Load Command Summary) */
+.tableWrap{
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.tableHeader, .tableRow{
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 1.2fr 1fr 0.8fr;
+  gap: 8px;
+  padding: 10px 10px;
+}
+
+.tableHeader{
+  background: rgba(255,255,255,0.04);
   font-weight: 800;
-  font-size: 12px;
-  cursor:pointer;
+  color: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.dtlBtnPrimary{
-  border-color: rgba(255, 59, 59, 0.55);
-  background: rgba(255, 59, 59, 0.14);
+
+.tableRow{
+  background: rgba(0,0,0,0.10);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-weight: 900;
+  color: #081018;
+  background: #66e0a3; /* ok badge */
 }
 
 /* Responsive */
 @media (max-width: 1180px){
-  .dashLayout{ grid-template-columns: 200px 1fr; }
+  .dashRoot{ grid-template-columns: 220px 1fr; }
   .grid{ grid-template-columns: 1fr; }
 }
