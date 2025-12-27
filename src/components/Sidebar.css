@@ -74,4 +74,12 @@
   color: rgba(255, 255, 255, 0.5);
   padding-top: 16px;
 }
+.mc-sidebar-brand {
+  text-transform: uppercase;
+}
+
+.mc-sidebar-brand br + * {
+  color: rgba(225, 27, 34, 0.85);
+  font-weight: 800;
+}
 

@@ -5,8 +5,9 @@ export default function Sidebar() {
   return (
     <aside className="mc-sidebar">
       <div className="mc-sidebar-brand">
-        MOVEN<br />Mission
-      </div>
+  MOVEN<br />LOGISTICS
+</div>
+
 
       <nav className="mc-sidebar-nav">
         <button className="nav-btn red active">Mission Control</button>

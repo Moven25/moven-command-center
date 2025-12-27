@@ -35,11 +35,12 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-se
   backdrop-filter: blur(14px);
 }
 
-.brandText{
-  font-weight:800;
-  letter-spacing:.6px;
-  font-size:24px;
+.brandText {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
 }
+
 .brandText::first-letter{ color: var(--red); }
 
 .dashNav{
