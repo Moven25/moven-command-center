@@ -158,7 +158,8 @@ function PlaceholderGrid({
               </div>
 
               <div className="dtlFooter">
-                <button className="dtlBtn" onClick={setCmd("dtl")}>View DTL</button>
+                <button className="dtlBtn" onClick={() => setCmd("dtl")}>View DTL</button>
+
                 <button className="dtlBtn dtlBtnPrimary" onClick={() => console.log("[MOVEN] Run DTL (stub)")}>
                   Run Scan
                 </button>
@@ -167,7 +168,10 @@ function PlaceholderGrid({
           </div>
 
           <div className="actionBar">
-            <button className="actionBtn" onClick={setCmd("mission")}>Back to Mission Control</button>
+            <button className="actionBtn" onClick={() => setCmd("mission")}>
+  Back to Mission Control
+</button>
+
 
             <button className="actionBtn" onClick={refreshAllSheets} disabled={!!movenSync?.loading}>
               {movenSync?.loading ? "Syncing..." : "Sync Sheets"}
