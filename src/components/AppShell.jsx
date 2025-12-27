@@ -93,16 +93,17 @@ export default function AppShell({ children }) {
   const refreshAllSheets = useCallback(async () => {
     setSyncState((s) => ({ ...s, loading: true, error: null }));
     try {
-      // Load in parallel
-      const [carriers, loads, brokers, compliance, factoring] = await Promise.all([
-        fetchSheet("carriers"),
-        fetchSheet("loads"),
-        fetchSheet("brokers"),
-        fetchSheet("compliance"),
-        fetchSheet("factoring"),
-      ]);
+     // TEMP: carriers only (until other sheets are wired)
+const carriers = await fetchSheet("carriers");
 
-      setData({ carriers, loads, brokers, compliance, factoring });
+setData({
+  carriers,
+  loads: [],
+  brokers: [],
+  compliance: [],
+  factoring: [],
+});
+
       setSyncState({
         loading: false,
         error: null,
