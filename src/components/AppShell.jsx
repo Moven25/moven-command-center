@@ -1,18 +1,14 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import TopNav from "./TopNav";
+import "./AppShell.css";
 
-export default function AppShell() {
+export default function AppShell({ children }) {
   return (
     <div className="app-shell">
       <Sidebar />
-      <div className="app-shell-main">
-        <TopNav />
-        <main className="app-shell-content">
-          <Outlet />
-        </main>
-      </div>
+      <main className="app-main">
+        {children}
+      </main>
     </div>
   );
 }

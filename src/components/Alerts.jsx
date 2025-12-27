@@ -16,5 +16,5 @@ export default function Alerts({ items = [] }) {
 );
 
 export default Alerts;
-  );
+  ;
 }

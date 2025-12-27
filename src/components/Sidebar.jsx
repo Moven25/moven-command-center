@@ -1,21 +1,24 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 
 export default function Sidebar() {
   return (
     <aside className="mc-sidebar">
-      <div className="mc-sidebar-brand">MOVEN<br/>Mission</div>
+      <div className="mc-sidebar-brand">
+        MOVEN<br />Mission
+      </div>
+
       <nav className="mc-sidebar-nav">
-        <NavLink to="/dashboard" className={({isActive})=> isActive? 'active':''}>Mission Control</NavLink>
-        <NavLink to="/load">Load Command</NavLink>
-        <NavLink to="/carrier">Carrier Command</NavLink>
-        <NavLink to="/weather">Weather</NavLink>
-        <NavLink to="/dtl">DTL</NavLink>
-        <NavLink to="/learning">Learning</NavLink>
-        <NavLink to="/settings">Settings</NavLink>
-        <NavLink to="/admin">Admin</NavLink>
+        <button className="nav-btn active">Mission Control</button>
+        <button className="nav-btn">Load Command</button>
+        <button className="nav-btn">Carrier Command</button>
+        <button className="nav-btn">Weather</button>
+        <button className="nav-btn">DTL</button>
+        <button className="nav-btn">Learning</button>
+        <button className="nav-btn">Settings</button>
+        <button className="nav-btn">Admin</button>
       </nav>
+
       <div className="mc-sidebar-footer">Owner</div>
     </aside>
   );
