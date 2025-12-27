@@ -7,8 +7,9 @@ export default function Dashboard() {
       {/* Top Bar */}
       <header className="dashTopbar">
         <div className="brand">
-          <span className="brandText">MOVEN</span>
-        </div>
+  <span className="brandText">MOVEN COMMAND</span>
+</div>
+
 <div className="top-command-bar">
   <button className="top-command-btn active">Mission Control</button>
   <button className="top-command-btn">Carrier Command</button>
