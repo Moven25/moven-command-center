@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Sidebar from "./Sidebar";
-import "./AppShell.css";
 import Dashboard from "../pages/Dashboard";
 
 async function fetchSheet(sheet) {
@@ -9,19 +7,8 @@ async function fetchSheet(sheet) {
     const text = await res.text();
     throw new Error(`fetch-sheets failed for "${sheet}": ${res.status} ${text}`);
   }
-  const csv = await res.text();
-
-  // very lightweight CSV parse (good enough for now)
-  const lines = csv.split(/\r?\n/).filter(Boolean);
-  if (lines.length === 0) return [];
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  return lines.slice(1).map((row) => {
-    const cols = row.split(",");
-    const obj = {};
-    headers.forEach((h, i) => (obj[h] = (cols[i] ?? "").trim()));
-    return obj;
-  });
+  const payload = await res.json();
+  return payload?.rows ?? [];
 }
 
 export default function AppShell() {
@@ -86,14 +73,5 @@ export default function AppShell() {
     [activeCommand, onCommandChange, data, syncState, refreshAllSheets]
   );
 
-  return (
-    <div className="shell">
-      <Sidebar activeCommand={activeCommand} onCommandChange={onCommandChange} />
-
-      <main className="shellMain">
-        <Dashboard {...shellProps} />
-      </main>
-    </div>
-  );
+  return <Dashboard {...shellProps} />;
 }
-

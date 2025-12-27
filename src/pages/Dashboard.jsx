@@ -108,6 +108,35 @@ export default function Dashboard({
                   <strong style={{ color: "rgba(255,255,255,0.9)" }}>—</strong>
                 </div>
               </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>Carrier List</div>
+                <table className="table compact">
+                  <thead>
+                    <tr>
+                      <th>Carrier</th>
+                      <th>MC</th>
+                      <th>DOT</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {combinedCarriers.slice(0, 3).map((c, idx) => (
+                      <tr key={idx}>
+                        <td>{c.name || "—"}</td>
+                        <td>{c.mc || "—"}</td>
+                        <td>{c.dot || "—"}</td>
+                      </tr>
+                    ))}
+                    {!combinedCarriers.length && (
+                      <tr>
+                        <td colSpan={3} style={{ opacity: 0.75 }}>
+                          Add a carrier to populate this list.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -229,10 +258,10 @@ export default function Dashboard({
           <div className="card">
             <div className="cardTitle">System Health</div>
             <div className="cardBody">
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Screen</span>
-                <span style={{ opacity: 0.8 }}>OK</span>
-              </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Screen</span>
+                  <span style={{ opacity: 0.8 }}>OK</span>
+                </div>
               <div
                 style={{
                   height: 8,
@@ -243,7 +272,7 @@ export default function Dashboard({
                   marginTop: 6,
                 }}
               >
-                <div style={{ width: "88%", height: "100%", background: "rgba(0,255,200,0.55)" }} />
+                <div style={{ width: "88%", height: "100%", background: "rgba(229,57,53,0.65)" }} />
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
@@ -260,7 +289,13 @@ export default function Dashboard({
                   marginTop: 6,
                 }}
               >
-                <div style={{ width: movenSync?.loading ? "45%" : "70%", height: "100%", background: "rgba(0,255,200,0.55)" }} />
+                <div
+                  style={{
+                    width: movenSync?.loading ? "45%" : "70%",
+                    height: "100%",
+                    background: "rgba(229,57,53,0.65)",
+                  }}
+                />
               </div>
             </div>
           </div>
