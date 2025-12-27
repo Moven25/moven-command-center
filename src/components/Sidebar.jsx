@@ -1,48 +1,42 @@
 import React from "react";
-import "./Sidebar.css";
+
+const items = [
+  { key: "mission", label: "Mission Control" },
+  { key: "carrier", label: "Carrier Command" },
+  { key: "load", label: "Load Command" },
+  { key: "weather", label: "Weather Command" },
+  { key: "learning", label: "Learning Command" },
+  { key: "dtl", label: "DTL" },
+  { key: "settings", label: "Settings" },
+  { key: "admin", label: "Admin" },
+];
 
 export default function Sidebar({ activeCommand, onCommandChange }) {
-  const btn = (key) => {
-    const isActive = activeCommand === key;
-    const base = "nav-btn red";
-    return isActive ? `${base} active` : base;
-  };
-
   return (
-    <aside className="mc-sidebar">
-      <div className="mc-sidebar-brand">
-        MOVEN<br />LOGISTICS
+    <aside className="sidebar">
+      <div className="sidebarBrand">
+        <div className="sidebarBrandTop">MOVEN</div>
+        <div className="sidebarBrandBottom">LOGISTICS</div>
       </div>
 
-      <nav className="mc-sidebar-nav">
-        <button className={btn("mission")} onClick={() => onCommandChange("mission")}>
-          Mission Control
-        </button>
-        <button className={btn("carrier")} onClick={() => onCommandChange("carrier")}>
-          Carrier Command
-        </button>
-        <button className={btn("load")} onClick={() => onCommandChange("load")}>
-          Load Command
-        </button>
-        <button className={btn("weather")} onClick={() => onCommandChange("weather")}>
-          Weather Command
-        </button>
-        <button className={btn("learning")} onClick={() => onCommandChange("learning")}>
-          Learning Command
-        </button>
-
-        <button className="nav-btn gray" onClick={() => onCommandChange("dtl")}>
-          DTL
-        </button>
-        <button className="nav-btn gray" onClick={() => onCommandChange("settings")}>
-          Settings
-        </button>
-        <button className="nav-btn gray" onClick={() => onCommandChange("admin")}>
-          Admin
-        </button>
+      <nav className="sidebarNav">
+        {items.map((it) => {
+          const isActive = activeCommand === it.key;
+          return (
+            <button
+              key={it.key}
+              className={`sideBtn ${isActive ? "active" : ""}`}
+              onClick={() => onCommandChange(it.key)}
+              type="button"
+            >
+              {it.label}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="mc-sidebar-footer">Owner</div>
+      <div className="sidebarFooter">Owner</div>
     </aside>
   );
 }
+

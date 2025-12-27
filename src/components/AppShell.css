@@ -1,57 +1,11 @@
-:root {
-  --app-bg: #050608;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--app-bg);
-}
-
-/* Layout container */
-.app-shell {
+.shell {
+  min-height: 100vh;
   display: flex;
-  height: 100vh;
-  width: 100%;
-
-  /* LIQUID BACKGROUND */
-  background:
-    radial-gradient(
-      1200px 600px at 15% 80%,
-      rgba(225, 27, 34, 0.35),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 85% 70%,
-      rgba(225, 27, 34, 0.25),
-      transparent 65%
-    ),
-    radial-gradient(
-      800px 500px at 50% 100%,
-      rgba(0, 120, 80, 0.25),
-      transparent 70%
-    ),
-    linear-gradient(
-      180deg,
-      #020202 0%,
-      #050608 40%,
-      #070a0c 100%
-    );
+  background: #0b0f14;
+  color: #e6e6e6;
 }
 
-
-/* Main content area */
-.app-main {
+.shellMain {
   flex: 1;
-  min-width: 0;     /* prevents flexbox overflow */
-  overflow-y: auto; /* dashboard scrolls */
-  overflow-x: hidden;
+  min-width: 0;
 }

@@ -1,146 +1,229 @@
-/* ===============================
-   ROOT + BACKGROUND
-================================ */
+/* ===== Root background (liquid gradient like screenshot) ===== */
 .dashRoot {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 15% 70%, rgba(180, 0, 0, 0.45), transparent 45%),
-    radial-gradient(circle at 70% 85%, rgba(0, 160, 120, 0.45), transparent 45%),
-    linear-gradient(180deg, #0b0f14, #0e131a);
-  color: #e6e6e6;
-  padding: 18px 22px 28px;
+  padding: 18px 22px 26px;
   box-sizing: border-box;
+  color: #eaeaea;
+  background:
+    radial-gradient(circle at 10% 70%, rgba(200, 0, 0, 0.55), transparent 45%),
+    radial-gradient(circle at 70% 85%, rgba(0, 160, 120, 0.50), transparent 45%),
+    linear-gradient(180deg, #0b0f14, #0e131a);
 }
 
-/* ===============================
-   TOP BAR
-================================ */
+/* ===== Shell sidebar (kept here so it matches screenshot) ===== */
+.sidebar {
+  width: 170px;
+  background: rgba(10, 12, 16, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sidebarBrand {
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1.05;
+  padding: 4px 4px 10px;
+}
+
+.sidebarBrandTop {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.sidebarBrandBottom {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideBtn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 10px;
+  border-radius: 10px;
+  background: rgba(18, 24, 34, 0.75);
+  border: 1px solid rgba(255, 77, 77, 0.18);
+  color: #ff4d4d;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.sideBtn:hover {
+  background: rgba(255, 77, 77, 0.12);
+}
+
+.sideBtn.active {
+  background: rgba(255, 77, 77, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.55);
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  font-size: 12px;
+  opacity: 0.7;
+  padding: 6px 4px;
+}
+
+/* ===== Topbar ===== */
 .dashTopbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .brandText {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 900;
   letter-spacing: 1px;
-  color: #ff4d4d;
+  color: #ffffff;
 }
 
-/* ===============================
-   TOP COMMAND BUTTONS
-================================ */
 .topCommands {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex: 1;
 }
 
 .top-command-btn {
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: 10px;
-  background: #0f131a;
-  border: 1px solid rgba(255, 77, 77, 0.4);
+  background: rgba(18, 24, 34, 0.75);
+  border: 1px solid rgba(255, 77, 77, 0.22);
   color: #ff4d4d;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
 }
 
 .top-command-btn:hover {
-  background: rgba(255, 77, 77, 0.15);
+  background: rgba(255, 77, 77, 0.12);
 }
 
 .top-command-btn.active {
-  background: rgba(255, 77, 77, 0.25);
-  box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.6);
+  background: rgba(255, 77, 77, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.55);
 }
 
-/* ===============================
-   MAIN GRID
-================================ */
+.topIcons {
+  display: flex;
+  gap: 8px;
+}
+
+.iconBtn {
+  background: rgba(18, 24, 34, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ===== Layout grid like screenshot ===== */
 .pageInner {
   display: grid;
-  grid-template-columns: 1fr 1.6fr 1fr;
-  gap: 18px;
+  grid-template-columns: 1fr 1.65fr 1fr;
+  gap: 16px;
 }
 
-/* ===============================
-   CARDS (GLASS)
-================================ */
+/* ===== Glass card ===== */
 .card {
   border-radius: 16px;
   padding: 14px 16px;
 }
 
 .glass {
-  background: rgba(18, 24, 34, 0.75);
-  backdrop-filter: blur(14px);
+  background: rgba(18, 24, 34, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.03),
-    0 20px 40px rgba(0,0,0,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 36px rgba(0,0,0,0.35);
+  backdrop-filter: blur(14px);
 }
 
 .cardTitle {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.subtle {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-/* ===============================
-   METRICS / GAUGES
-================================ */
-.money {
-  font-size: 28px;
-  font-weight: 800;
-  margin-top: 6px;
-}
-
-.metric {
-  display: flex;
-  justify-content: space-between;
   font-size: 13px;
-  margin-top: 4px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #ffffff;
 }
 
-/* ===============================
-   TABLES
-================================ */
+/* ===== Gauge ===== */
+.gaugeWrap {
+  display: flex;
+  justify-content: flex-start;
+  margin: 6px 0 10px;
+}
+
+.gaugeCircle {
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  border: 6px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 0 0 8px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gaugeValue {
+  font-size: 42px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+/* ===== Table ===== */
 .miniTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .miniTable th {
   text-align: left;
-  padding: 8px 10px;
-  opacity: 0.6;
-  font-weight: 600;
+  padding: 8px 8px;
+  font-weight: 800;
+  opacity: 0.75;
 }
 
 .miniTable td {
-  padding: 10px;
+  padding: 9px 8px;
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-/* ===============================
-   STATUS COLORS
-================================ */
-.status-green { color: #4ade80; }
-.status-yellow { color: #facc15; }
-.status-red { color: #f87171; }
+.scorePill {
+  display: inline-flex;
+  min-width: 28px;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 12px;
+  color: #0b0f14;
+}
 
-/* ===============================
-   ACTION BAR
-================================ */
+.scorePill.green { background: #34d399; }
+
+/* ===== Mid row cards ===== */
+.midRow {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 0.9fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+/* ===== Action bar ===== */
 .actionBar {
   display: flex;
   gap: 12px;
@@ -148,33 +231,72 @@
 }
 
 .actionBtn {
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: 12px;
-  background: #0f131a;
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(18, 24, 34, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   color: #fff;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.actionBtn:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-.actionBtn.danger {
-  border-color: rgba(255,77,77,0.6);
-  color: #ff4d4d;
 }
 
 .actionBtn.primary {
-  border-color: rgba(255,77,77,0.6);
-  background: rgba(255,77,77,0.2);
+  border-color: rgba(255, 77, 77, 0.45);
+  background: rgba(255, 77, 77, 0.16);
 }
 
-/* ===============================
-   DTL CARD
-================================ */
+.actionBtn.danger {
+  border-color: rgba(255, 77, 77, 0.65);
+  color: #ff4d4d;
+}
+
+/* ===== Small UI elements ===== */
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: 0.92;
+}
+
+.money {
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.subtle {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.pill {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.dotRow, .prioRow {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.92;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 8px;
+}
+
+.dot.green { background: #34d399; }
+.dot.yellow { background: #facc15; }
+.dot.red { background: #fb7185; }
+
+/* ===== DTL card ===== */
 .dtlTitle {
   display: flex;
   justify-content: space-between;
@@ -182,65 +304,76 @@
 }
 
 .dtlStatus {
-  font-size: 12px;
+  font-size: 11px;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(255,255,255,0.08);
 }
 
 .dtlLine {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.92;
 }
 
-/* ===============================
-   ALERTS
-================================ */
-.alerts {
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* ===============================
-   MODAL (Add Carrier)
-================================ */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
+.dtlFooter {
+  margin-top: 10px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
+  gap: 10px;
 }
 
-.modalCard {
-  width: min(720px, 92vw);
-  padding: 18px;
-  border-radius: 18px;
-}
-
-.formGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.formGrid input {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.35);
+.dtlBtn {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(18, 24, 34, 0.75);
   border: 1px solid rgba(255,255,255,0.12);
   color: #fff;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-/* ===============================
-   RESPONSIVE
-================================ */
+.dtlBtnPrimary {
+  border-color: rgba(255, 77, 77, 0.60);
+  color: #ff4d4d;
+}
+
+.alertError {
+  margin-top: 8px;
+  color: #ff4d4d;
+  font-weight: 800;
+}
+
+.healthRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.healthBar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  overflow: hidden;
+}
+
+.healthFill {
+  height: 100%;
+  background: rgba(52, 211, 153, 0.9);
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .pageInner {
+    grid-template-columns: 1fr;
+  }
+  .midRow {
     grid-template-columns: 1fr;
   }
 }
