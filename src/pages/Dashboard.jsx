@@ -47,17 +47,29 @@ export default function Dashboard({
     [carrierRows, localCarriers]
   );
 
-  const addCarrierLocal = () => {
-    const name = prompt("Carrier name?");
-    if (!name) return;
+ const addCarrier = async () => {
+  const name = prompt("Carrier name?");
+  if (!name) return;
 
-    const mc = prompt("MC number? (optional)") || "";
-    const dot = prompt("DOT number? (optional)") || "";
-    const phone = prompt("Phone? (optional)") || "";
-    const email = prompt("Email? (optional)") || "";
+  const mc = prompt("MC number (optional)") || "";
+  const dot = prompt("DOT number (optional)") || "";
+  const phone = prompt("Phone (optional)") || "";
+  const email = prompt("Email (optional)") || "";
 
-    setLocalCarriers((prev) => [...prev, { name, mc, dot, phone, email }]);
-  };
+  const res = await fetch("/.netlify/functions/save-carrier", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, mc, dot, phone, email }),
+  });
+
+  if (!res.ok) {
+    alert("Failed to save carrier");
+    return;
+  }
+
+  // Reload from Zoho
+  refreshAllSheets();
+};
 
   const sideItems = [
     { key: "mission", label: "Mission Control" },
