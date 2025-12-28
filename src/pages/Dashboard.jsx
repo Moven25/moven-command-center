@@ -472,7 +472,10 @@ export default function Dashboard({
               ))}
             </div>
           </header>
-
+<p>DASHBOARD LOADED</p>
+<div className="p-6 bg-red-700 text-white rounded-xl">
+  Tailwind is working 🔥
+</div>
           {activeCommand === "mission" && <MissionGrid />}
           {activeCommand === "carrier" && <CarrierCommand />}
 
@@ -485,3 +488,4 @@ export default function Dashboard({
     </div>
   );
 }
+
