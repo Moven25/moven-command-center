@@ -1,85 +1,82 @@
-/* SIDEBAR CONTAINER */
-.mc-sidebar {
-  width: 240px;
-  background: #000000;
-  border-right: 1px solid rgba(255, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  padding: 18px 14px;
+.sb {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 14px;
+  gap: 14px;
 }
 
-/* BRAND */
-.mc-sidebar-brand {
-  font-size: 22px;
+.sbHeader {
+  padding: 10px 10px 0 10px;
+}
+.sbTitle {
   font-weight: 900;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-  margin-bottom: 24px;
+  letter-spacing: 0.8px;
+}
+.sbSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted2);
 }
 
-.mc-sidebar-brand span,
-.mc-sidebar-brand br + * {
-  color: #e11b22;
-}
-
-/* NAV */
-.mc-sidebar-nav {
+.sbNav {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  padding: 6px;
+  border-radius: var(--r);
 }
 
-/* BUTTON BASE */
-.nav-btn {
-  height: 48px;                 /* BIGGER */
-  padding: 0 16px;
-  background: #000000;          /* BLACK */
-  border: 1px solid rgba(255, 0, 0, 0.25);
-  border-radius: 10px;
-  font-size: 16px;              /* BIGGER TEXT */
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.sbLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: rgba(229,231,235,0.88);
 }
 
-/* RED COMMAND BUTTONS */
-.nav-btn.red {
-  color: #e11b22;               /* RED LETTERING */
+.sbDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(229,231,235,0.25);
 }
 
-/* NON-RED (Settings / Admin etc) */
-.nav-btn.gray {
-  color: rgba(255, 255, 255, 0.75);
+.sbLink:hover {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.05);
 }
 
-/* HOVER */
-.nav-btn:hover {
-  background: rgba(225, 27, 34, 0.15);
-  border-color: rgba(225, 27, 34, 0.55);
+.sbLink.active {
+  background: rgba(59,130,246,0.10);
+  border-color: rgba(59,130,246,0.25);
+}
+.sbLink.active .sbDot {
+  background: var(--blue);
 }
 
-/* ACTIVE (Mission Control) */
-.nav-btn.active {
-  background: rgba(225, 27, 34, 0.25);
-  border-color: #e11b22;
-  box-shadow: inset 0 0 0 1px rgba(225, 27, 34, 0.45);
+.sbFooter {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
 }
 
-/* FOOTER */
-.mc-sidebar-footer {
-  margin-top: auto;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
-  padding-top: 16px;
-}
-.mc-sidebar-brand {
-  text-transform: uppercase;
+.sbFootLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.mc-sidebar-brand br + * {
-  color: rgba(225, 27, 34, 0.85);
-  font-weight: 800;
+.sbPill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(34,197,94,0.35);
+  background: rgba(34,197,94,0.10);
 }
 
+.sbMuted {
+  font-size: 12px;
+  color: var(--muted2);
+}

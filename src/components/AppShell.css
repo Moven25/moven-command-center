@@ -1,11 +1,34 @@
-.shell {
-  min-height: 100vh;
-  display: flex;
-  background: #0b0f14;
-  color: #e6e6e6;
+.shell{
+  padding:18px;
+  display:flex;
+  justify-content:center;
 }
 
-.shellMain {
-  flex: 1;
-  min-width: 0;
+.shellFrame{
+  width: 1260px;
+  border-radius:4px;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,.10);
+  overflow:hidden;
+  position:relative;
+}
+
+.shellFrame:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.7);
+}
+
+.shellBody{
+  display:flex;
+  min-height: 720px;
+  background: rgba(0,0,0,.28);
+}
+
+.shellMain{
+  flex:1;
+  padding:14px;
 }

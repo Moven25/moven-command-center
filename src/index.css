@@ -1,20 +1,38 @@
 :root {
-  --mc-bg: #05070b;
-  --mc-panel: #0f1720;
-  --mc-text: #e6eef6;
-  --mc-muted: #9aa6b6;
-  --mc-accent: #ff6b4b;
-  font-family: Inter, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --bg: #0f1117;
+  --bg2: #0c0f16;
+  --panel: #151924;
+  --panel2: #121624;
+  --border: rgba(255, 255, 255, 0.06);
+  --text: #e5e7eb;
+  --muted: rgba(229, 231, 235, 0.72);
+  --muted2: rgba(229, 231, 235, 0.55);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --purple: #a855f7;
+  --red: #ef4444;
+
+  --r: 14px;
 }
 
-/* reset */
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; padding: 0; background: var(--mc-bg); color: var(--mc-text); }
-body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
-a { color: inherit; }
-
-/* force dark mode variables */
-@media (prefers-color-scheme: light) {
-  :root { color-scheme: dark; }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
+
+body {
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.04), transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(0, 0, 0, 0.65), transparent 45%);
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }

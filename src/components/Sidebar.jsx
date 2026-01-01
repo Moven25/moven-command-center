@@ -1,42 +1,46 @@
 import React from "react";
+import { NavLink } from "react-router-dom";
+import "./sidebar.css";
 
-const items = [
-  { key: "mission", label: "Mission Control" },
-  { key: "carrier", label: "Carrier Command" },
-  { key: "load", label: "Load Command" },
-  { key: "weather", label: "Weather Command" },
-  { key: "learning", label: "Learning Command" },
-  { key: "dtl", label: "DTL" },
-  { key: "settings", label: "Settings" },
-  { key: "admin", label: "Admin" },
+const nav = [
+  { to: "/mission-control", label: "Mission Control" },
+  { to: "/dispatch", label: "Dispatch Command" },
+  { to: "/logistics", label: "Logistics Command" },
+  { to: "/carriers", label: "Carrier Command" },
+  { to: "/brokers", label: "Broker Command" },
+  { to: "/finance", label: "Finance Command" },
+  { to: "/compliance", label: "Compliance Command" },
+  { to: "/learning", label: "Learning Command" },
+  { to: "/settings", label: "Settings / Utilities" },
 ];
 
-export default function Sidebar({ activeCommand, onCommandChange }) {
+export default function Sidebar() {
   return (
-    <aside className="sidebar">
-      <div className="sidebarBrand">
-        <div className="sidebarBrandTop">MOVEN</div>
-        <div className="sidebarBrandBottom">LOGISTICS</div>
+    <div className="sb">
+      <div className="sbHeader">
+        <div className="sbTitle">Sync OS</div>
+        <div className="sbSub">Navigation</div>
       </div>
 
-      <nav className="sidebarNav">
-        {items.map((it) => {
-          const isActive = activeCommand === it.key;
-          return (
-            <button
-              key={it.key}
-              className={`sideBtn ${isActive ? "active" : ""}`}
-              onClick={() => onCommandChange(it.key)}
-              type="button"
-            >
-              {it.label}
-            </button>
-          );
-        })}
+      <nav className="sbNav">
+        {nav.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `sbLink ${isActive ? "active" : ""}`}
+          >
+            <span className="sbDot" />
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
       </nav>
 
-      <div className="sidebarFooter">Owner</div>
-    </aside>
+      <div className="sbFooter">
+        <div className="sbFootLine">
+          <span className="sbPill">Live</span>
+          <span className="sbMuted">Data connected</span>
+        </div>
+      </div>
+    </div>
   );
 }
-
