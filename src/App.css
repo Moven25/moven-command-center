@@ -462,3 +462,89 @@ body {
 /* fallback simple components */
 .primary-btn{ background: var(--mc-accent); color:#071018; border:none; padding:8px 12px; border-radius:8px; }
 
+/* src/App.css */
+/* Premium Ice Blue Theme Tokens + Base App Styling */
+
+:root{
+  /* Accent */
+  --accent-ice: #6FE7FF;
+  --accent-ice-soft: rgba(111,231,255,0.15);
+  --accent-ice-glow: rgba(111,231,255,0.35);
+
+  /* Backgrounds */
+  --bg-main: #0B0F14;
+  --bg-panel: #121822;
+  --bg-panel-soft: #161E2B;
+  --bg-panel-2: rgba(18, 24, 34, 0.78);
+
+  /* Text */
+  --text-primary: #E6EDF5;
+  --text-secondary: #9AA4B2;
+  --text-muted: rgba(230,237,245,0.78);
+
+  /* Borders/Shadows */
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.10);
+  --shadow-soft: 0 8px 30px rgba(0,0,0,0.35);
+  --shadow-panel: 0 0 0 1px var(--border-subtle), 0 18px 50px rgba(0,0,0,0.45);
+
+  /* Radii/Spacing */
+  --r-xs: 10px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --pad-xs: 8px;
+  --pad-sm: 12px;
+  --pad-md: 16px;
+  --pad-lg: 20px;
+
+  /* Status colors (use for pills only; keep accent for focus/selection) */
+  --status-booked: #6FE7FF;
+  --status-risk: #FFB020;
+  --status-exception: #FF6B6B;
+  --status-delivered: #2ED47A;
+
+  /* Legacy aliases (so your existing CSS keeps working) */
+  --bg2: var(--bg-panel);
+  --panel2: var(--bg-panel-soft);
+  --border: var(--border-subtle);
+  --text: var(--text-primary);
+  --muted2: var(--text-secondary);
+  --shadow: var(--shadow-soft);
+}
+
+/* Global base */
+html, body, #root {
+  height: 100%;
+  background: radial-gradient(1200px 700px at 25% 10%, rgba(111,231,255,0.08), transparent 55%),
+              radial-gradient(900px 500px at 80% 25%, rgba(111,231,255,0.05), transparent 60%),
+              var(--bg-main);
+  color: var(--text-primary);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+/* Better focus ring (premium + accessible) */
+:focus-visible {
+  outline: 2px solid rgba(111,231,255,0.55);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* Generic “glass panel” utility if you want it */
+.glassPanel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(10px);
+}
+
+/* Buttons baseline */
+button {
+  font: inherit;
+}

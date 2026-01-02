@@ -187,3 +187,195 @@
   .mcKpis { grid-template-columns: repeat(2, 1fr); }
   .mcGrid { grid-template-columns: 1fr; }
 }
+/* ===== Tasks: open vs complete ===== */
+
+.mcTaskList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mcTaskRow {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.16);
+  cursor: pointer;
+}
+
+.mcTaskRow:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.mcTaskRow.active {
+  border-color: rgba(59,130,246,0.35);
+  background: rgba(59,130,246,0.10);
+}
+
+.mcTaskRow.done {
+  opacity: 0.55;
+}
+
+.mcTaskCheck {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.mcTaskTitle {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.mcTaskMeta {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.mcTaskBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+}
+
+.mcTaskDim {
+  color: var(--muted2);
+}
+
+.mcTaskPanel {
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.mcTaskPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.mcTaskPanelTitle {
+  font-weight: 900;
+  letter-spacing: 0.4px;
+}
+
+.mcTaskClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mcTaskPanelBody {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mcTaskPanelMain {
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.mcTaskPanelSection {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.14);
+}
+
+.mcTaskPanelLabel {
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.mcTaskPanelText {
+  margin-top: 6px;
+  color: rgba(229,231,235,0.88);
+  font-size: 13px;
+}
+
+.mcTaskLink {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mcTaskPanelActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+/* Weather pill style */
+.mcPill.watch {
+  border-color: rgba(245,158,11,0.35);
+  background: rgba(245,158,11,0.12);
+}
+
+/* Alert action buttons row */
+.mcAlertActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+/* src/pages/MissionControl.css */
+
+.mcGrid{
+  display: grid;
+  gap: 14px;
+}
+
+.mcCard{
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(10px);
+}
+
+.mcCardHeader{
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  color: rgba(230,237,245,0.92);
+}
+
+.mcCardBody{
+  padding: 14px;
+  color: rgba(230,237,245,0.92);
+}
+
+.mcMetric{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mcMetric .label{
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.mcMetric .value{
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(230,237,245,0.96);
+}

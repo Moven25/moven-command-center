@@ -1,0 +1,300 @@
+/* Dispatch Command — premium Sync OS style (matches Logistics Command vibe) */
+
+.dcPage{
+  padding: 18px 18px 22px;
+  min-height: calc(100vh - 64px);
+  color: rgba(255,255,255,0.92);
+}
+
+/* Header */
+.dcHeader{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 14px 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+}
+
+.dcTitleWrap{ display:flex; flex-direction:column; gap: 4px; }
+.dcTitle{
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+.dcSub{
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 700;
+}
+
+.dcHeaderActions{ display:flex; gap: 10px; align-items:center; }
+
+.dcBtn, .dcBtnGhost{
+  border-radius: 12px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.92);
+  font-size: 13px;
+  cursor:pointer;
+  font-weight: 800;
+}
+.dcBtnGhost{ background: rgba(255,255,255,0.04); }
+.dcBtn:hover, .dcBtnGhost:hover{
+  border-color: rgba(108,196,255,0.28);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
+}
+
+/* Filters */
+.dcFilters{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.dcSearchWrap{
+  flex: 1;
+  min-width: 320px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+}
+.dcSearchIcon{ color: rgba(255,255,255,0.55); }
+.dcSearch{
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: rgba(255,255,255,0.90);
+  font-size: 13px;
+}
+.dcSearch::placeholder{ color: rgba(255,255,255,0.40); }
+
+.dcFilterGroup{
+  display:flex;
+  gap: 10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+}
+.dcField{ display:flex; flex-direction:column; gap: 6px; }
+.dcLabel{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 900;
+}
+.dcSelect{
+  border-radius: 12px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.90);
+  font-size: 13px;
+  outline: none;
+}
+.dcSelect:focus{
+  border-color: rgba(108,196,255,0.28);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
+}
+
+/* Layout */
+.dcGrid{
+  display:grid;
+  grid-template-columns: minmax(520px, 1fr) 360px;
+  gap: 14px;
+  align-items:start;
+  margin-top: 14px;
+}
+
+.dcStack{ display:flex; flex-direction:column; gap: 14px; }
+
+/* Cards */
+.dcCard{
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.10));
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  overflow:hidden;
+}
+
+.dcCardHeader{
+  padding: 12px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.10);
+}
+.dcCardTitle{
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: rgba(255,255,255,0.88);
+}
+.dcCardMeta{
+  font-size: 12px;
+  color: rgba(255,255,255,0.60);
+  font-weight: 800;
+}
+
+/* Table */
+.dcTable{ padding: 10px 10px 12px; }
+
+.dcTH{
+  display:grid;
+  grid-template-columns: 1.0fr 1.1fr 0.9fr 1.0fr 1.1fr 1.0fr 0.7fr;
+  gap: 10px;
+  padding: 10px 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.dcTB{ display:flex; flex-direction:column; gap: 8px; padding-top: 10px; }
+
+.dcTR{
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+  border-radius: 12px;
+  padding: 10px 10px;
+  display:grid;
+  grid-template-columns: 1.0fr 1.1fr 0.9fr 1.0fr 1.1fr 1.0fr 0.7fr;
+  gap: 10px;
+  color: rgba(255,255,255,0.86);
+  cursor:pointer;
+  text-align:left;
+}
+.dcTR:hover{
+  border-color: rgba(108,196,255,0.22);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.08);
+}
+.dcTR.isActive{
+  border-color: rgba(108,196,255,0.35);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
+  background: linear-gradient(180deg, rgba(108,196,255,0.10), rgba(0,0,0,0.18));
+}
+
+.dcCellBold{ font-weight: 900; letter-spacing: 0.2px; }
+.taRight{ text-align:right; }
+
+/* Pills */
+.dcPill{
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.80);
+  font-weight: 900;
+  display:inline-flex;
+  align-items:center;
+}
+.dcPill.info{ border-color: rgba(108,196,255,0.28); background: rgba(108,196,255,0.10); }
+.dcPill.ok{ border-color: rgba(130,255,210,0.25); background: rgba(130,255,210,0.10); }
+.dcPill.warn{ border-color: rgba(255,196,64,0.30); background: rgba(255,196,64,0.10); }
+.dcPill.danger{ border-color: rgba(255,90,90,0.30); background: rgba(255,90,90,0.10); }
+.dcPill.neutral{ opacity: 0.92; }
+
+/* Details */
+.dcDetails{ padding: 12px; display:flex; flex-direction:column; gap: 10px; }
+
+.dcKV{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.16);
+  border-radius: 12px;
+  padding: 10px;
+}
+.dcKV .k{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 900;
+}
+.dcKV .v{
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 800;
+}
+
+.dcSmallBtn{
+  border-radius: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.90);
+  font-weight: 900;
+  cursor:pointer;
+}
+.dcSmallBtn:hover{
+  border-color: rgba(108,196,255,0.28);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
+}
+
+/* Notes */
+.dcNotes{ margin-top: 4px; }
+.dcNotesTitle{
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  margin: 6px 0 8px;
+}
+.dcTextarea{
+  width: 100%;
+  min-height: 90px;
+  border-radius: 14px;
+  padding: 10px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.90);
+  outline:none;
+  resize: vertical;
+}
+.dcTextarea::placeholder{ color: rgba(255,255,255,0.45); }
+
+/* Actions */
+.dcActions{
+  padding: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dcBtnBlock{
+  border-radius: 12px;
+  padding: 10px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.90);
+  font-weight: 900;
+  font-size: 12px;
+  cursor:pointer;
+}
+.dcBtnBlock:hover{
+  border-color: rgba(108,196,255,0.28);
+  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
+}
+
+/* Responsive */
+@media (max-width: 1200px){
+  .dcGrid{ grid-template-columns: 1fr; }
+  .dcFilters{ flex-direction:column; align-items:stretch; }
+  .dcSearchWrap{ min-width: unset; }
+}
