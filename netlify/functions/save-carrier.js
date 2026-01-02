@@ -1,23 +1,14 @@
-// MOVEN Logistics — Save Carrier Profile (Full Sync Stub)
-// This receives updated carrier data from the React app.
-// Next step will be to write this into Zoho via their API.
-
 import fetch from "node-fetch";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 export const handler = async (event) => {
-  // Handle CORS preflight
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: "OK",
-    };
+    return { statusCode: 200, headers: corsHeaders };
   }
 
   if (event.httpMethod !== "POST") {
@@ -31,38 +22,68 @@ export const handler = async (event) => {
   try {
     const payload = JSON.parse(event.body || "{}");
 
-    console.log("🔴 MOVEN — incoming carrier save payload:");
-    console.log(JSON.stringify(payload, null, 2));
+    const {
+      name,
+      mc,
+      dot,
+      phone,
+      email,
+    } = payload;
 
-    const { carrierId, carrier, status } = payload;
-
-    if (!carrierId) {
+    if (!name) {
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: "Missing carrierId in payload",
+        body: "Carrier name is required",
       };
     }
 
-    // TODO: this is where we will:
-    // 1) Look up the row for carrierId in Zoho
-    // 2) Update the row with carrier + status fields using Zoho Sheet API
+    const row = [
+      name,
+      mc || "",
+      dot || "",
+      phone || "",
+      email || "",
+      new Date().toISOString(),
+    ];
 
-    // For now, just echo back success so the UI knows it worked.
+    const zohoRes = await fetch(
+      `https://sheet.zoho.com/api/v2/${process.env.ZOHO_SHEET_ID}/worksheets/${process.env.ZOHO_WORKSHEET_NAME}/rows`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Zoho-oauthtoken ${process.env.ZOHO_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rows: [{ cells: row.map(v => ({ value: v })) }],
+        }),
+      }
+    );
+
+    const text = await zohoRes.text();
+
+    if (!zohoRes.ok) {
+      console.error("Zoho error:", text);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: "Zoho write failed",
+      };
+    }
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({
-        ok: true,
-        message: "Payload received, ready for Zoho write-back.",
-      }),
+      body: JSON.stringify({ ok: true }),
     };
+
   } catch (err) {
-    console.error("Save-carrier error:", err);
+    console.error(err);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: `Server error: ${err.message}`,
+      body: err.message,
     };
   }
 };
