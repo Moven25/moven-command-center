@@ -1,54 +1,54 @@
 import React from "react";
 import "./CommandShell.css";
 
-export default function LearningCommand() {
+export default function IntelligenceCommand() {
   return (
     <div className="command-shell">
       <header className="command-shell__header">
         <div>
           <div className="command-shell__kicker">Strategy</div>
-          <h1 className="command-shell__title">Learning Command</h1>
+          <h1 className="command-shell__title">Intelligence Command</h1>
           <p className="command-shell__subtitle">
-            Playbooks, negotiation scripts, SOPs, and quick drills — right inside Sync OS.
+            Research lanes, brokers, markets, and performance — then turn insights into decisions.
           </p>
         </div>
 
         <div className="command-shell__actions">
           <button className="command-shell__btn" type="button">
-            Open Playbook
+            Lane Research
           </button>
           <button className="command-shell__btn command-shell__btn--primary" type="button">
-            Start Drill
+            Generate Brief
           </button>
         </div>
       </header>
 
       <section className="command-shell__grid">
-        <div className="command-shell__card">
-          <div className="command-shell__cardTitle">Negotiation Library</div>
+        <div className="command-shell__card command-shell__card--wide">
+          <div className="command-shell__cardTitle">Market Pulse</div>
           <div className="command-shell__placeholder">
-            Placeholder: scripts, rebuttals, pricing anchors, tone presets.
+            Placeholder: RPM trends, seasonal notes, top lanes, hot/cold markets.
           </div>
         </div>
 
         <div className="command-shell__card">
-          <div className="command-shell__cardTitle">SOPs</div>
+          <div className="command-shell__cardTitle">Lane Profitability</div>
           <div className="command-shell__placeholder">
-            Placeholder: booking flow, carrier onboarding, factoring docs, check calls.
+            Placeholder: net RPM, deadhead %, avg wait, quick score.
           </div>
         </div>
 
         <div className="command-shell__card">
-          <div className="command-shell__cardTitle">Quick Wins</div>
+          <div className="command-shell__cardTitle">Broker Intelligence</div>
           <div className="command-shell__placeholder">
-            Placeholder: 5–10 minute lessons that improve RPM fast.
+            Placeholder: pay history, responsiveness, notes, risk flags.
           </div>
         </div>
 
         <div className="command-shell__card">
-          <div className="command-shell__cardTitle">Certification</div>
+          <div className="command-shell__cardTitle">Carrier Performance</div>
           <div className="command-shell__placeholder">
-            Placeholder: training completion, badges, team readiness.
+            Placeholder: on-time %, claims, detention patterns, utilization.
           </div>
         </div>
       </section>

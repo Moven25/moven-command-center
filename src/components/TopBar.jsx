@@ -1,34 +1,29 @@
-import React from "react";
-import "./Topbar.css";
-
-export default function Topbar({ section = "Mission Control" }) {
+export default function TopBar() {
   return (
-    <div className="osTopbar">
-      {/* Left (can be empty or keep minimal) */}
-      <div className="osTopbarLeft" aria-hidden="true" />
+    <header className="topbar">
+      <div className="topLeft">Week of Jan 6</div>
 
-      {/* Center (TRUE centered) */}
-      <div className="osTopbarCenter">
-        <div className="osBrandPill">
-          <div className="osBrandMark">LS</div>
+      <div className="topCenter">
+        <div className="topMetric">
+          <div className="muted small">Active Trucks</div>
+          <div className="topMetricValue">14</div>
+        </div>
 
-          <div className="osBrandText">
-            <div className="osBrandName">LaneSync</div>
-            <div className="osBrandSub">Sync OS</div>
-          </div>
-
-          <div className="osDivider" />
-
-          <div className="osSection">{section}</div>
+        <div className="topMetric">
+          <div className="muted small">Weekly Gross</div>
+          <div className="topMetricValue">$8,750</div>
         </div>
       </div>
 
-      {/* Right actions (ALWAYS far right) */}
-      <div className="osTopbarRight">
-        <button className="osIconBtn" title="Notifications">🔔</button>
-        <button className="osIconBtn" title="Popout">↗</button>
-        <button className="osIconBtn" title="Settings">⚙</button>
+      <div className="topRight">
+        <div className="statusPill">Healthy</div>
+        <button className="iconBtn" type="button" title="Pop out">
+          ↗
+        </button>
+        <button className="iconBtn" type="button" title="Settings">
+          ⚙️
+        </button>
       </div>
-    </div>
+    </header>
   );
 }

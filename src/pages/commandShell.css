@@ -1,0 +1,119 @@
+/* src/pages/CommandShell.css
+   Lightweight, safe styling for scaffold pages only.
+   Does not change your global design language.
+*/
+
+.command-shell {
+  width: 100%;
+  padding: 18px 18px 22px;
+}
+
+.command-shell__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.command-shell__kicker {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(229, 231, 235, 0.6);
+  margin-bottom: 6px;
+}
+
+.command-shell__title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.command-shell__subtitle {
+  margin: 6px 0 0;
+  max-width: 720px;
+  line-height: 1.35;
+  color: rgba(229, 231, 235, 0.7);
+  font-size: 13px;
+}
+
+.command-shell__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.command-shell__btn {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.command-shell__btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.command-shell__btn--primary {
+  border-color: color-mix(in srgb, var(--accent) 42%, rgba(255, 255, 255, 0.14));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 18%, rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.command-shell__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.command-shell__card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  min-height: 140px;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.25);
+}
+
+.command-shell__card--wide {
+  grid-column: 1 / -1;
+  min-height: 160px;
+}
+
+.command-shell__cardTitle {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.86);
+  margin-bottom: 10px;
+}
+
+.command-shell__placeholder {
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(229, 231, 235, 0.68);
+}
+
+@media (max-width: 860px) {
+  .command-shell__grid {
+    grid-template-columns: 1fr;
+  }
+  .command-shell__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .command-shell__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -1,134 +1,133 @@
-/* =========================================================
-   Sync OS Topbar — True centered brand/section + actions right
-   ========================================================= */
-
-.osTopbar{
+/* TopBar shell */
+.osTopbar {
   position: relative;
-  height: 54px;
+  height: 56px;
   display: flex;
   align-items: center;
-  padding: 10px 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.14));
-  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  padding: 0 14px;
+  gap: 10px;
+
+  /* keep your dark glass feel */
+  background: rgba(25, 30, 40, 0.55);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
 }
 
-/* Left spacer */
-.osTopbarLeft{
-  width: 220px; /* gives layout balance if sidebar area exists */
-  min-width: 180px;
+/* Left spacer (reserves space so center stays truly centered) */
+.osTopbarLeft {
+  width: 160px; /* matches approximate width of right actions */
+  flex: 0 0 auto;
 }
 
-/* TRUE center block */
-.osTopbarCenter{
+/* Center wrapper (TRUE centered regardless of right width) */
+.osTopbarCenter {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none; /* prevents center from blocking clicks to right */
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* prevents accidental overlay clicks */
 }
 
 /* Brand pill */
-.osBrandPill{
+.osBrandPill {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+
   padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.22);
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
 }
 
-/* LS mark */
-.osBrandMark{
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+/* LS badge */
+.osBrandMark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
-  letter-spacing: 0.4px;
-  color: rgba(255,255,255,0.92);
-  background: radial-gradient(circle at 30% 20%, rgba(108,196,255,0.35), rgba(18,24,32,0.65));
-  border: 1px solid rgba(108,196,255,0.25);
-  box-shadow: 0 0 0 4px rgba(108,196,255,0.08);
+
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+
+  background: rgba(90, 140, 255, 0.18);
+  border: 1px solid rgba(90, 140, 255, 0.35);
 }
 
 /* Brand text */
-.osBrandText{
+.osBrandText {
   display: flex;
   flex-direction: column;
   line-height: 1.05;
 }
 
-.osBrandName{
-  font-size: 16px;     /* BIGGER */
-  font-weight: 950;    /* BOLDER */
+.osBrandName {
+  font-weight: 900;      /* BOLDER */
+  font-size: 18px;       /* BIGGER */
   letter-spacing: 0.2px;
-  color: rgba(255,255,255,0.96);
 }
 
-.osBrandSub{
+.osBrandSub {
   margin-top: 2px;
   font-size: 11px;
-  font-weight: 800;
-  color: rgba(255,255,255,0.60);
+  opacity: 0.75;
+  font-weight: 600;
 }
 
 /* Divider */
-.osDivider{
+.osDivider {
   width: 1px;
-  height: 26px;
-  background: rgba(255,255,255,0.10);
+  height: 28px;
+  background: rgba(255, 255, 255, 0.14);
 }
 
-/* Section label */
-.osSection{
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 1px;
+/* Section title (Mission Control / Dispatch Command etc.) */
+.osSection {
+  font-weight: 900;      /* BOLDER */
+  font-size: 14px;       /* BIGGER */
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.78);
-  white-space: nowrap;
+  opacity: 0.95;
 }
 
-/* Right actions always far right */
-.osTopbarRight{
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+/* Right actions pinned far right */
+.osTopbarRight {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+
+  width: 160px; /* match left spacer width */
+  justify-content: flex-end;
 }
 
 /* Icon buttons */
-.osIconBtn{
-  width: 34px;
-  height: 34px;
+.osIconBtn {
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
-  color: rgba(255,255,255,0.92);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.92);
+
   cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
-.osIconBtn:hover{
-  border-color: rgba(108,196,255,0.28);
-  box-shadow: 0 0 0 3px rgba(108,196,255,0.10);
-}
-
-/* Responsive */
-@media (max-width: 900px){
-  .osTopbarLeft{ width: 0; min-width: 0; }
-  .osBrandPill{ padding: 8px 12px; gap: 10px; }
-  .osBrandName{ font-size: 15px; }
-  .osSection{ display: none; } /* keeps center clean on small screens */
+.osIconBtn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.16);
 }

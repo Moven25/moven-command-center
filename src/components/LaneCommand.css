@@ -1,0 +1,308 @@
+/* src/components/LaneCommand.css */
+
+.lc-wrap {
+  width: 100%;
+}
+
+.lc-sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 10px;
+}
+
+.lc-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.2px;
+}
+
+.lc-popoutBtn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lc-popoutBtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* LANE BAR */
+.lc-laneBar {
+  display: grid;
+  grid-template-columns: 1fr 180px 180px;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  margin-bottom: 12px;
+}
+
+.lc-laneLeft,
+.lc-laneMid,
+.lc-laneRight {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 12px;
+}
+
+.lc-k {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 4px;
+}
+
+.lc-v {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* MAIN GRID (MATCHES MOCKUP) */
+.lc-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+/* Shared card style */
+.lc-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  padding: 12px 14px;
+}
+
+.lc-cardTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 8px;
+}
+
+.lc-subTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 8px;
+}
+
+/* NET RPM (BIG CENTER CARD) */
+.lc-netRpm {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.lc-netLabel {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: rgba(255, 206, 92, 0.95);
+  margin-bottom: 6px;
+}
+
+.lc-netValue {
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(255, 206, 92, 0.98);
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+  margin-bottom: 10px;
+}
+
+.lc-statusRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.lc-statusIcon {
+  font-size: 14px;
+}
+
+.lc-statusLabel {
+  font-size: 14px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 1px;
+}
+
+.lc-statusPill {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255, 206, 92, 0.95);
+  border: 1px solid rgba(255, 206, 92, 0.55);
+  background: rgba(255, 206, 92, 0.10);
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* LANE HISTORY */
+.lc-historyList {
+  display: grid;
+  gap: 10px;
+}
+
+.lc-historyRow {
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  padding-top: 10px;
+}
+
+.lc-historyVal {
+  font-size: 20px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* BROKER + NOTES CARDS */
+.lc-infoRow {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.lc-infoRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.lc-infoKey {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.lc-infoVal {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.lc-noteLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.lc-noteIcon {
+  opacity: 0.9;
+}
+
+/* TABLES */
+.lc-table {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.lc-tr {
+  display: grid;
+  grid-template-columns: 1.2fr 0.6fr 0.8fr 0.8fr;
+  gap: 0;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lc-tr:first-child {
+  border-top: none;
+}
+
+.lc-th {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lc-td {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.lc-th .lc-td {
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.lc-tdCenter {
+  text-align: center;
+}
+
+.lc-green {
+  color: rgba(116, 224, 153, 0.95);
+  font-weight: 900;
+}
+
+/* RECENT LOADS (needs 5 columns) */
+.lc-recent .lc-tr {
+  grid-template-columns: 0.6fr 1.5fr 0.7fr 0.8fr 0.8fr;
+}
+
+.lc-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  margin-right: 8px;
+  position: relative;
+  top: -1px;
+}
+
+.lc-dot-green {
+  background: rgba(116, 224, 153, 0.95);
+  box-shadow: 0 0 12px rgba(116, 224, 153, 0.35);
+}
+
+.lc-dot-red {
+  background: rgba(255, 92, 92, 0.95);
+  box-shadow: 0 0 12px rgba(255, 92, 92, 0.35);
+}
+
+.lc-statusText {
+  font-weight: 900;
+}
+
+.lc-status-green {
+  color: rgba(116, 224, 153, 0.95);
+}
+
+.lc-status-red {
+  color: rgba(255, 92, 92, 0.95);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .lc-laneBar {
+    grid-template-columns: 1fr;
+  }
+  .lc-grid {
+    grid-template-columns: 1fr;
+  }
+}

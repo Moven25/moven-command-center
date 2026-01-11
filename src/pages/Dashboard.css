@@ -1,0 +1,292 @@
+/* ===== Mission Control baseline styles ===== */
+:root{
+  --bg: #0b0f16;
+  --panel: rgba(255,255,255,0.06);
+  --panel2: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.12);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.65);
+}
+
+.mc{
+  color: var(--text);
+  padding: 18px;
+}
+
+.mcTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  padding: 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel2);
+  margin-bottom: 12px;
+}
+
+.mcTitle .mcH1{
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+.mcTitle .mcLive{ color: var(--muted); font-weight: 600; }
+.mcTitle .mcSub{ color: var(--muted); margin-top: 3px; font-size: 12px; }
+
+.mcRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.mcSearch{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+  min-width: 320px;
+}
+.mcSearch input{
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.mcMode{
+  display:flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.20);
+}
+
+.pill{
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.pill.active{
+  color: var(--text);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.iconBtn{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.iconBtn:hover{ background: rgba(255,255,255,0.09); }
+
+.iconWrap{ position: relative; display: inline-flex; align-items: center; }
+
+/* Avatar */
+.avatarBtn{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.avatarDot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(120, 220, 255, 0.95);
+}
+
+/* Executive mode badge */
+.execBadge{
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(20, 255, 200, 0.06);
+  color: rgba(255,255,255,0.92);
+  font-size: 13px;
+}
+
+/* Actions row */
+.actionsRow{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel2);
+  margin-bottom: 12px;
+}
+.actionsLabel{
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 6px;
+}
+.chip{
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.chip:hover{ background: rgba(255,255,255,0.09); }
+.chip.danger{
+  border-color: rgba(255,120,120,0.35);
+  background: rgba(255,120,120,0.10);
+}
+
+/* Grid */
+.mcGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr 360px;
+  gap: 12px;
+}
+
+.card{
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 12px;
+}
+
+.card.stat .label{ color: var(--muted); font-size: 12px; }
+.card.stat .value{ font-size: 28px; font-weight: 700; margin-top: 6px; }
+.card.stat .spark{ color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+.cardHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cardTitle{ font-weight: 650; }
+.cardTools{ display:flex; gap: 6px; align-items:center; }
+
+.mini{
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor:pointer;
+  font-size: 12px;
+}
+.mini.active{ background: rgba(255,255,255,0.10); }
+.mini.ghost{ background: transparent; color: var(--muted); }
+
+.card.wide{ grid-column: 1 / span 3; min-height: 220px; }
+.chartMock{
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 14px;
+  min-height: 160px;
+  display:grid;
+  place-items:center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.card.side .bigMoney{ font-size: 30px; font-weight: 750; margin-top: 6px; }
+.card.side .row{
+  display:flex;
+  justify-content:space-between;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+.muted{ color: var(--muted); }
+.barMock{
+  margin-top: 10px;
+  height: 70px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(120,220,255,0.35), rgba(120,220,255,0.05));
+  border: 1px solid rgba(120,220,255,0.20);
+}
+
+/* Table */
+.card.table{ grid-column: 1 / span 3; }
+.tableHead, .tableRow{
+  display:grid;
+  grid-template-columns: 90px 120px 1fr 90px 70px 110px;
+  gap: 10px;
+  padding: 10px 6px;
+  font-size: 12px;
+}
+.tableHead{
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.tableRow{
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.tableRow:last-child{ border-bottom: 0; }
+
+/* Dropdown */
+.dropdown{
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 320px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(10, 14, 22, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  z-index: 999;
+  overflow: hidden;
+}
+.dropHeader{
+  padding: 12px 12px;
+  font-weight: 650;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.dropItem{
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.dropItem:hover{ background: rgba(255,255,255,0.06); }
+.dropItem .right{ margin-left: auto; }
+.dropCta{
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.dropCta:hover{ background: rgba(255,255,255,0.10); }
+
+.dot{ width: 8px; height: 8px; border-radius: 99px; display: inline-block; }
+.dot.warn{ background: rgba(255, 210, 90, 0.95); }
+.dot.risk{ background: rgba(255, 90, 90, 0.95); }
+.dot.info{ background: rgba(90, 190, 255, 0.95); }

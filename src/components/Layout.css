@@ -1,18 +1,30 @@
+/* Ensure full-height app so grid can render */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
 .os {
   height: 100%;
   display: grid;
   grid-template-columns: 260px 1fr;
+  background: radial-gradient(1200px 800px at 30% 20%, rgba(80,120,255,0.10), transparent 60%),
+              radial-gradient(900px 600px at 80% 40%, rgba(0,180,255,0.08), transparent 60%),
+              linear-gradient(180deg, #0b0f17 0%, #070a10 100%);
 }
 
 .osSidebar {
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
+  background: rgba(15, 17, 23, 0.85);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
 }
 
 .osMain {
   display: grid;
   grid-template-rows: 64px 1fr;
   min-width: 0;
+  overflow: hidden;
 }
 
 .osTopbar {
@@ -20,231 +32,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(15, 17, 23, 0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(10, 12, 18, 0.65);
   backdrop-filter: blur(10px);
 }
 
-.osBrand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.osBrandMark {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(180deg, rgba(59,130,246,0.35), rgba(168,85,247,0.15));
-  border: 1px solid var(--border);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.osBrandName {
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.1;
-}
-.osBrandSub {
-  font-size: 12px;
-  color: var(--muted2);
-}
-
-.osSection {
-  font-weight: 800;
-  letter-spacing: 1.4px;
-  font-size: 12px;
-  color: rgba(229,231,235,0.9);
-}
-
-.osActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.osBtn {
-  height: 34px;
-  width: 34px;
-  border-radius: 10px;
-  background: var(--panel2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  cursor: pointer;
-}
-.osBtn:hover {
-  background: #171c2b;
-}
-
 .osContent {
-  padding: 16px;
-  overflow: auto;
   min-width: 0;
-}
-.osNotifs {
-  position: fixed;
-  top: 70px;
-  right: 16px;
-  width: 340px;
-  max-height: 70vh;
   overflow: auto;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  z-index: 50;
-}
-
-.osNotifsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.osNotifsClose {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.osNotifsBody {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.osNotifItem {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(0,0,0,0.16);
-}
-
-.osNotifTitle {
-  font-weight: 800;
-  font-size: 13px;
-}
-
-.osNotifSub {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--muted2);
-}
-/* ===== Pop-out smooth transition ===== */
-.os {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.os-transition {
-  opacity: 0.4;
-  transform: scale(0.995);
-}
-
-/* Disabled pop-out button (Mission Control) */
-.osBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-/* ===== Smooth transition when handing off to pop-out ===== */
-.os {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-.os-transition {
-  opacity: 0.4;
-  transform: scale(0.995);
-}
-
-/* Disable button styling */
-.osBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-/* Popout mode: full width content (no sidebar) */
-.os-popout {
-  grid-template-columns: 1fr !important;
-}
-.os-popout .osMain {
-  grid-template-rows: 64px 1fr;
-}
-
-/* Notifications extra action styling */
-.osNotifAction {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.osNotifBtn {
-  align-self: flex-start;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--panel2);
-  color: var(--text);
-  cursor: pointer;
-}
-.osNotifBtn:hover {
-  background: #171c2b;
-}
-.osNotifHint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--muted2);
-}
-/* src/components/Layout.css */
-
-.os {
-  height: 100%;
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  background: transparent;
-}
-
-/* Sidebar column */
-.osSidebar {
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border-right: 1px solid var(--border-subtle);
-}
-
-/* Main column */
-.osMain {
-  display: grid;
-  grid-template-rows: 64px 1fr;
-  min-width: 0; /* critical: prevents right-side cramping */
-}
-
-/* Topbar */
-.osTopbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: linear-gradient(180deg, rgba(18,24,34,0.75), rgba(18,24,34,0.55));
-  backdrop-filter: blur(12px);
-}
-
-/* Content area */
-.osContent {
   padding: 18px;
-  overflow: auto;
-  min-width: 0; /* critical: lets grids/tables shrink correctly */
-}
-
-/* Optional: when you popout and want full width (no sidebar) */
-.os-popout {
-  grid-template-columns: 1fr !important;
-}
-.os-popout .osSidebar {
-  display: none !important;
 }
