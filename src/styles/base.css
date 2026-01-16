@@ -1,0 +1,60 @@
+/* src/styles/base.css
+   Global baseline + typography. Keep this calm and predictable.
+*/
+
+html, body, #root {
+  height: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--text-1);
+  background: radial-gradient(
+      1200px 600px at 20% 0%,
+      rgba(255, 255, 255, 0.05),
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, rgba(255,255,255,0.10));
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: var(--text-0);
+  letter-spacing: 0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+/* Scrollbar (subtle, safe) */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 999px;
+    border: 2px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}

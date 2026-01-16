@@ -1,5 +1,6 @@
+// src/layout/AppShell.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AppShell.css";
 
@@ -11,6 +12,9 @@ function commandClassFromPath(pathname = "/") {
   if (p.includes("carrier")) return "command-carrier";
   if (p.includes("broker")) return "command-broker";
   if (p.includes("finance")) return "command-finance";
+  if (p.includes("compliance")) return "command-compliance";
+  if (p.includes("intelligence")) return "command-intelligence";
+  if (p.includes("learning")) return "command-learning";
   return "command-mission";
 }
 
@@ -125,16 +129,17 @@ export default function AppShell({ children }) {
         <Sidebar theme={theme} onToggleTheme={manualToggleTheme} />
       </aside>
 
-      {/* Scrim (mobile) */}
+      {/* Scrim (mobile) — HARDENED so it never steals clicks when closed */}
       <button
         className={`sidebar-scrim ${sidebarOpen ? "on" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
-        tabIndex={-1}
+        onClick={() => sidebarOpen && setSidebarOpen(false)}
+        aria-hidden={!sidebarOpen}
+        tabIndex={sidebarOpen ? 0 : -1}
         type="button"
+        style={{ pointerEvents: sidebarOpen ? "auto" : "none" }}
       />
 
-      {/* Toggle button (ALWAYS top-left, never shifts) */}
+      {/* Toggle button */}
       <button
         className="sidebar-fab"
         onClick={() => setSidebarOpen((v) => !v)}
@@ -145,7 +150,8 @@ export default function AppShell({ children }) {
         ☰
       </button>
 
-      <main className="app-main">{children}</main>
+      {/* Layout outlet/children */}
+      <main className="app-main">{children ?? <Outlet />}</main>
     </div>
   );
 }

@@ -1,0 +1,433 @@
+/* src/pages/ComplianceCommand.css */
+
+.compliancecmd__meta {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.compliancecmd__pill {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.86);
+  font-size: 12px;
+}
+
+.compliancecmd__toolbar {
+  margin-top: 10px;
+  display: grid;
+  gap: 12px;
+}
+
+.compliancecmd__toolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compliancecmd__label {
+  color: rgba(255,255,255,0.76);
+  font-size: 12px;
+}
+
+.compliancecmd__seg {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.compliancecmd__segBtn {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.86);
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.compliancecmd__segBtn.is-active {
+  outline: 2px solid rgba(255,255,255,0.35);
+}
+
+.compliancecmd__grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1100px) {
+  .compliancecmd__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compliancecmd__card {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.compliancecmd__card--wide {
+  grid-column: 1 / -1;
+}
+
+.compliancecmd__cardHeader {
+  padding: 14px 14px 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compliancecmd__cardTitle {
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__cardSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.70);
+}
+
+.compliancecmd__count {
+  min-width: 34px;
+  height: 30px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.92);
+  font-weight: 900;
+}
+
+.compliancecmd__miniBtn {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.86);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.compliancecmd__miniBtn:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.compliancecmd__list {
+  padding: 6px 10px 12px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.compliancecmd__row {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compliancecmd__rowTitle {
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__rowSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.68);
+}
+
+.compliancecmd__badge {
+  align-self: center;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.92);
+  font-weight: 900;
+  border-radius: 12px;
+  padding: 6px 10px;
+  height: fit-content;
+}
+
+.compliancecmd__badge.is-warn {
+  border-color: rgba(255, 200, 80, 0.35);
+  background: rgba(255, 180, 60, 0.10);
+}
+
+.compliancecmd__chips {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.compliancecmd__chip {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 200, 80, 0.25);
+  background: rgba(255, 180, 60, 0.10);
+  color: rgba(255,255,255,0.86);
+}
+
+.compliancecmd__empty {
+  padding: 14px;
+  color: rgba(255,255,255,0.72);
+  font-size: 13px;
+}
+
+.compliancecmd__stats {
+  padding: 10px 14px 14px 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.compliancecmd__stat {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.compliancecmd__statLabel {
+  font-size: 12px;
+  color: rgba(255,255,255,0.70);
+}
+
+.compliancecmd__statValue {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__divider {
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+  margin: 0 14px 12px 14px;
+}
+
+.compliancecmd__smallList {
+  padding: 0 14px 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.compliancecmd__smallRow {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.compliancecmd__smallTitle {
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__smallSub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.68);
+}
+
+.compliancecmd__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  align-self: center;
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.compliancecmd__dot.is-ok {
+  background: rgba(120,255,160,0.20);
+  border-color: rgba(120,255,160,0.25);
+}
+
+.compliancecmd__dot.is-warn {
+  background: rgba(255,180,60,0.18);
+  border-color: rgba(255,200,80,0.30);
+}
+
+/* Reminders */
+.compliancecmd__remGrid {
+  padding: 6px 10px 12px 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .compliancecmd__remGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compliancecmd__remColTitle {
+  padding: 10px 10px 0 10px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.86);
+}
+
+.compliancecmd__remRow {
+  margin: 8px 10px 10px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 10px 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.compliancecmd__remRow.is-done {
+  opacity: 0.70;
+}
+
+.compliancecmd__remCheck {
+  width: 34px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+}
+
+.compliancecmd__remX {
+  width: 34px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+}
+
+.compliancecmd__remTitle {
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__remSub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.68);
+}
+
+/* Modal */
+.compliancecmd__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: grid;
+  place-items: center;
+  z-index: 80;
+}
+
+.compliancecmd__modal {
+  width: min(860px, 94vw);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(12,16,24,0.92);
+  overflow: hidden;
+}
+
+.compliancecmd__modalHeader {
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.compliancecmd__modalTitle {
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+
+.compliancecmd__modalSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.70);
+}
+
+.compliancecmd__close {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.86);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.compliancecmd__form {
+  padding: 0 14px 14px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.compliancecmd__field {
+  display: grid;
+  gap: 6px;
+}
+
+.compliancecmd__field--wide {
+  grid-column: 1 / -1;
+}
+
+.compliancecmd__field span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.70);
+}
+
+.compliancecmd__field input,
+.compliancecmd__field select {
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+  outline: none;
+}
+
+.compliancecmd__modalActions {
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(255,255,255,0.10);
+}
+.compliancecmd__row,
+.compliancecmd__smallRow,
+.compliancecmd__stat,
+.compliancecmd__chip,
+.compliancecmd__remRow {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}

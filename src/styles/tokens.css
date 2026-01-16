@@ -1,0 +1,85 @@
+/* src/styles/tokens.css
+   LaneSync Design Tokens (single source of truth)
+*/
+
+:root {
+  /* ---------- Base surfaces ---------- */
+  --bg-0: rgba(3, 6, 12, 1);
+  --bg-1: rgba(6, 10, 18, 1);
+
+  --surface-0: rgba(255, 255, 255, 0.02);
+  --surface-1: rgba(255, 255, 255, 0.03);
+  --surface-2: rgba(255, 255, 255, 0.05);
+
+  /* ---------- Borders ---------- */
+  --border-0: rgba(255, 255, 255, 0.07);
+  --border-1: rgba(255, 255, 255, 0.10);
+  --border-2: rgba(255, 255, 255, 0.14);
+
+  /* ---------- Text ---------- */
+  --text-0: rgba(255, 255, 255, 0.92);
+  --text-1: rgba(255, 255, 255, 0.84);
+  --text-2: rgba(229, 231, 235, 0.72);
+  --text-3: rgba(229, 231, 235, 0.58);
+
+  /* ---------- Accents ---------- */
+  --accent: rgba(99, 102, 241, 1);
+
+  --accent-mission: rgba(99, 102, 241, 1);
+  --accent-lane: rgba(34, 211, 238, 1);
+  --accent-load: rgba(168, 85, 247, 1);
+  --accent-carrier: rgba(34, 197, 94, 1);
+  --accent-broker: rgba(244, 114, 182, 1);
+
+  --accent-finance: rgba(16, 185, 129, 1);
+  --accent-compliance: rgba(245, 158, 11, 1);
+
+  --accent-intelligence: rgba(148, 163, 184, 1);
+  --accent-learning: rgba(148, 163, 184, 1);
+
+  /* ---------- Status ---------- */
+  --ok: rgba(34, 197, 94, 1);
+  --warn: rgba(245, 158, 11, 1);
+  --bad: rgba(239, 68, 68, 1);
+  --info: rgba(59, 130, 246, 1);
+
+  /* ---------- Spacing ---------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 28px;
+  --s-8: 32px;
+
+  /* ---------- Radius ---------- */
+  --r-1: 10px;
+  --r-2: 12px;
+  --r-3: 16px;
+  --r-4: 20px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-1: 0 10px 22px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 18px 34px rgba(0, 0, 0, 0.28);
+
+  /* ---------- Typography ---------- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+  --fs-0: 12px;
+  --fs-1: 13px;
+  --fs-2: 14px;
+  --fs-3: 16px;
+  --fs-4: 18px;
+  --fs-5: 22px;
+
+  --lh-tight: 1.1;
+  --lh-normal: 1.35;
+  --lh-loose: 1.5;
+
+  /* ---------- Motion ---------- */
+  --t-fast: 120ms;
+  --t-med: 160ms;
+  --t-slow: 240ms;
+}

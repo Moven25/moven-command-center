@@ -1,0 +1,414 @@
+/* src/pages/IntelligenceCommand.css */
+
+/* ============================
+   TOOLBAR
+============================ */
+.intelcmd__toolbar {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 10; /* keep chips above any overlapping layers */
+}
+
+.intelcmd__search {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  outline: none;
+}
+
+/* Chips container */
+.intelcmd__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  pointer-events: auto;
+}
+
+/* ============================
+   CLICKABLE CHIP BUTTONS (REAL)
+============================ */
+.intelcmd__chipBtn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.intelcmd__chipBtn strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+}
+
+.intelcmd__chipBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intelcmd__chipBtn:active {
+  transform: translateY(1px);
+}
+
+.intelcmd__chipBtn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.intelcmd__chipBtn.is-active {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 1px;
+}
+
+/* ============================
+   ATTENTION GLOW (only while is-attn exists)
+============================ */
+@keyframes intelGlow {
+  0% { box-shadow: 0 0 0 rgba(255, 200, 80, 0); }
+  50% { box-shadow: 0 0 18px rgba(255, 200, 80, 0.45); }
+  100% { box-shadow: 0 0 0 rgba(255, 200, 80, 0); }
+}
+
+.intelcmd__chipBtn.is-attn {
+  border-color: rgba(255, 200, 80, 0.45);
+  background: rgba(255, 180, 60, 0.14);
+  animation: intelGlow 1.4s ease-in-out infinite;
+}
+
+/* ============================
+   GRID / CARDS
+============================ */
+.intelcmd__grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+@media (max-width: 1100px) {
+  .intelcmd__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.intelcmd__card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.intelcmd__card--wide {
+  grid-column: 1 / -1;
+}
+
+.intelcmd__cardHeader {
+  padding: 14px 14px 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.intelcmd__cardTitle {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.intelcmd__cardSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.intelcmd__miniBtn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.intelcmd__miniBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================
+   MARKET PULSE GRID
+============================ */
+.intelcmd__pulse {
+  padding: 0 14px 14px 14px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1100px) {
+  .intelcmd__pulse {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Make tiles work as <button> OR <div> without visual changes */
+.intelcmd__pulseItem {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 12px;
+
+  /* button reset */
+  text-align: left;
+  width: 100%;
+}
+
+button.intelcmd__pulseItem {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+button.intelcmd__pulseItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+button.intelcmd__pulseItem:active {
+  transform: translateY(1px);
+}
+
+.intelcmd__pulseItem.is-attn {
+  border-color: rgba(255, 200, 80, 0.35);
+  background: rgba(255, 180, 60, 0.10);
+  animation: intelGlow 1.6s ease-in-out infinite;
+}
+
+.intelcmd__pulseLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.intelcmd__pulseValue {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ============================
+   LISTS / ROWS
+============================ */
+.intelcmd__list {
+  padding: 6px 10px 12px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+/* Carrier Performance scroll fix */
+.intelcmd__list--scroll {
+  max-height: 220px; /* adjust if you want taller */
+  overflow: auto;
+  padding-bottom: 14px;
+}
+
+.intelcmd__row {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.intelcmd__row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intelcmd__rowTitle {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.intelcmd__rowSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.intelcmd__rowRight {
+  text-align: right;
+  min-width: 88px;
+}
+
+.intelcmd__metric {
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+}
+
+.intelcmd__metric.is-warn {
+  color: rgba(255, 210, 120, 0.95);
+}
+
+.intelcmd__metricLabel {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.intelcmd__pill {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  margin-left: auto;
+}
+
+.intelcmd__pill.is-ok {
+  border-color: rgba(120, 255, 160, 0.25);
+  background: rgba(120, 255, 160, 0.08);
+}
+
+.intelcmd__pill.is-warn {
+  border-color: rgba(255, 200, 80, 0.35);
+  background: rgba(255, 180, 60, 0.10);
+}
+
+.intelcmd__muted {
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 600;
+}
+
+.intelcmd__empty {
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+/* ============================
+   OVERLAYS / PANELS / MODALS
+============================ */
+.intelcmd__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+}
+
+.intelcmd__panel {
+  width: min(980px, 94vw);
+  height: min(650px, 86vh);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 24, 0.92);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+.intelcmd__modal {
+  width: min(980px, 94vw);
+  height: min(720px, 90vh);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 24, 0.92);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+.intelcmd__panelHeader {
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.intelcmd__panelTitle {
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.intelcmd__panelSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.intelcmd__close {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.intelcmd__close:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intelcmd__panelBody {
+  padding: 0 14px 14px 14px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.intelcmd__panelRow {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.intelcmd__panelRow:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intelcmd__panelRight {
+  text-align: right;
+  min-width: 90px;
+}
+
+.intelcmd__brief {
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  line-height: 1.45;
+  background: rgba(0, 0, 0, 0.22);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}

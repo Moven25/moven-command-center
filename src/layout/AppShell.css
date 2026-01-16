@@ -106,8 +106,12 @@ body {
   overflow: hidden;
 
   /* Always paint the viewport */
-  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-0)
-        100%),
+  background: linear-gradient(
+      135deg,
+      var(--bg-1) 0%,
+      var(--bg-2) 50%,
+      var(--bg-0) 100%
+    ),
     radial-gradient(1200px 760px at 20% 18%, var(--tint-a), transparent 60%),
     radial-gradient(1200px 760px at 78% 82%, var(--tint-b), transparent 62%);
 }
@@ -160,7 +164,8 @@ body {
 }
 
 /* =========================
-   MAIN AREA (full paint)
+   MAIN AREA (full paint + SCROLL)
+   ✅ FIX: allow page scrolling so lower sections (Carrier Performance) show
    ========================= */
 .app-main {
   position: absolute;
@@ -169,12 +174,22 @@ body {
   height: 100vh;
 
   /* background always visible across full screen */
-  background: radial-gradient(1200px 780px at 22% 16%, var(--tint-a), transparent
-        62%),
+  background: radial-gradient(
+      1200px 780px at 22% 16%,
+      var(--tint-a),
+      transparent 62%
+    ),
     radial-gradient(1200px 820px at 78% 84%, var(--tint-b), transparent 64%);
 
-  overflow: hidden;
+  /* ✅ KEY FIX: scroll page content */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+
   padding: 20px;
+
+  /* clean stacking context for content vs background layers */
+  z-index: 1;
 }
 
 /* Desktop: make room for sidebar by padding-left (NOT shrinking width) */
@@ -186,12 +201,36 @@ body {
 }
 
 /* =========================
+   OPTION 2 DIVIDER (NEUTRAL)
+   - global OS boundary, NOT accent-colored
+   - consistent across all commands
+   ========================= */
+
+/* Add the divider using an extra gradient in .app-main background. */
+.app-shell.sidebar-open .app-main {
+  background:
+    /* Neutral divider at the edge of sidebar */
+    linear-gradient(
+      to right,
+      transparent calc(var(--sidebar-w) + 19px),
+      rgba(255, 255, 255, 0.06) calc(var(--sidebar-w) + 19px),
+      rgba(255, 255, 255, 0.06) calc(var(--sidebar-w) + 20px),
+      transparent calc(var(--sidebar-w) + 20px)
+    ),
+    radial-gradient(1200px 780px at 22% 16%, var(--tint-a), transparent 62%),
+    radial-gradient(1200px 820px at 78% 84%, var(--tint-b), transparent 64%);
+}
+
+/* =========================
    FUTURISTIC (non-distracting) LAYERS
+   ✅ FIX: keep layers FIXED to viewport so they don't scroll with content
    ========================= */
 .app-main::before {
   content: "";
-  position: absolute;
+  position: fixed; /* ✅ was absolute */
   inset: -10%;
+
+  /* MUST NEVER steal clicks */
   pointer-events: none;
 
   background: radial-gradient(
@@ -199,8 +238,11 @@ body {
       color-mix(in srgb, var(--accent) 18%, transparent),
       transparent 66%
     ),
-    radial-gradient(900px 650px at 70% 78%, rgba(34, 211, 238, 0.06), transparent
-          70%),
+    radial-gradient(
+      900px 650px at 70% 78%,
+      rgba(34, 211, 238, 0.06),
+      transparent 70%
+    ),
     repeating-radial-gradient(
       circle at 60% 52%,
       rgba(255, 255, 255, 0.04) 0px,
@@ -211,17 +253,29 @@ body {
 
   opacity: var(--ambient-opacity);
   animation: ambient-drift var(--drift-duration) ease-in-out infinite alternate;
+
+  /* behind UI */
+  z-index: 0;
 }
 
 .app-main::after {
   content: "";
-  position: absolute;
+  position: fixed; /* ✅ was absolute */
   inset: 0;
+
+  /* MUST NEVER steal clicks */
   pointer-events: none;
 
-  background: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent
-        1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
   background-size: 120px 120px;
   opacity: var(--grid-opacity);
   mask-image: radial-gradient(
@@ -230,6 +284,9 @@ body {
     rgba(0, 0, 0, 0.75) 55%,
     rgba(0, 0, 0, 0) 80%
   );
+
+  /* behind UI */
+  z-index: 0;
 }
 
 @keyframes ambient-drift {
@@ -244,10 +301,10 @@ body {
   }
 }
 
-/* Ensure page content sits above the background layers */
+/* Content always above background layers */
 .app-main > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* =========================

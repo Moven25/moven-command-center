@@ -1,0 +1,1062 @@
+/* =============================
+   Carrier Command
+============================= */
+
+.carriercmd {
+  width: 100%;
+}
+
+.carriercmd__muted {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.carriercmd__kbdHint {
+  margin-left: 10px;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+
+/* =============================
+   KPI STRIP (more hierarchy)
+============================= */
+
+.carriercmd__kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+}
+
+.carriercmd__kpi {
+  border-radius: var(--r-3);
+  border: 1px solid var(--border-0);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
+  padding: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.carriercmd__kpi:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.carriercmd__kpi.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 40%, rgba(255, 255, 255, 0.10));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 18%, rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.04)
+  );
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.25);
+}
+
+.carriercmd__kpiLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.carriercmd__kpiValue {
+  margin-top: 6px;
+  font-size: 26px; /* bigger hierarchy */
+  font-weight: 700;
+  color: var(--text-0);
+}
+
+/* KPI tones (status encoding) */
+.carriercmd__kpi--ok .carriercmd__kpiValue {
+  color: color-mix(in srgb, var(--accent) 60%, var(--text-0));
+}
+
+.carriercmd__kpi--info .carriercmd__kpiValue {
+  color: color-mix(in srgb, var(--accent) 45%, var(--text-0));
+}
+
+.carriercmd__kpi--warn .carriercmd__kpiValue {
+  color: color-mix(in srgb, var(--warn) 70%, var(--text-0));
+}
+
+/* subtle pulse when there’s something to handle */
+.carriercmd__kpi.is-pulsing::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--r-3);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, rgba(255, 255, 255, 0.10));
+  opacity: 0.6;
+  animation: kpiPulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes kpiPulse {
+  0% { opacity: 0.25; }
+  50% { opacity: 0.75; }
+  100% { opacity: 0.25; }
+}
+
+/* =============================
+   MAIN GRID LAYOUT
+============================= */
+
+.carriercmd__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* =============================
+   CARDS
+============================= */
+
+.carriercmd__card {
+  border-radius: var(--r-3);
+  border: 1px solid var(--border-0);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.carriercmd__card--wide {
+  grid-column: 1 / 2;
+}
+
+.carriercmd__cardHeader {
+  padding: var(--s-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.carriercmd__cardTitle {
+  font-size: var(--fs-2);
+  color: var(--text-0);
+}
+
+.carriercmd__cardSub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* =============================
+   TABLE
+============================= */
+
+.carriercmd__tableWrap {
+  width: 100%;
+  overflow: auto;
+  outline: none;
+}
+
+.carriercmd__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.carriercmd__table thead th {
+  padding: 12px var(--s-4);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.carriercmd__table tbody td {
+  padding: 12px var(--s-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  color: var(--text-1);
+  vertical-align: top;
+}
+
+.carriercmd__table tbody tr {
+  cursor: pointer;
+  position: relative;
+  transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.carriercmd__table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.035);
+  transform: translateY(-1px);
+}
+
+.carriercmd__table tbody tr.is-selected {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02)
+  );
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* Row left-border status encoding */
+.carriercmd__table tbody tr::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.10);
+}
+
+.carriercmd__table tbody tr.row--active::before {
+  background: color-mix(in srgb, var(--accent) 55%, rgba(255,255,255,0.10));
+}
+.carriercmd__table tbody tr.row--onboarding::before {
+  background: color-mix(in srgb, var(--accent) 35%, rgba(255,255,255,0.10));
+}
+.carriercmd__table tbody tr.row--risk::before {
+  background: color-mix(in srgb, var(--warn) 55%, rgba(255,255,255,0.10));
+}
+
+.carriercmd__cellMain {
+  color: var(--text-0);
+}
+
+.carriercmd__cellSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Chips (status colors) */
+.carriercmd__chip {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-1);
+}
+
+.carriercmd__chip--active {
+  border-color: color-mix(in srgb, var(--accent) 30%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__chip--onboarding {
+  border-color: color-mix(in srgb, var(--accent) 18%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__chip--risk {
+  border-color: color-mix(in srgb, var(--warn) 35%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.86);
+}
+
+.carriercmd__pill--complete {
+  border-color: color-mix(in srgb, var(--accent) 28%, rgba(255,255,255,0.12));
+}
+.carriercmd__pill--missing {
+  border-color: color-mix(in srgb, var(--warn) 28%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__inlineText {
+  margin-left: 8px;
+  color: var(--text-1);
+}
+
+.carriercmd__inlinePerf {
+  display: inline-flex;
+  gap: 8px;
+  color: var(--text-1);
+}
+
+.carriercmd__perfHint {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.carriercmd__perfHint.is-warn {
+  color: color-mix(in srgb, var(--warn) 65%, var(--text-2));
+}
+
+/* =============================
+   RIGHT DETAIL PANEL
+============================= */
+
+.carriercmd__detail {
+  padding: var(--s-4);
+}
+
+.carriercmd__detailEmpty {
+  padding: var(--s-4);
+  color: var(--text-2);
+}
+
+.carriercmd__detailRow {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: var(--s-3);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.carriercmd__detailRow--stack {
+  grid-template-columns: 1fr;
+}
+
+.carriercmd__label {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.carriercmd__value {
+  font-size: 13px;
+  color: var(--text-1);
+  line-height: 1.35;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.carriercmd__detailActions {
+  margin-top: var(--s-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* Suggested Action block */
+.carriercmd__suggest {
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 18px 34px rgba(0,0,0,0.22);
+}
+
+.carriercmd__suggestTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.carriercmd__suggestTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.carriercmd__suggestIcon {
+  font-size: 14px;
+}
+
+.carriercmd__suggestBadge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.86);
+  white-space: nowrap;
+}
+
+.carriercmd__suggestDetail {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-1);
+  line-height: 1.35;
+}
+
+.carriercmd__suggestActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+/* tones */
+.carriercmd__suggest--warn {
+  border-color: color-mix(in srgb, var(--warn) 25%, rgba(255,255,255,0.10));
+}
+.carriercmd__suggest--info {
+  border-color: color-mix(in srgb, var(--accent) 20%, rgba(255,255,255,0.10));
+}
+.carriercmd__suggest--ok {
+  border-color: rgba(255,255,255,0.10);
+}
+
+/* =============================
+   RECENT LOADS (Detail Panel)
+============================= */
+
+.carriercmd__loadList {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.carriercmd__loadItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.carriercmd__loadTop {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.carriercmd__loadId {
+  color: var(--text-0);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.carriercmd__loadSub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.carriercmd__loadTime {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.carriercmd__loadChip {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.carriercmd__loadChip--issue {
+  border-color: color-mix(in srgb, var(--warn) 35%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__loadChip--at-pickup,
+.carriercmd__loadChip--at-delivery {
+  border-color: color-mix(in srgb, var(--accent) 28%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__loadChip--en-route,
+.carriercmd__loadChip--booked,
+.carriercmd__loadChip--completed {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* =============================
+   DRAWER / MODAL (unchanged from your base)
+   (keeping your existing rules)
+============================= */
+
+.carriercmd__drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.carriercmd__drawer {
+  height: 100%;
+  width: min(560px, 92vw);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 14, 22, 0.92),
+    rgba(6, 8, 14, 0.92)
+  );
+  border-left: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: carriercmdDrawerIn 180ms ease-out;
+}
+
+@keyframes carriercmdDrawerIn {
+  from { transform: translateX(18px); opacity: 0.85; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* keep the rest of your existing CSS below this point */
+.carriercmd__drawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.carriercmd__drawerTitle {
+  font-size: 16px;
+  color: var(--text-0);
+  letter-spacing: 0.01em;
+}
+
+.carriercmd__drawerSub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.carriercmd__drawerClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.carriercmd__drawerClose:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Tabs */
+.carriercmd__drawerTabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.carriercmd__tab {
+  white-space: nowrap;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.carriercmd__tab:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.carriercmd__tab.is-active {
+  border-color: color-mix(in srgb, var(--accent) 40%, rgba(255, 255, 255, 0.10));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 16%, rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.carriercmd__drawerBody {
+  padding: 12px;
+  overflow: auto;
+}
+
+.carriercmd__drawerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.carriercmd__drawerCard {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.25);
+}
+
+.carriercmd__drawerCard--wide {
+  grid-column: 1 / -1;
+}
+
+.carriercmd__drawerCardTitle {
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.carriercmd__drawerLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-1);
+  font-size: 12px;
+}
+
+.carriercmd__drawerLine:last-child { border-bottom: 0; }
+
+.carriercmd__drawerLine span { color: var(--text-2); }
+.carriercmd__drawerLine strong { color: var(--text-0); font-weight: 600; }
+
+.carriercmd__drawerHint {
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.carriercmd__drawerNotes {
+  color: var(--text-1);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.carriercmd__drawerBig {
+  font-size: 28px;
+  color: var(--text-0);
+  font-weight: 700;
+}
+
+/* Docs buttons */
+.carriercmd__drawerDocs { display: grid; gap: 10px; }
+
+.carriercmd__doc {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.carriercmd__doc:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.carriercmd__docMeta { font-size: 12px; color: var(--text-2); }
+
+.carriercmd__doc.is-on {
+  border-color: color-mix(in srgb, var(--accent) 30%, rgba(255, 255, 255, 0.12));
+}
+
+.carriercmd__doc.is-off {
+  border-color: color-mix(in srgb, var(--warn) 30%, rgba(255, 255, 255, 0.12));
+}
+
+/* Alert */
+.carriercmd__drawerAlert {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, rgba(255,255,255,0.10));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-1);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.carriercmd__drawerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* Load History table */
+.carriercmd__loadsTableWrap {
+  width: 100%;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.carriercmd__loadsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.carriercmd__loadsTable thead th {
+  padding: 10px 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.carriercmd__loadsTable tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-1);
+  font-size: 13px;
+}
+
+.carriercmd__loadsTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Add Carrier modal */
+.carriercmd__modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.carriercmd__modal {
+  width: min(760px, 94vw);
+  max-height: min(86vh, 820px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(10, 14, 22, 0.94), rgba(6, 8, 14, 0.92));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.carriercmd__modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.carriercmd__modalTitle { font-size: 16px; color: var(--text-0); }
+
+.carriercmd__modalSub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.carriercmd__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.carriercmd__close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.carriercmd__form { padding: 14px; }
+
+.carriercmd__formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.carriercmd__field { display: grid; gap: 6px; }
+.carriercmd__field--wide { grid-column: 1 / -1; }
+
+.carriercmd__field span {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.carriercmd__input,
+.carriercmd__select,
+.carriercmd__textarea {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+  outline: none;
+}
+
+.carriercmd__input:focus,
+.carriercmd__select:focus,
+.carriercmd__textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 30%, rgba(255,255,255,0.12));
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.carriercmd__textarea { min-height: 96px; resize: vertical; }
+
+.carriercmd__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.carriercmd__toggle--wide { grid-column: 1 / -1; }
+.carriercmd__toggle input { accent-color: var(--accent); }
+
+.carriercmd__formActions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .carriercmd__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .carriercmd__grid { grid-template-columns: 1fr; }
+  .carriercmd__card--wide { grid-column: 1 / -1; }
+  .carriercmd__drawerGrid { grid-template-columns: 1fr; }
+  .carriercmd__formGrid { grid-template-columns: 1fr; }
+}
+/* =========================================================
+   ADDITIONS for updated CarrierCommand.jsx
+   - KPI tone variants + pulsing
+   - Keyboard hint
+   - Table row state styling
+   - Compliance pill + perf hint
+   - Suggested Action module
+========================================================= */
+
+/* --- KPI tone variants (subtle) --- */
+.carriercmd__kpi--neutral .carriercmd__kpiValue { color: var(--text-0); }
+
+.carriercmd__kpi--ok.is-selected,
+.carriercmd__kpi--ok:hover {
+  border-color: color-mix(in srgb, var(--accent) 26%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__kpi--info.is-selected,
+.carriercmd__kpi--info:hover {
+  border-color: rgba(255,255,255,0.16);
+}
+
+.carriercmd__kpi--warn.is-selected,
+.carriercmd__kpi--warn:hover {
+  border-color: color-mix(in srgb, var(--warn) 28%, rgba(255,255,255,0.12));
+}
+
+/* --- KPI pulsing when there’s risk/missing docs --- */
+.carriercmd__kpi.is-pulsing {
+  animation: carriercmdPulse 1.4s ease-in-out infinite;
+}
+@keyframes carriercmdPulse {
+  0% { box-shadow: var(--shadow-1); }
+  50% { box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 22px 40px rgba(0,0,0,0.30); }
+  100% { box-shadow: var(--shadow-1); }
+}
+
+/* --- Keyboard hint in header subline --- */
+.carriercmd__kbdHint {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  opacity: 0.9;
+}
+
+/* --- Table row state styling (very subtle, OS feel) --- */
+.carriercmd__table tbody tr.row--risk td {
+  color: rgba(255,255,255,0.86);
+}
+.carriercmd__table tbody tr.row--risk {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 154, 60, 0.06),
+    rgba(255,255,255,0.00) 55%
+  );
+}
+
+.carriercmd__table tbody tr.row--onboarding {
+  background: linear-gradient(
+    90deg,
+    rgba(60, 170, 255, 0.05),
+    rgba(255,255,255,0.00) 55%
+  );
+}
+
+.carriercmd__table tbody tr.row--comp-missing td {
+  /* keep subtle, don’t scream */
+  color: rgba(255,255,255,0.84);
+}
+
+/* --- Chip variants (status) --- */
+.carriercmd__chip--active {
+  border-color: rgba(255,255,255,0.14);
+}
+.carriercmd__chip--onboarding {
+  border-color: color-mix(in srgb, var(--accent) 22%, rgba(255,255,255,0.14));
+}
+.carriercmd__chip--risk {
+  border-color: color-mix(in srgb, var(--warn) 28%, rgba(255,255,255,0.14));
+}
+
+/* --- Compliance pill + inline text helpers --- */
+.carriercmd__pill {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 8px;
+  transform: translateY(1px);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.86);
+}
+
+.carriercmd__pill--complete {
+  border-color: color-mix(in srgb, var(--accent) 26%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__pill--missing {
+  border-color: color-mix(in srgb, var(--warn) 30%, rgba(255,255,255,0.12));
+}
+
+.carriercmd__inlineText {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+/* --- Performance line + hint --- */
+.carriercmd__inlinePerf {
+  display: inline-block;
+  color: rgba(255,255,255,0.82);
+  font-size: 12px;
+}
+
+.carriercmd__perfHint {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.carriercmd__perfHint.is-warn {
+  color: color-mix(in srgb, var(--warn) 65%, var(--text-0));
+}
+
+/* =========================================================
+   Suggested Action module (right detail panel)
+========================================================= */
+.carriercmd__suggest {
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 18px 34px rgba(0,0,0,0.22);
+}
+
+.carriercmd__suggestTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.carriercmd__suggestTitle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.carriercmd__suggestIcon {
+  font-size: 14px;
+  transform: translateY(-0.5px);
+}
+
+.carriercmd__suggestBadge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.86);
+}
+
+.carriercmd__suggestDetail {
+  font-size: 12px;
+  color: rgba(255,255,255,0.84);
+  line-height: 1.35;
+}
+
+.carriercmd__suggestActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* tones */
+.carriercmd__suggest--ok {
+  border-color: rgba(255,255,255,0.10);
+}
+.carriercmd__suggest--info {
+  border-color: rgba(255,255,255,0.14);
+}
+.carriercmd__suggest--warn {
+  border-color: color-mix(in srgb, var(--warn) 28%, rgba(255,255,255,0.12));
+}

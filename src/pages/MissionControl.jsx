@@ -17,6 +17,9 @@ import "./MissionControl.css";
  *    pop out lane command with selected lane (query params)
  *    lane history ⋯ menu + CSV export + open history
  *    recent loads row click -> lane command for that lane
+ *
+ * - NEW:
+ *    Carrier Performance rows click -> Carrier Command (with carrier query)
  */
 
 export default function MissionControl() {
@@ -31,10 +34,42 @@ export default function MissionControl() {
   // Lane selector state
   const lanes = useMemo(
     () => [
-      { id: "chi-dal", label: "Chicago, IL → Dallas, TX", from: "Chicago, IL", to: "Dallas, TX", miles: 920, rate: 2600, netRpm: 2.17 },
-      { id: "dal-mem", label: "Dallas, TX → Memphis, TN", from: "Dallas, TX", to: "Memphis, TN", miles: 452, rate: 1050, netRpm: 1.88 },
-      { id: "chi-atl", label: "Chicago, IL → Atlanta, GA", from: "Chicago, IL", to: "Atlanta, GA", miles: 720, rate: 1760, netRpm: 2.45 },
-      { id: "atl-nsh", label: "Atlanta, GA → Nashville, TN", from: "Atlanta, GA", to: "Nashville, TN", miles: 250, rate: 700, netRpm: 2.55 },
+      {
+        id: "chi-dal",
+        label: "Chicago, IL → Dallas, TX",
+        from: "Chicago, IL",
+        to: "Dallas, TX",
+        miles: 920,
+        rate: 2600,
+        netRpm: 2.17,
+      },
+      {
+        id: "dal-mem",
+        label: "Dallas, TX → Memphis, TN",
+        from: "Dallas, TX",
+        to: "Memphis, TN",
+        miles: 452,
+        rate: 1050,
+        netRpm: 1.88,
+      },
+      {
+        id: "chi-atl",
+        label: "Chicago, IL → Atlanta, GA",
+        from: "Chicago, IL",
+        to: "Atlanta, GA",
+        miles: 720,
+        rate: 1760,
+        netRpm: 2.45,
+      },
+      {
+        id: "atl-nsh",
+        label: "Atlanta, GA → Nashville, TN",
+        from: "Atlanta, GA",
+        to: "Nashville, TN",
+        miles: 250,
+        rate: 700,
+        netRpm: 2.55,
+      },
     ],
     []
   );
@@ -120,6 +155,19 @@ export default function MissionControl() {
     }
   };
 
+  // ✅ Carrier Performance row click -> Carrier Command (with carrier query)
+  const openCarrierFromPerformance = (carrierName) => {
+    setMenuOpen(false);
+    setLaneHistoryMenuOpen(false);
+
+    const params = new URLSearchParams({
+      carrier: carrierName,
+      from: "mission-control",
+    });
+
+    navigate(`/carrier-command?${params.toString()}`);
+  };
+
   // Close menus on ESC
   useEffect(() => {
     const onKey = (e) => {
@@ -158,7 +206,11 @@ export default function MissionControl() {
       broker: "ABC Logistics",
       mc: "567432",
       notesShort: "Needs quick confirmation.",
-      notesList: ["Confirm delivery appointment window", "Verify fuel surcharge inclusion", "Check detention policy before tender"],
+      notesList: [
+        "Confirm delivery appointment window",
+        "Verify fuel surcharge inclusion",
+        "Check detention policy before tender",
+      ],
     }),
     []
   );
@@ -170,7 +222,7 @@ export default function MissionControl() {
       return [
         { date: "01/04", netRpm: 1.88, miles: 452, rate: 1050, broker: "RoadStar" },
         { date: "12/28", netRpm: 1.95, miles: 452, rate: 1100, broker: "BlueHaul" },
-        { date: "12/16", netRpm: 2.10, miles: 452, rate: 1180, broker: "Atlas Freight" },
+        { date: "12/16", netRpm: 2.1, miles: 452, rate: 1180, broker: "Atlas Freight" },
       ];
     }
     if (selectedLane.id === "chi-atl") {
@@ -189,8 +241,8 @@ export default function MissionControl() {
     }
     return [
       { date: "01/06", netRpm: 2.35, miles: 920, rate: 2600, broker: "ABC Logistics" },
-      { date: "12/28", netRpm: 2.20, miles: 920, rate: 2480, broker: "RoadStar" },
-      { date: "12/16", netRpm: 2.10, miles: 920, rate: 2400, broker: "BlueHaul" },
+      { date: "12/28", netRpm: 2.2, miles: 920, rate: 2480, broker: "RoadStar" },
+      { date: "12/16", netRpm: 2.1, miles: 920, rate: 2400, broker: "BlueHaul" },
     ];
   }, [selectedLane]);
 
@@ -592,8 +644,18 @@ export default function MissionControl() {
                   </thead>
                   <tbody>
                     {carrierRows.map((r) => (
-                      <tr key={r.carrier}>
-                        <td>{r.carrier}</td>
+                      <tr
+                        key={r.carrier}
+                        onClick={() => openCarrierFromPerformance(r.carrier)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") openCarrierFromPerformance(r.carrier);
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title={`Open Carrier Command for ${r.carrier}`}
+                      >
+                        <td style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{r.carrier}</td>
                         <td>{r.trucks}</td>
                         <td>{r.rpm}</td>
                         <td>{r.loads}</td>
@@ -601,6 +663,10 @@ export default function MissionControl() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+                Tip: Click a carrier row to open Carrier Command.
               </div>
             </div>
 

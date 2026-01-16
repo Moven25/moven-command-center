@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import "./Sidebar.css";
@@ -33,7 +34,11 @@ export default function Sidebar({ theme = "day", onToggleTheme }) {
             className="theme-toggle no-nav-style"
             type="button"
             onClick={onToggleTheme}
-            title={theme === "night" ? "Night Ops (click for Day)" : "Day Ops (click for Night)"}
+            title={
+              theme === "night"
+                ? "Night Ops (click for Day)"
+                : "Day Ops (click for Night)"
+            }
             aria-label="Toggle Night Ops"
           >
             {theme === "night" ? "🌙" : "☀️"}
