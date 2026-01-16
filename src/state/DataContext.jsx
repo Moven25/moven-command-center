@@ -30,7 +30,6 @@ const SEED_CARRIERS = [
     lastContactAt: "2026-01-10T14:20:00Z",
     notes: "Strong Midwest carrier. Prefers morning pickups.",
 
-    // ✅ Added so Compliance/Performance panels don't render blank
     compliancePerformanceNotes:
       "A-rated paperwork. Always sends POD quickly. No recent compliance issues.",
     complianceNotes:
@@ -58,7 +57,6 @@ const SEED_CARRIERS = [
     lastContactAt: "2026-01-10T00:10:00Z",
     notes: "Late deliveries last quarter. Watch detention.",
 
-    // ✅ Added so Compliance/Performance panels don't render blank
     compliancePerformanceNotes:
       "Paperwork sometimes late. POD turnaround inconsistent. Track follow-ups.",
     complianceNotes:
@@ -86,7 +84,6 @@ const SEED_CARRIERS = [
     lastContactAt: "2026-01-09T16:40:00Z",
     notes: "Waiting on insurance + authority verification.",
 
-    // ✅ Added so Compliance/Performance panels don't render blank
     compliancePerformanceNotes:
       "Onboarding—no historical performance. Require full doc pack before dispatch.",
     complianceNotes:
@@ -197,6 +194,64 @@ const SEED_LOADS = [
 ];
 
 /* -----------------------------
+   LIVE BROKER Seeds (new)
+------------------------------ */
+const SEED_BROKERS = [
+  {
+    id: "BR-11001",
+    name: "BlueRock Logistics",
+    email: "ops@bluerocklogistics.com",
+    phone: "(212) 555-0110",
+    city: "New York, NY",
+    riskScore: 28,
+    creditScore: 82,
+    hot: true,
+    lastContactAt: "2026-01-10T15:05:00Z",
+    notes: "Pays okay. Responds fast when updated early. Ask for detention upfront.",
+    lanePrefs: "Midwest → TX, Northeast → New England. Avoid NYC dock tight.",
+  },
+  {
+    id: "BR-11002",
+    name: "Summit Freight",
+    email: "team@summitfreight.com",
+    phone: "(615) 555-0122",
+    city: "Nashville, TN",
+    riskScore: 42,
+    creditScore: 68,
+    hot: false,
+    lastContactAt: "2026-01-09T19:40:00Z",
+    notes: "Hard negotiator. Likes quick ETAs. Push for TONU on cancels.",
+    lanePrefs: "Southeast regional, ATL/ORL. Prefers same-day turn loads.",
+  },
+  {
+    id: "BR-11003",
+    name: "Northstar Brokerage",
+    email: "dispatch@northstarbrokerage.com",
+    phone: "(312) 555-0188",
+    city: "Chicago, IL",
+    riskScore: 18,
+    creditScore: 88,
+    hot: true,
+    lastContactAt: "2026-01-10T13:25:00Z",
+    notes: "Solid credit. Repeat lanes available. Keep performance clean.",
+    lanePrefs: "CHI → HOU, CHI → DAL, MEM → HOU.",
+  },
+  {
+    id: "BR-11004",
+    name: "Canyon Logistics",
+    email: "ops@canyonlogistics.com",
+    phone: "(602) 555-0169",
+    city: "Phoenix, AZ",
+    riskScore: 62,
+    creditScore: 54,
+    hot: false,
+    lastContactAt: "2026-01-10T02:12:00Z",
+    notes: "Risky: slow pay claims reported. Get rate con + accessorials in writing.",
+    lanePrefs: "AZ → NV / CA short hauls. Confirm appt windows.",
+  },
+];
+
+/* -----------------------------
    TRAINING Seeds (safe demo data)
 ------------------------------ */
 const TRAINING_CARRIERS = [
@@ -220,7 +275,6 @@ const TRAINING_CARRIERS = [
     lastContactAt: daysFromNowISO(0, 9),
     notes: "Demo carrier. Use for booking + status practice.",
 
-    // ✅ Added so Compliance/Performance panels don't render blank
     compliancePerformanceNotes:
       "Training: upload W9/COI, practice documenting POD + invoicing.",
     complianceNotes:
@@ -360,12 +414,73 @@ const TRAINING_LOADS = [
 ];
 
 /* -----------------------------
+   TRAINING BROKER Seeds (new)
+------------------------------ */
+const TRAINING_BROKERS = [
+  {
+    id: "TB-40001",
+    name: "Training Broker One",
+    email: "ops@tb1.training",
+    phone: "(555) 020-4001",
+    city: "Chicago, IL",
+    riskScore: 22,
+    creditScore: 78,
+    hot: true,
+    lastContactAt: daysFromNowISO(0, 9),
+    notes: "Training: practice rate negotiation + load updates.",
+    lanePrefs: "CHI → DAL, CHI → ATL. Prefer fast updates.",
+  },
+  {
+    id: "TB-40002",
+    name: "Training Broker Two",
+    email: "ops@tb2.training",
+    phone: "(555) 020-4002",
+    city: "Atlanta, GA",
+    riskScore: 58,
+    creditScore: 60,
+    hot: false,
+    lastContactAt: daysFromNowISO(-1, 15),
+    notes: "Training: practice detention + issue escalation.",
+    lanePrefs: "ATL regional. Confirm appt windows + detention terms.",
+  },
+  {
+    id: "TB-40003",
+    name: "Training Broker Three",
+    email: "ops@tb3.training",
+    phone: "(555) 020-4003",
+    city: "Phoenix, AZ",
+    riskScore: 66,
+    creditScore: 52,
+    hot: false,
+    lastContactAt: daysFromNowISO(-2, 11),
+    notes: "Training: practice protecting terms in the rate con.",
+    lanePrefs: "AZ → NV / CA. Accessorials must be written.",
+  },
+  {
+    id: "TB-40004",
+    name: "Training Broker Four",
+    email: "ops@tb4.training",
+    phone: "(555) 020-4004",
+    city: "Newark, NJ",
+    riskScore: 30,
+    creditScore: 84,
+    hot: true,
+    lastContactAt: daysFromNowISO(0, 7),
+    notes: "Training: practice clean handoffs + POD requests.",
+    lanePrefs: "NE short hauls. POD required within 1 hour of delivery.",
+  },
+];
+
+/* -----------------------------
    Helpers
 ------------------------------ */
 function nextCarrierId(prefix = "CR") {
   return `${prefix}-${Math.floor(10000 + Math.random() * 89999)}`;
 }
 function nextLoadId(prefix = "LD") {
+  return `${prefix}-${Math.floor(10000 + Math.random() * 89999)}`;
+}
+function nextBrokerId(prefix = "BR") {
   return `${prefix}-${Math.floor(10000 + Math.random() * 89999)}`;
 }
 
@@ -389,9 +504,11 @@ export function DataProvider({ children }) {
   // Keep two data stores: live + training
   const [liveCarriers, setLiveCarriers] = useState(SEED_CARRIERS);
   const [liveLoads, setLiveLoads] = useState(SEED_LOADS);
+  const [liveBrokers, setLiveBrokers] = useState(SEED_BROKERS);
 
   const [trainingCarriers, setTrainingCarriers] = useState(TRAINING_CARRIERS);
   const [trainingLoads, setTrainingLoads] = useState(TRAINING_LOADS);
+  const [trainingBrokers, setTrainingBrokers] = useState(TRAINING_BROKERS);
 
   // persist training mode
   useEffect(() => {
@@ -405,9 +522,11 @@ export function DataProvider({ children }) {
   // Derived “active” dataset based on mode
   const carriers = trainingMode ? trainingCarriers : liveCarriers;
   const loads = trainingMode ? trainingLoads : liveLoads;
+  const brokers = trainingMode ? trainingBrokers : liveBrokers;
 
   const setCarriers = trainingMode ? setTrainingCarriers : setLiveCarriers;
   const setLoads = trainingMode ? setTrainingLoads : setLiveLoads;
+  const setBrokers = trainingMode ? setTrainingBrokers : setLiveBrokers;
 
   /* -----------------------------
      Carriers
@@ -512,11 +631,45 @@ export function DataProvider({ children }) {
   }
 
   /* -----------------------------
+     Brokers (NEW)
+  ------------------------------ */
+  function addBroker(input) {
+    const idRaw = (input?.id || "").trim();
+    const id = idRaw || nextBrokerId(trainingMode ? "TB" : "BR");
+    const name = (input?.name || "").trim();
+    if (!name) return null;
+
+    const broker = {
+      id,
+      name,
+      email: input.email ?? "",
+      phone: input.phone ?? "",
+      city: input.city ?? "",
+      riskScore: Number(input.riskScore ?? 25),
+      creditScore: Number(input.creditScore ?? 70),
+      hot: !!input.hot,
+      lastContactAt: input.lastContactAt ?? new Date().toISOString(),
+      notes: input.notes ?? "",
+      lanePrefs: input.lanePrefs ?? "",
+    };
+
+    setBrokers((prev) => [broker, ...prev]);
+    return broker;
+  }
+
+  function updateBroker(brokerId, patch) {
+    setBrokers((prev) =>
+      prev.map((b) => (b.id === brokerId ? { ...b, ...patch } : b))
+    );
+  }
+
+  /* -----------------------------
      Training Utilities
   ------------------------------ */
   function resetTrainingData() {
     setTrainingCarriers(TRAINING_CARRIERS);
     setTrainingLoads(TRAINING_LOADS);
+    setTrainingBrokers(TRAINING_BROKERS);
   }
 
   const value = useMemo(
@@ -527,12 +680,17 @@ export function DataProvider({ children }) {
 
       carriers,
       loads,
+      brokers,
+
       addCarrier,
       updateCarrier,
       addLoad,
       updateLoad,
+
+      addBroker,
+      updateBroker,
     }),
-    [trainingMode, carriers, loads]
+    [trainingMode, carriers, loads, brokers]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
