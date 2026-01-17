@@ -6,6 +6,10 @@ import React, { createContext, useContext, useMemo, useState, useEffect } from "
 ------------------------------ */
 const LS_TRAINING = "lanesync_training_mode_v1";
 
+/* NEW: persist brokers per mode (optional but recommended) */
+const LS_LIVE_BROKERS = "lanesync_live_brokers_v1";
+const LS_TRAIN_BROKERS = "lanesync_training_brokers_v1";
+
 /* -----------------------------
    LIVE Seeds (your current spine)
 ------------------------------ */
@@ -29,7 +33,6 @@ const SEED_CARRIERS = [
     claims: 0,
     lastContactAt: "2026-01-10T14:20:00Z",
     notes: "Strong Midwest carrier. Prefers morning pickups.",
-
     compliancePerformanceNotes:
       "A-rated paperwork. Always sends POD quickly. No recent compliance issues.",
     complianceNotes:
@@ -56,7 +59,6 @@ const SEED_CARRIERS = [
     claims: 3,
     lastContactAt: "2026-01-10T00:10:00Z",
     notes: "Late deliveries last quarter. Watch detention.",
-
     compliancePerformanceNotes:
       "Paperwork sometimes late. POD turnaround inconsistent. Track follow-ups.",
     complianceNotes:
@@ -83,7 +85,6 @@ const SEED_CARRIERS = [
     claims: 0,
     lastContactAt: "2026-01-09T16:40:00Z",
     notes: "Waiting on insurance + authority verification.",
-
     compliancePerformanceNotes:
       "Onboarding—no historical performance. Require full doc pack before dispatch.",
     complianceNotes:
@@ -194,65 +195,7 @@ const SEED_LOADS = [
 ];
 
 /* -----------------------------
-   LIVE BROKER Seeds (new)
------------------------------- */
-const SEED_BROKERS = [
-  {
-    id: "BR-11001",
-    name: "BlueRock Logistics",
-    email: "ops@bluerocklogistics.com",
-    phone: "(212) 555-0110",
-    city: "New York, NY",
-    riskScore: 28,
-    creditScore: 82,
-    hot: true,
-    lastContactAt: "2026-01-10T15:05:00Z",
-    notes: "Pays okay. Responds fast when updated early. Ask for detention upfront.",
-    lanePrefs: "Midwest → TX, Northeast → New England. Avoid NYC dock tight.",
-  },
-  {
-    id: "BR-11002",
-    name: "Summit Freight",
-    email: "team@summitfreight.com",
-    phone: "(615) 555-0122",
-    city: "Nashville, TN",
-    riskScore: 42,
-    creditScore: 68,
-    hot: false,
-    lastContactAt: "2026-01-09T19:40:00Z",
-    notes: "Hard negotiator. Likes quick ETAs. Push for TONU on cancels.",
-    lanePrefs: "Southeast regional, ATL/ORL. Prefers same-day turn loads.",
-  },
-  {
-    id: "BR-11003",
-    name: "Northstar Brokerage",
-    email: "dispatch@northstarbrokerage.com",
-    phone: "(312) 555-0188",
-    city: "Chicago, IL",
-    riskScore: 18,
-    creditScore: 88,
-    hot: true,
-    lastContactAt: "2026-01-10T13:25:00Z",
-    notes: "Solid credit. Repeat lanes available. Keep performance clean.",
-    lanePrefs: "CHI → HOU, CHI → DAL, MEM → HOU.",
-  },
-  {
-    id: "BR-11004",
-    name: "Canyon Logistics",
-    email: "ops@canyonlogistics.com",
-    phone: "(602) 555-0169",
-    city: "Phoenix, AZ",
-    riskScore: 62,
-    creditScore: 54,
-    hot: false,
-    lastContactAt: "2026-01-10T02:12:00Z",
-    notes: "Risky: slow pay claims reported. Get rate con + accessorials in writing.",
-    lanePrefs: "AZ → NV / CA short hauls. Confirm appt windows.",
-  },
-];
-
-/* -----------------------------
-   TRAINING Seeds (safe demo data)
+   TRAINING Seeds
 ------------------------------ */
 const TRAINING_CARRIERS = [
   {
@@ -274,7 +217,6 @@ const TRAINING_CARRIERS = [
     claims: 0,
     lastContactAt: daysFromNowISO(0, 9),
     notes: "Demo carrier. Use for booking + status practice.",
-
     compliancePerformanceNotes:
       "Training: upload W9/COI, practice documenting POD + invoicing.",
     complianceNotes:
@@ -301,7 +243,6 @@ const TRAINING_CARRIERS = [
     claims: 2,
     lastContactAt: daysFromNowISO(-1, 16),
     notes: "Demo risk carrier. Use for detention + issue handling.",
-
     compliancePerformanceNotes:
       "Training: document problems, send updates to broker, request POD fast.",
     complianceNotes:
@@ -328,7 +269,6 @@ const TRAINING_CARRIERS = [
     claims: 0,
     lastContactAt: daysFromNowISO(-2, 11),
     notes: "Demo onboarding carrier. Practice missing docs workflow.",
-
     compliancePerformanceNotes:
       "Training: onboarding stage — missing insurance/authority.",
     complianceNotes:
@@ -414,60 +354,77 @@ const TRAINING_LOADS = [
 ];
 
 /* -----------------------------
-   TRAINING BROKER Seeds (new)
+   BROKER SEEDS
 ------------------------------ */
+const SEED_BROKERS = [
+  {
+    id: "BR-45114",
+    name: "BlueRock Logistics",
+    email: "ops@bluerocklogistics.com",
+    phone: "(312) 555-0191",
+    city: "Chicago, IL",
+    creditDays: 30,
+    riskScore: 35,
+    hotList: true,
+    negotiationNotes: "Baseline: confirm accessorials, detention after 2 hrs, TONU policy, rate floor per lane.",
+    lanesNotes: "Strong: CHI→DAL, CHI→ATL. Avoid: NE winter last-minute.",
+    lastContactAt: daysFromNowISO(-1, 14),
+    setupStatus: "Ready",
+    setup: {
+      setupPacketReceived: true,
+      creditApproved: true,
+      rateConfProcessConfirmed: true,
+      detentionTonuConfirmed: true,
+      afterHoursContact: true,
+    },
+    activity: [{ at: daysFromNowISO(-1, 14), text: "Seeded broker profile created." }],
+  },
+];
+
 const TRAINING_BROKERS = [
   {
     id: "TB-40001",
     name: "Training Broker One",
-    email: "ops@tb1.training",
+    email: "one@training.broker",
     phone: "(555) 020-4001",
     city: "Chicago, IL",
-    riskScore: 22,
-    creditScore: 78,
-    hot: true,
-    lastContactAt: daysFromNowISO(0, 9),
-    notes: "Training: practice rate negotiation + load updates.",
-    lanePrefs: "CHI → DAL, CHI → ATL. Prefer fast updates.",
+    creditDays: 30,
+    riskScore: 25,
+    hotList: true,
+    negotiationNotes: "",
+    lanesNotes: "",
+    lastContactAt: daysFromNowISO(-1, 10),
+    setupStatus: "Blocked",
+    setup: {
+      setupPacketReceived: true,
+      creditApproved: false,
+      rateConfProcessConfirmed: false,
+      detentionTonuConfirmed: false,
+      afterHoursContact: false,
+    },
+    activity: [{ at: daysFromNowISO(-1, 10), text: "Training broker created." }],
   },
   {
     id: "TB-40002",
     name: "Training Broker Two",
-    email: "ops@tb2.training",
+    email: "two@training.broker",
     phone: "(555) 020-4002",
     city: "Atlanta, GA",
-    riskScore: 58,
-    creditScore: 60,
-    hot: false,
-    lastContactAt: daysFromNowISO(-1, 15),
-    notes: "Training: practice detention + issue escalation.",
-    lanePrefs: "ATL regional. Confirm appt windows + detention terms.",
-  },
-  {
-    id: "TB-40003",
-    name: "Training Broker Three",
-    email: "ops@tb3.training",
-    phone: "(555) 020-4003",
-    city: "Phoenix, AZ",
-    riskScore: 66,
-    creditScore: 52,
-    hot: false,
+    creditDays: 45,
+    riskScore: 70,
+    hotList: false,
+    negotiationNotes: "High risk: require factoring approval + tighter terms.",
+    lanesNotes: "",
     lastContactAt: daysFromNowISO(-2, 11),
-    notes: "Training: practice protecting terms in the rate con.",
-    lanePrefs: "AZ → NV / CA. Accessorials must be written.",
-  },
-  {
-    id: "TB-40004",
-    name: "Training Broker Four",
-    email: "ops@tb4.training",
-    phone: "(555) 020-4004",
-    city: "Newark, NJ",
-    riskScore: 30,
-    creditScore: 84,
-    hot: true,
-    lastContactAt: daysFromNowISO(0, 7),
-    notes: "Training: practice clean handoffs + POD requests.",
-    lanePrefs: "NE short hauls. POD required within 1 hour of delivery.",
+    setupStatus: "Blocked",
+    setup: {
+      setupPacketReceived: false,
+      creditApproved: false,
+      rateConfProcessConfirmed: false,
+      detentionTonuConfirmed: false,
+      afterHoursContact: false,
+    },
+    activity: [{ at: daysFromNowISO(-2, 11), text: "Training broker created." }],
   },
 ];
 
@@ -490,34 +447,68 @@ function safeBoolFromLS(key, fallback) {
   return v === "true";
 }
 
+function safeJsonFromLS(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJsonToLS(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+function brokerSetupProgress(b) {
+  const s = b?.setup || {};
+  const keys = ["setupPacketReceived", "creditApproved", "rateConfProcessConfirmed", "detentionTonuConfirmed", "afterHoursContact"];
+  const done = keys.reduce((acc, k) => acc + (s[k] ? 1 : 0), 0);
+  const pct = Math.round((done / keys.length) * 100);
+  return { done, total: keys.length, pct };
+}
+
 /* -----------------------------
    Context
 ------------------------------ */
 const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
-  // ✅ Training Mode ON by default
-  const [trainingMode, setTrainingMode] = useState(() =>
-    safeBoolFromLS(LS_TRAINING, true)
-  );
+  // Training Mode ON by default
+  const [trainingMode, setTrainingMode] = useState(() => safeBoolFromLS(LS_TRAINING, true));
 
   // Keep two data stores: live + training
   const [liveCarriers, setLiveCarriers] = useState(SEED_CARRIERS);
   const [liveLoads, setLiveLoads] = useState(SEED_LOADS);
-  const [liveBrokers, setLiveBrokers] = useState(SEED_BROKERS);
 
   const [trainingCarriers, setTrainingCarriers] = useState(TRAINING_CARRIERS);
   const [trainingLoads, setTrainingLoads] = useState(TRAINING_LOADS);
-  const [trainingBrokers, setTrainingBrokers] = useState(TRAINING_BROKERS);
+
+  // NEW: brokers per mode (persisted)
+  const [liveBrokers, setLiveBrokers] = useState(() => safeJsonFromLS(LS_LIVE_BROKERS, SEED_BROKERS));
+  const [trainingBrokers, setTrainingBrokers] = useState(() => safeJsonFromLS(LS_TRAIN_BROKERS, TRAINING_BROKERS));
 
   // persist training mode
   useEffect(() => {
     try {
       localStorage.setItem(LS_TRAINING, String(trainingMode));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [trainingMode]);
+
+  // persist brokers
+  useEffect(() => {
+    saveJsonToLS(LS_LIVE_BROKERS, liveBrokers);
+  }, [liveBrokers]);
+
+  useEffect(() => {
+    saveJsonToLS(LS_TRAIN_BROKERS, trainingBrokers);
+  }, [trainingBrokers]);
 
   // Derived “active” dataset based on mode
   const carriers = trainingMode ? trainingCarriers : liveCarriers;
@@ -556,8 +547,6 @@ export function DataProvider({ children }) {
       claims: input.claims ?? 0,
       lastContactAt: input.lastContactAt ?? new Date().toISOString(),
       notes: input.notes ?? "",
-
-      // ✅ defaults so Compliance panels always have something
       compliancePerformanceNotes: input.compliancePerformanceNotes ?? "",
       complianceNotes: input.complianceNotes ?? "",
       performanceNotes: input.performanceNotes ?? "",
@@ -568,9 +557,7 @@ export function DataProvider({ children }) {
   }
 
   function updateCarrier(carrierId, patch) {
-    setCarriers((prev) =>
-      prev.map((c) => (c.id === carrierId ? { ...c, ...patch } : c))
-    );
+    setCarriers((prev) => prev.map((c) => (c.id === carrierId ? { ...c, ...patch } : c)));
   }
 
   /* -----------------------------
@@ -580,10 +567,7 @@ export function DataProvider({ children }) {
     const idRaw = (input?.id || "").trim();
     const id = idRaw || nextLoadId(trainingMode ? "TL" : "LD");
 
-    // resolve carrier name from active carriers list
-    const carrierObj = input?.carrierId
-      ? carriers.find((c) => c.id === input.carrierId)
-      : null;
+    const carrierObj = input?.carrierId ? carriers.find((c) => c.id === input.carrierId) : null;
     const carrierName = carrierObj?.name || (input?.carrier || "").trim() || "—";
 
     const load = {
@@ -614,24 +598,18 @@ export function DataProvider({ children }) {
     setLoads((prev) =>
       prev.map((l) => {
         if (l.id !== loadId) return l;
-
         const next = { ...l, ...patch };
-
-        // If carrierId changes, re-resolve carrier name
         if ("carrierId" in patch) {
-          const carrierObj = next.carrierId
-            ? carriers.find((c) => c.id === next.carrierId)
-            : null;
+          const carrierObj = next.carrierId ? carriers.find((c) => c.id === next.carrierId) : null;
           next.carrier = carrierObj?.name || next.carrier || "—";
         }
-
         return next;
       })
     );
   }
 
   /* -----------------------------
-     Brokers (NEW)
+     Brokers
   ------------------------------ */
   function addBroker(input) {
     const idRaw = (input?.id || "").trim();
@@ -639,19 +617,33 @@ export function DataProvider({ children }) {
     const name = (input?.name || "").trim();
     if (!name) return null;
 
+    const now = new Date().toISOString();
     const broker = {
       id,
       name,
       email: input.email ?? "",
       phone: input.phone ?? "",
       city: input.city ?? "",
-      riskScore: Number(input.riskScore ?? 25),
-      creditScore: Number(input.creditScore ?? 70),
-      hot: !!input.hot,
-      lastContactAt: input.lastContactAt ?? new Date().toISOString(),
-      notes: input.notes ?? "",
-      lanePrefs: input.lanePrefs ?? "",
+      creditDays: Number(input.creditDays ?? 30),
+      riskScore: Number(input.riskScore ?? 35),
+      hotList: !!input.hotList,
+      negotiationNotes: input.negotiationNotes ?? "",
+      lanesNotes: input.lanesNotes ?? "",
+      lastContactAt: input.lastContactAt ?? now,
+      setupStatus: input.setupStatus ?? "Blocked",
+      setup: input.setup ?? {
+        setupPacketReceived: false,
+        creditApproved: false,
+        rateConfProcessConfirmed: false,
+        detentionTonuConfirmed: false,
+        afterHoursContact: false,
+      },
+      activity: Array.isArray(input.activity) ? input.activity : [{ at: now, text: "Broker created." }],
     };
+
+    // auto status if setup complete
+    const prog = brokerSetupProgress(broker);
+    if (prog.pct === 100) broker.setupStatus = "Ready";
 
     setBrokers((prev) => [broker, ...prev]);
     return broker;
@@ -659,7 +651,60 @@ export function DataProvider({ children }) {
 
   function updateBroker(brokerId, patch) {
     setBrokers((prev) =>
-      prev.map((b) => (b.id === brokerId ? { ...b, ...patch } : b))
+      prev.map((b) => {
+        if (b.id !== brokerId) return b;
+
+        const next = { ...b, ...patch };
+
+        // merge nested setup if provided
+        if (patch?.setup && typeof patch.setup === "object") {
+          next.setup = { ...(b.setup || {}), ...(patch.setup || {}) };
+        }
+
+        // keep activity array safe
+        next.activity = Array.isArray(next.activity) ? next.activity : [];
+
+        // auto-update setupStatus based on progress
+        const prog = brokerSetupProgress(next);
+        next.setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
+
+        return next;
+      })
+    );
+  }
+
+  function markBrokerContact(brokerId) {
+    const now = new Date().toISOString();
+    setBrokers((prev) =>
+      prev.map((b) => {
+        if (b.id !== brokerId) return b;
+        const activity = Array.isArray(b.activity) ? b.activity : [];
+        return {
+          ...b,
+          lastContactAt: now,
+          activity: [{ at: now, text: "Contact marked." }, ...activity].slice(0, 50),
+        };
+      })
+    );
+  }
+
+  function toggleBrokerSetupItem(brokerId, itemKey) {
+    setBrokers((prev) =>
+      prev.map((b) => {
+        if (b.id !== brokerId) return b;
+        const setup = { ...(b.setup || {}) };
+        setup[itemKey] = !setup[itemKey];
+        const next = { ...b, setup };
+        const prog = brokerSetupProgress(next);
+        next.setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
+
+        const now = new Date().toISOString();
+        const activity = Array.isArray(b.activity) ? b.activity : [];
+        const label = String(itemKey || "");
+        next.activity = [{ at: now, text: `Setup updated: ${label} → ${setup[itemKey] ? "ON" : "OFF"}` }, ...activity].slice(0, 50);
+
+        return next;
+      })
     );
   }
 
@@ -689,6 +734,8 @@ export function DataProvider({ children }) {
 
       addBroker,
       updateBroker,
+      markBrokerContact,
+      toggleBrokerSetupItem,
     }),
     [trainingMode, carriers, loads, brokers]
   );

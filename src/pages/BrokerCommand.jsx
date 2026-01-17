@@ -5,30 +5,8 @@ import "./BrokerCommand.css";
 import { useData } from "../state/DataContext";
 
 /* -----------------------------
-  Local fallback store (if DataContext doesn't have brokers yet)
+  Helpers
 ------------------------------ */
-const LS_KEY = "lanesync_brokers_v1";
-
-function loadLocalBrokers() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-function saveLocalBrokers(items) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(items));
-  } catch {
-    // ignore
-  }
-}
-
-function nextBrokerId() {
-  return `BR-${Math.floor(10000 + Math.random() * 89999)}`;
-}
-
 function normalize(s) {
   return String(s || "").trim().toLowerCase();
 }
@@ -40,23 +18,48 @@ function riskLabel(score) {
   return "High";
 }
 
+function formatWhen(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString([], {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const SETUP_ITEMS = [
+  { key: "setupPacketReceived", label: "Setup packet received" },
+  { key: "creditApproved", label: "Credit check / factoring approval" },
+  { key: "rateConfProcessConfirmed", label: "Rate confirmation process confirmed" },
+  { key: "detentionTonuConfirmed", label: "Detention / TONU terms confirmed" },
+  { key: "afterHoursContact", label: "After-hours / weekend contact" },
+];
+
+function setupProgress(broker) {
+  const s = broker?.setup || {};
+  const done = SETUP_ITEMS.reduce((acc, it) => acc + (s[it.key] ? 1 : 0), 0);
+  const total = SETUP_ITEMS.length;
+  const pct = Math.round((done / total) * 100);
+  return { done, total, pct };
+}
+
+function statusTone(status) {
+  const v = String(status || "").toLowerCase();
+  if (v === "ready") return "ok";
+  return "warn";
+}
+
+/* -----------------------------
+  Component
+------------------------------ */
 export default function BrokerCommand() {
-  const data = useData?.() || {};
-  const ctxBrokers = data.brokers; // optional
-  const ctxAddBroker = data.addBroker; // optional
-  const ctxUpdateBroker = data.updateBroker; // optional
+  const data = useData();
+  const { brokers, addBroker, updateBroker, markBrokerContact, toggleBrokerSetupItem } = data;
 
-  const [localBrokers, setLocalBrokers] = useState(() => loadLocalBrokers());
-
-  // Use DataContext brokers if present, else localStorage brokers
-  const brokers = Array.isArray(ctxBrokers) ? ctxBrokers : localBrokers;
-
-  // persist local fallback
-  useEffect(() => {
-    if (!Array.isArray(ctxBrokers)) saveLocalBrokers(localBrokers);
-  }, [localBrokers, ctxBrokers]);
-
-  const [selectedId, setSelectedId] = useState(brokers[0]?.id || null);
+  const [selectedId, setSelectedId] = useState(brokers?.[0]?.id || null);
 
   useEffect(() => {
     if (!brokers?.length) return;
@@ -83,7 +86,7 @@ export default function BrokerCommand() {
     });
   }, [brokers, search]);
 
-  // KPI-ish counters
+  // KPIs
   const stats = useMemo(() => {
     const total = brokers.length;
     const atRisk = brokers.filter((b) => (b.riskScore || 0) > 55).length;
@@ -94,6 +97,18 @@ export default function BrokerCommand() {
 
   // Add Broker modal
   const [addOpen, setAddOpen] = useState(false);
+
+  const emptySetup = useMemo(
+    () => ({
+      setupPacketReceived: false,
+      creditApproved: false,
+      rateConfProcessConfirmed: false,
+      detentionTonuConfirmed: false,
+      afterHoursContact: false,
+    }),
+    []
+  );
+
   const [draft, setDraft] = useState({
     id: "",
     name: "",
@@ -106,26 +121,20 @@ export default function BrokerCommand() {
     negotiationNotes: "",
     lanesNotes: "",
     lastContactAt: new Date().toISOString(),
+    // ✅ NEW: setup lives in the add modal too
+    setup: { ...emptySetup },
+    setupStatus: "Blocked",
+    setupConfirmedAt: "",
+    activity: [],
   });
 
-  function doAddBroker(newBroker) {
-    // If context has addBroker, use it, else local fallback
-    if (typeof ctxAddBroker === "function") {
-      const created = ctxAddBroker(newBroker);
-      return created || null;
-    }
-    setLocalBrokers((prev) => [newBroker, ...prev]);
-    return newBroker;
-  }
-
-  function doUpdateBroker(id, patch) {
-    if (!id) return;
-    if (typeof ctxUpdateBroker === "function") {
-      ctxUpdateBroker(id, patch);
-      return;
-    }
-    setLocalBrokers((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
-  }
+  // Lightweight toast (no new libs)
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 1800);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   function openProfile(nextTab = "Overview") {
     if (!selected) return;
@@ -135,7 +144,44 @@ export default function BrokerCommand() {
 
   function markContact() {
     if (!selected) return;
-    doUpdateBroker(selected.id, { lastContactAt: new Date().toISOString() });
+    if (typeof markBrokerContact === "function") {
+      markBrokerContact(selected.id);
+      setToast({ tone: "ok", text: "Contact marked." });
+      return;
+    }
+    updateBroker(selected.id, { lastContactAt: new Date().toISOString() });
+    setToast({ tone: "ok", text: "Contact marked." });
+  }
+
+  // ----- Add Modal Setup Logic -----
+  const draftProg = useMemo(() => setupProgress(draft), [draft]);
+  const canConfirmDraftSetup = draftProg.pct === 100;
+
+  function toggleDraftSetupItem(key) {
+    setDraft((d) => {
+      const setup = { ...(d.setup || {}) };
+      setup[key] = !setup[key];
+      const next = { ...d, setup };
+
+      // auto setupStatus based on progress
+      const prog = setupProgress(next);
+      next.setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
+      if (prog.pct !== 100) next.setupConfirmedAt = "";
+
+      return next;
+    });
+  }
+
+  function confirmDraftSetupComplete() {
+    if (!canConfirmDraftSetup) return;
+    const now = new Date().toISOString();
+    setDraft((d) => ({
+      ...d,
+      setupStatus: "Ready",
+      setupConfirmedAt: now,
+      activity: [{ at: now, text: "Setup confirmed complete (during creation)." }, ...(Array.isArray(d.activity) ? d.activity : [])].slice(0, 50),
+    }));
+    setToast({ tone: "ok", text: "Setup confirmed ✅" });
   }
 
   function saveAdd(e) {
@@ -143,36 +189,58 @@ export default function BrokerCommand() {
     const name = String(draft.name || "").trim();
     if (!name) return;
 
-    const id = String(draft.id || "").trim() || nextBrokerId();
+    const now = new Date().toISOString();
+
+    // Ensure status is correct at save-time
+    const prog = setupProgress(draft);
+    const setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
+
     const record = {
       ...draft,
-      id,
       name,
-      lastContactAt: new Date().toISOString(),
+      lastContactAt: now,
+      setupStatus,
+      setupConfirmedAt: prog.pct === 100 ? (draft.setupConfirmedAt || now) : "",
+      activity: [
+        { at: now, text: "Broker created." },
+        ...(Array.isArray(draft.activity) ? draft.activity : []),
+      ].slice(0, 50),
     };
 
-    const created = doAddBroker(record);
+    const created = addBroker(record);
     if (created?.id) {
       setSelectedId(created.id);
       setAddOpen(false);
       setDrawerOpen(true);
       setTab("Overview");
+      setToast({ tone: "ok", text: setupStatus === "Ready" ? "Broker created (READY)." : "Broker created (BLOCKED)." });
     }
   }
 
-  // simple “action buttons” that actually do things
   const actions = useMemo(() => {
     if (!selected) return null;
 
     const risk = riskLabel(selected.riskScore || 0);
     const hasNotes = !!String(selected.negotiationNotes || "").trim();
+    const prog = setupProgress(selected);
+
+    if (prog.pct < 100) {
+      return {
+        tone: "warn",
+        icon: "🧾",
+        title: "Setup not complete",
+        detail: `Finish broker setup checklist (${prog.done}/${prog.total}). Don’t trust payment terms until confirmed.`,
+        cta: "Open Setup",
+        tab: "Setup",
+      };
+    }
 
     if (risk === "High") {
       return {
         tone: "warn",
         icon: "⚠️",
         title: "High Risk Broker",
-        detail: "Confirm credit / factoring approval, tighten terms, and require setup packet.",
+        detail: "Confirm credit/factoring approval, tighten terms, and require setup packet every time.",
         cta: "Open Notes",
         tab: "Notes",
       };
@@ -183,7 +251,7 @@ export default function BrokerCommand() {
         tone: "warn",
         icon: "📝",
         title: "Missing Negotiation Notes",
-        detail: "Add your “pain extraction” script + fallback counters so every call is consistent.",
+        detail: "Add your script + fallback counters so every call is consistent.",
         cta: "Add Notes",
         tab: "Notes",
       };
@@ -193,23 +261,46 @@ export default function BrokerCommand() {
       tone: "ok",
       icon: "✅",
       title: "Ready",
-      detail: "Notes exist. Review lanes and keep contact cadence tight.",
+      detail: "Setup complete and notes exist. Keep contact cadence tight.",
       cta: "Open Lanes",
       tab: "Lanes",
     };
   }, [selected]);
 
-  function formatWhen(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "—";
-    return d.toLocaleString([], { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-  }
-
   const notesRef = useRef(null);
+
+  // Setup confirmation behaviors (existing brokers)
+  const selProg = useMemo(
+    () => (selected ? setupProgress(selected) : { done: 0, total: SETUP_ITEMS.length, pct: 0 }),
+    [selected]
+  );
+  const canConfirmSetup = !!selected && selProg.pct === 100;
+
+  function confirmSetupComplete() {
+    if (!selected) return;
+    const now = new Date().toISOString();
+
+    updateBroker(selected.id, {
+      setupStatus: "Ready",
+      setupConfirmedAt: now,
+      activity: [
+        { at: now, text: "Setup confirmed complete." },
+        ...(Array.isArray(selected.activity) ? selected.activity : []),
+      ].slice(0, 50),
+    });
+
+    setToast({ tone: "ok", text: "Setup confirmed ✅" });
+  }
 
   return (
     <div className="command-shell brokercmd">
+      {/* Toast */}
+      {toast ? (
+        <div className={`brokercmd__toast brokercmd__toast--${toast.tone}`} role="status" aria-live="polite">
+          {toast.text}
+        </div>
+      ) : null}
+
       {/* HEADER */}
       <header className="command-shell__header">
         <div>
@@ -243,6 +334,10 @@ export default function BrokerCommand() {
                 negotiationNotes: "",
                 lanesNotes: "",
                 lastContactAt: new Date().toISOString(),
+                setup: { ...emptySetup },
+                setupStatus: "Blocked",
+                setupConfirmedAt: "",
+                activity: [],
               });
               setAddOpen(true);
             }}
@@ -279,7 +374,7 @@ export default function BrokerCommand() {
           <div className="brokercmd__cardHeader">
             <div>
               <div className="brokercmd__cardTitle">Broker List</div>
-              <div className="brokercmd__cardSub">Select a broker to view details and notes.</div>
+              <div className="brokercmd__cardSub">Click to select · Double click to open profile.</div>
             </div>
 
             <div className="brokercmd__search">
@@ -296,6 +391,7 @@ export default function BrokerCommand() {
               <thead>
                 <tr>
                   <th>Broker</th>
+                  <th>Setup</th>
                   <th>Risk</th>
                   <th>Credit</th>
                   <th>Hot</th>
@@ -306,6 +402,9 @@ export default function BrokerCommand() {
                 {filtered.map((b) => {
                   const isSel = b.id === selectedId;
                   const risk = riskLabel(b.riskScore || 0);
+                  const prog = setupProgress(b);
+                  const tone = statusTone(b.setupStatus);
+
                   return (
                     <tr
                       key={b.id}
@@ -320,18 +419,31 @@ export default function BrokerCommand() {
                     >
                       <td>
                         <div className="brokercmd__cellMain">{b.name}</div>
-                        <div className="brokercmd__cellSub">{b.id} · {b.city || "—"}</div>
+                        <div className="brokercmd__cellSub">
+                          {b.id} · {b.city || "—"}
+                        </div>
                       </td>
-                      <td><span className={`brokercmd__chip brokercmd__chip--${risk.toLowerCase()}`}>{risk}</span></td>
+
+                      <td>
+                        <span className={`brokercmd__chip brokercmd__chip--${tone}`}>
+                          {String(b.setupStatus || "Blocked").toUpperCase()}
+                        </span>
+                        <span className="brokercmd__setupPct">{prog.pct}%</span>
+                      </td>
+
+                      <td>
+                        <span className={`brokercmd__chip brokercmd__chip--${risk.toLowerCase()}`}>{risk}</span>
+                      </td>
                       <td>{Number(b.creditDays || 0)}d</td>
                       <td>{b.hotList ? "🔥" : "—"}</td>
                       <td>{formatWhen(b.lastContactAt)}</td>
                     </tr>
                   );
                 })}
+
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="brokercmd__empty">
+                    <td colSpan={6} className="brokercmd__empty">
                       No brokers found. Click <strong>Add Broker</strong>.
                     </td>
                   </tr>
@@ -377,6 +489,16 @@ export default function BrokerCommand() {
               ) : null}
 
               <div className="brokercmd__detailRow">
+                <div className="brokercmd__label">Setup</div>
+                <div className="brokercmd__value">
+                  <strong>{String(selected.setupStatus || "Blocked")}</strong> · {selProg.done}/{selProg.total} ({selProg.pct}%)
+                  {selected.setupConfirmedAt ? (
+                    <div className="brokercmd__tiny">Confirmed: {formatWhen(selected.setupConfirmedAt)}</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="brokercmd__detailRow">
                 <div className="brokercmd__label">Risk</div>
                 <div className="brokercmd__value">
                   <strong>{riskLabel(selected.riskScore || 0)}</strong> ({selected.riskScore || 0})
@@ -391,7 +513,8 @@ export default function BrokerCommand() {
               <div className="brokercmd__detailRow">
                 <div className="brokercmd__label">Contact</div>
                 <div className="brokercmd__value">
-                  {selected.phone || "—"}<br />
+                  {selected.phone || "—"}
+                  <br />
                   {selected.email || "—"}
                 </div>
               </div>
@@ -422,57 +545,155 @@ export default function BrokerCommand() {
             <div className="brokercmd__modalHeader">
               <div>
                 <div className="brokercmd__modalTitle">Add Broker</div>
-                <div className="brokercmd__modalSub">Create a broker profile for consistent negotiation and lanes.</div>
+                <div className="brokercmd__modalSub">
+                  Create a broker profile for consistent negotiation and lanes. Add setup items now to activate.
+                </div>
               </div>
-              <button className="brokercmd__close" type="button" onClick={() => setAddOpen(false)}>✕</button>
+              <button className="brokercmd__close" type="button" onClick={() => setAddOpen(false)}>
+                ✕
+              </button>
             </div>
 
             <form className="brokercmd__form" onSubmit={saveAdd}>
               <div className="brokercmd__formGrid">
                 <label className="brokercmd__field">
                   <span>Broker ID (optional)</span>
-                  <input value={draft.id} onChange={(e) => setDraft((d) => ({ ...d, id: e.target.value }))} placeholder="BR-10201" />
+                  <input
+                    value={draft.id}
+                    onChange={(e) => setDraft((d) => ({ ...d, id: e.target.value }))}
+                    placeholder="BR-10201"
+                  />
                 </label>
 
                 <label className="brokercmd__field brokercmd__field--wide">
                   <span>Broker Name</span>
-                  <input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Brokerage name" required />
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                    placeholder="Brokerage name"
+                    required
+                  />
                 </label>
 
                 <label className="brokercmd__field">
                   <span>Email</span>
-                  <input value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} placeholder="ops@broker.com" />
+                  <input
+                    value={draft.email}
+                    onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
+                    placeholder="ops@broker.com"
+                  />
                 </label>
 
                 <label className="brokercmd__field">
                   <span>Phone</span>
-                  <input value={draft.phone} onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))} placeholder="(555) 555-5555" />
+                  <input
+                    value={draft.phone}
+                    onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))}
+                    placeholder="(555) 555-5555"
+                  />
                 </label>
 
                 <label className="brokercmd__field">
                   <span>City</span>
-                  <input value={draft.city} onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))} placeholder="Chicago, IL" />
+                  <input
+                    value={draft.city}
+                    onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))}
+                    placeholder="Chicago, IL"
+                  />
                 </label>
 
                 <label className="brokercmd__field">
                   <span>Credit Days</span>
-                  <input type="number" value={draft.creditDays} onChange={(e) => setDraft((d) => ({ ...d, creditDays: Number(e.target.value || 0) }))} />
+                  <input
+                    type="number"
+                    value={draft.creditDays}
+                    onChange={(e) => setDraft((d) => ({ ...d, creditDays: Number(e.target.value || 0) }))}
+                  />
                 </label>
 
                 <label className="brokercmd__field">
                   <span>Risk Score (0-100)</span>
-                  <input type="number" value={draft.riskScore} onChange={(e) => setDraft((d) => ({ ...d, riskScore: Number(e.target.value || 0) }))} />
+                  <input
+                    type="number"
+                    value={draft.riskScore}
+                    onChange={(e) => setDraft((d) => ({ ...d, riskScore: Number(e.target.value || 0) }))}
+                  />
                 </label>
 
                 <label className="brokercmd__toggle brokercmd__field--wide">
-                  <input type="checkbox" checked={!!draft.hotList} onChange={(e) => setDraft((d) => ({ ...d, hotList: e.target.checked }))} />
+                  <input
+                    type="checkbox"
+                    checked={!!draft.hotList}
+                    onChange={(e) => setDraft((d) => ({ ...d, hotList: e.target.checked }))}
+                  />
                   <span>Hot List (preferred broker)</span>
                 </label>
               </div>
 
+              {/* ✅ NEW: Activation / Setup Checklist inside Add Broker */}
+              <div className="brokercmd__modalSetup">
+                <div className="brokercmd__modalSetupTop">
+                  <div>
+                    <div className="brokercmd__modalSetupTitle">Broker Setup (Activation)</div>
+                    <div className="brokercmd__modalSetupSub">
+                      {draftProg.done}/{draftProg.total} complete · {draftProg.pct}% ·{" "}
+                      <strong>{String(draft.setupStatus || "Blocked")}</strong>
+                      {draft.setupConfirmedAt ? (
+                        <span className="brokercmd__tiny"> · Confirmed: {formatWhen(draft.setupConfirmedAt)}</span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {canConfirmDraftSetup ? (
+                    <button
+                      type="button"
+                      className="command-shell__btn command-shell__btn--primary"
+                      onClick={confirmDraftSetupComplete}
+                    >
+                      Confirm Setup Complete
+                    </button>
+                  ) : (
+                    <button type="button" className="command-shell__btn" disabled>
+                      Confirm Setup Complete
+                    </button>
+                  )}
+                </div>
+
+                <div className="brokercmd__setupBar">
+                  <div className="brokercmd__setupBarTop">
+                    <strong>{draftProg.done}/{draftProg.total}</strong>
+                    <span>{draftProg.pct}%</span>
+                  </div>
+                  <div className="brokercmd__setupBarTrack">
+                    <div className="brokercmd__setupBarFill" style={{ width: `${draftProg.pct}%` }} />
+                  </div>
+                </div>
+
+                <div className="brokercmd__checklist">
+                  {SETUP_ITEMS.map((it) => {
+                    const on = !!(draft.setup || {})[it.key];
+                    return (
+                      <button
+                        key={it.key}
+                        type="button"
+                        className={`brokercmd__check ${on ? "is-on" : "is-off"}`}
+                        onClick={() => toggleDraftSetupItem(it.key)}
+                      >
+                        <span>{on ? "☑" : "☐"}</span>
+                        <span>{it.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="brokercmd__modalActions">
-                <button className="command-shell__btn" type="button" onClick={() => setAddOpen(false)}>Cancel</button>
-                <button className="command-shell__btn command-shell__btn--primary" type="submit">Save Broker</button>
+                <button className="command-shell__btn" type="button" onClick={() => setAddOpen(false)}>
+                  Cancel
+                </button>
+                <button className="command-shell__btn command-shell__btn--primary" type="submit">
+                  Save Broker
+                </button>
               </div>
             </form>
           </div>
@@ -486,9 +707,13 @@ export default function BrokerCommand() {
             <div className="brokercmd__drawerHeader">
               <div>
                 <div className="brokercmd__drawerTitle">{selected.name}</div>
-                <div className="brokercmd__drawerSub">{selected.id} · {selected.city || "—"}</div>
+                <div className="brokercmd__drawerSub">
+                  {selected.id} · {selected.city || "—"}
+                </div>
               </div>
-              <button className="brokercmd__drawerClose" type="button" onClick={() => setDrawerOpen(false)}>✕</button>
+              <button className="brokercmd__drawerClose" type="button" onClick={() => setDrawerOpen(false)}>
+                ✕
+              </button>
             </div>
 
             <div className="brokercmd__tabs" role="tablist" aria-label="Broker profile tabs">
@@ -510,6 +735,15 @@ export default function BrokerCommand() {
               {tab === "Overview" ? (
                 <div className="brokercmd__drawerGrid">
                   <div className="brokercmd__drawerCard">
+                    <div className="brokercmd__drawerCardTitle">Setup</div>
+                    <div className="brokercmd__drawerBig">{setupProgress(selected).pct}%</div>
+                    <div className="brokercmd__drawerHint">
+                      {setupProgress(selected).done}/{setupProgress(selected).total} complete ·{" "}
+                      {String(selected.setupStatus || "Blocked")}
+                    </div>
+                  </div>
+
+                  <div className="brokercmd__drawerCard">
                     <div className="brokercmd__drawerCardTitle">Risk</div>
                     <div className="brokercmd__drawerBig">{riskLabel(selected.riskScore || 0)}</div>
                     <div className="brokercmd__drawerHint">Score: {selected.riskScore || 0}</div>
@@ -523,12 +757,27 @@ export default function BrokerCommand() {
 
                   <div className="brokercmd__drawerCard brokercmd__drawerCard--wide">
                     <div className="brokercmd__drawerCardTitle">Contact</div>
-                    <div className="brokercmd__drawerLine"><span>Email</span><strong>{selected.email || "—"}</strong></div>
-                    <div className="brokercmd__drawerLine"><span>Phone</span><strong>{selected.phone || "—"}</strong></div>
-                    <div className="brokercmd__drawerLine"><span>Last Contact</span><strong>{formatWhen(selected.lastContactAt)}</strong></div>
+                    <div className="brokercmd__drawerLine">
+                      <span>Email</span>
+                      <strong>{selected.email || "—"}</strong>
+                    </div>
+                    <div className="brokercmd__drawerLine">
+                      <span>Phone</span>
+                      <strong>{selected.phone || "—"}</strong>
+                    </div>
+                    <div className="brokercmd__drawerLine">
+                      <span>Last Contact</span>
+                      <strong>{formatWhen(selected.lastContactAt)}</strong>
+                    </div>
                     <div className="brokercmd__drawerActions">
-                      <button className="command-shell__btn" type="button" onClick={markContact}>Mark Contact</button>
-                      <button className="command-shell__btn" type="button" onClick={() => doUpdateBroker(selected.id, { hotList: !selected.hotList })}>
+                      <button className="command-shell__btn" type="button" onClick={markContact}>
+                        Mark Contact
+                      </button>
+                      <button
+                        className="command-shell__btn"
+                        type="button"
+                        onClick={() => updateBroker(selected.id, { hotList: !selected.hotList })}
+                      >
                         {selected.hotList ? "Remove Hot List" : "Add Hot List"}
                       </button>
                     </div>
@@ -547,7 +796,7 @@ export default function BrokerCommand() {
                       ref={notesRef}
                       className="brokercmd__textarea"
                       value={selected.negotiationNotes || ""}
-                      onChange={(e) => doUpdateBroker(selected.id, { negotiationNotes: e.target.value })}
+                      onChange={(e) => updateBroker(selected.id, { negotiationNotes: e.target.value })}
                       placeholder="Example: If they say ‘that’s all I have’ → ask ‘what’s your target?’ → anchor higher → confirm accessorials…"
                     />
                     <div className="brokercmd__drawerActions">
@@ -572,7 +821,7 @@ export default function BrokerCommand() {
                     <textarea
                       className="brokercmd__textarea"
                       value={selected.lanesNotes || ""}
-                      onChange={(e) => doUpdateBroker(selected.id, { lanesNotes: e.target.value })}
+                      onChange={(e) => updateBroker(selected.id, { lanesNotes: e.target.value })}
                       placeholder="Examples: CHI→DAL headhaul ok, pay ≥ $2.10 all-in. Avoid NE winter. Weekend pickups need +$150…"
                     />
                     <div className="brokercmd__drawerActions">
@@ -589,28 +838,38 @@ export default function BrokerCommand() {
                   <div className="brokercmd__drawerCard brokercmd__drawerCard--wide">
                     <div className="brokercmd__drawerCardTitle">Broker Setup Checklist</div>
                     <div className="brokercmd__drawerHint">
-                      Later we can attach actual files like we did for Carrier docs. For now: track the checklist.
+                      Checklist drives status. When all items are checked, you can <strong>Confirm Setup Complete</strong>.
+                    </div>
+
+                    <div className="brokercmd__setupBar">
+                      <div className="brokercmd__setupBarTop">
+                        <strong>{setupProgress(selected).done}/{setupProgress(selected).total}</strong>
+                        <span>{setupProgress(selected).pct}%</span>
+                      </div>
+                      <div className="brokercmd__setupBarTrack">
+                        <div className="brokercmd__setupBarFill" style={{ width: `${setupProgress(selected).pct}%` }} />
+                      </div>
                     </div>
 
                     <div className="brokercmd__checklist">
-                      {[
-                        "Setup packet received",
-                        "Credit check / factoring approval",
-                        "Rate confirmation process confirmed",
-                        "Detention / TONU terms confirmed",
-                        "After-hours / weekend contact",
-                      ].map((label) => {
-                        const key = `ck_${label.replace(/\W+/g, "_")}`;
-                        const on = !!selected[key];
+                      {SETUP_ITEMS.map((it) => {
+                        const on = !!(selected.setup || {})[it.key];
                         return (
                           <button
-                            key={key}
+                            key={it.key}
                             type="button"
                             className={`brokercmd__check ${on ? "is-on" : "is-off"}`}
-                            onClick={() => doUpdateBroker(selected.id, { [key]: !on })}
+                            onClick={() => {
+                              if (typeof toggleBrokerSetupItem === "function") {
+                                toggleBrokerSetupItem(selected.id, it.key);
+                              } else {
+                                const nextSetup = { ...(selected.setup || {}), [it.key]: !on };
+                                updateBroker(selected.id, { setup: nextSetup });
+                              }
+                            }}
                           >
                             <span>{on ? "☑" : "☐"}</span>
-                            <span>{label}</span>
+                            <span>{it.label}</span>
                           </button>
                         );
                       })}
@@ -620,9 +879,20 @@ export default function BrokerCommand() {
                       <button className="command-shell__btn" type="button" onClick={markContact}>
                         Mark Contact
                       </button>
-                      <button className="command-shell__btn command-shell__btn--primary" type="button" onClick={() => setTab("Notes")}>
+
+                      <button className="command-shell__btn" type="button" onClick={() => setTab("Notes")}>
                         Go To Notes
                       </button>
+
+                      {canConfirmSetup ? (
+                        <button
+                          className="command-shell__btn command-shell__btn--primary"
+                          type="button"
+                          onClick={confirmSetupComplete}
+                        >
+                          Confirm Setup Complete
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
