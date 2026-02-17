@@ -5,21 +5,14 @@ import "./MissionControl.css";
 
 /**
  * Mission Control (v4 - KPI ROUTING)
- * - KPI clicks NAVIGATE to command pages:
- *    Active Lanes -> Lane Command
- *    Active Trucks -> Carrier Command
- *    Loads Booked -> Load Command
- *    Trucks Below Target -> Carrier Command (with filter hint)
- *    Avg Net RPM -> Lane Command (focus hint)
- * - Keeps:
- *    top-right ⋯ menu
- *    lane selector -> lane command with selected lane (query params)
- *    pop out lane command with selected lane (query params)
- *    lane history ⋯ menu + CSV export + open history
- *    recent loads row click -> lane command for that lane
+ * ✅ CLICK-THROUGH FIX:
+ * - Stop propagation on menu interactions (onMouseDown + onClick)
+ * - Guard KPI/table clicks if any menu/modal is open
  *
- * - NEW:
- *    Carrier Performance rows click -> Carrier Command (with carrier query)
+ * ✅ SETTINGS:
+ * - Tips toggle (persisted)
+ * - Compact UI toggle (persisted + body class)
+ * - Mobile Compact toggle (persisted + body class, only used by CSS media queries)
  */
 
 export default function MissionControl() {
@@ -30,6 +23,62 @@ export default function MissionControl() {
 
   // Lane History menu
   const [laneHistoryMenuOpen, setLaneHistoryMenuOpen] = useState(false);
+
+  // Settings modal
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Settings keys
+  const LS_MC_COMPACT = "lanesync_mc_compact_ui_v1";
+  const LS_MC_TIPS = "lanesync_mc_show_tips_v1";
+  const LS_MC_MOBILE_COMPACT = "lanesync_mc_mobile_compact_v1";
+
+  // Settings state
+  const [showTips, setShowTips] = useState(() => {
+    const v = localStorage.getItem(LS_MC_TIPS);
+    if (v === null) return true;
+    return v === "true";
+  });
+
+  const [compactUi, setCompactUi] = useState(() => {
+    const v = localStorage.getItem(LS_MC_COMPACT);
+    if (v === null) return false;
+    return v === "true";
+  });
+
+  const [mobileCompact, setMobileCompact] = useState(() => {
+    const v = localStorage.getItem(LS_MC_MOBILE_COMPACT);
+    if (v === null) return true; // default ON for better phone/tablet experience
+    return v === "true";
+  });
+
+  // Apply + persist compact UI
+  useEffect(() => {
+    document.body.classList.toggle("compact-ui", !!compactUi);
+    try {
+      localStorage.setItem(LS_MC_COMPACT, String(!!compactUi));
+    } catch {
+      // ignore
+    }
+  }, [compactUi]);
+
+  // Persist tips
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_MC_TIPS, String(!!showTips));
+    } catch {
+      // ignore
+    }
+  }, [showTips]);
+
+  // Apply + persist mobile compact (CSS will decide when to use it via media queries)
+  useEffect(() => {
+    document.body.classList.toggle("mobile-compact", !!mobileCompact);
+    try {
+      localStorage.setItem(LS_MC_MOBILE_COMPACT, String(!!mobileCompact));
+    } catch {
+      // ignore
+    }
+  }, [mobileCompact]);
 
   // Lane selector state
   const lanes = useMemo(
@@ -113,11 +162,22 @@ export default function MissionControl() {
     }
   };
 
-  // ✅ KPI -> Route to Command pages
-  const handleKpiClick = (kpiId) => {
-    // close any menus so nothing blocks clicks
+  const closeAllMenus = () => {
     setMenuOpen(false);
     setLaneHistoryMenuOpen(false);
+  };
+
+  const anyOverlayOpen = menuOpen || laneHistoryMenuOpen || settingsOpen;
+
+  // helper: prevent click-through / ghost clicks
+  const stopMenuEvent = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // KPI routing
+  const handleKpiClick = (kpiId) => {
+    if (anyOverlayOpen) return;
 
     if (kpiId === "lanes") {
       if (selectedLane) {
@@ -129,21 +189,10 @@ export default function MissionControl() {
       return;
     }
 
-    if (kpiId === "trucks") {
-      navigate("/carrier-command");
-      return;
-    }
+    if (kpiId === "trucks") return navigate("/carrier-command");
+    if (kpiId === "booked") return navigate("/load-command");
 
-    if (kpiId === "booked") {
-      navigate("/load-command");
-      return;
-    }
-
-    if (kpiId === "below") {
-      // filter hint (optional for later)
-      navigate("/carrier-command?filter=below-target");
-      return;
-    }
+    if (kpiId === "below") return navigate("/carrier-command?filter=below-target");
 
     if (kpiId === "avg") {
       if (selectedLane) {
@@ -155,10 +204,9 @@ export default function MissionControl() {
     }
   };
 
-  // ✅ Carrier Performance row click -> Carrier Command (with carrier query)
+  // Carrier Performance row click -> Carrier Command
   const openCarrierFromPerformance = (carrierName) => {
-    setMenuOpen(false);
-    setLaneHistoryMenuOpen(false);
+    if (anyOverlayOpen) return;
 
     const params = new URLSearchParams({
       carrier: carrierName,
@@ -168,19 +216,19 @@ export default function MissionControl() {
     navigate(`/carrier-command?${params.toString()}`);
   };
 
-  // Close menus on ESC
+  // Close menus/modals on ESC
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
-        setMenuOpen(false);
-        setLaneHistoryMenuOpen(false);
+        closeAllMenus();
+        setSettingsOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Close top-right ⋯ menu on outside click
+  // Close top-right menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const closeOnOutside = (e) => {
@@ -190,7 +238,7 @@ export default function MissionControl() {
     return () => document.removeEventListener("mousedown", closeOnOutside);
   }, [menuOpen]);
 
-  // Close Lane History ⋯ menu on outside click
+  // Close Lane History menu on outside click
   useEffect(() => {
     if (!laneHistoryMenuOpen) return;
     const closeOnOutside = (e) => {
@@ -262,11 +310,10 @@ export default function MissionControl() {
     []
   );
 
-  const netRpm = selectedLane?.netRpm ?? 2.17;
-  const statusLabel = netRpm >= 2.35 ? "HEALTHY" : netRpm >= 2.1 ? "BORDERLINE" : "RISK";
+  const statusLabel = (selectedLane?.netRpm ?? 2.17) >= 2.35 ? "HEALTHY" : (selectedLane?.netRpm ?? 2.17) >= 2.1 ? "BORDERLINE" : "RISK";
 
   const openLaneCommandHere = () => {
-    if (!selectedLane) return;
+    if (!selectedLane || anyOverlayOpen) return;
     rememberLane(selectedLane);
     navigate(`/lane-command?${buildLaneQuery(selectedLane)}`);
   };
@@ -308,17 +355,30 @@ export default function MissionControl() {
   };
 
   const openLaneCommandHistoryHere = () => {
-    if (!selectedLane) return;
+    if (!selectedLane || anyOverlayOpen) return;
     rememberLane(selectedLane);
     navigate(`/lane-command?${buildLaneQuery(selectedLane, { tab: "history" })}`);
   };
 
   const openFromRecentLoad = (laneId) => {
+    if (anyOverlayOpen) return;
     const laneObj = lanes.find((l) => l.id === laneId);
     if (!laneObj) return;
     setSelectedLaneId(laneObj.id);
     rememberLane(laneObj);
     navigate(`/lane-command?${buildLaneQuery(laneObj)}`);
+  };
+
+  const resetMissionPrefs = () => {
+    try {
+      localStorage.removeItem(LS_MC_COMPACT);
+      localStorage.removeItem(LS_MC_TIPS);
+      localStorage.removeItem(LS_MC_MOBILE_COMPACT);
+      localStorage.removeItem("lanesync_sidebar_open");
+    } catch {
+      // ignore
+    }
+    window.location.reload();
   };
 
   return (
@@ -340,8 +400,9 @@ export default function MissionControl() {
                 className="icon-btn"
                 title="More"
                 type="button"
+                onMouseDown={stopMenuEvent}
                 onClick={(e) => {
-                  e.stopPropagation();
+                  stopMenuEvent(e);
                   setLaneHistoryMenuOpen(false);
                   setMenuOpen((v) => !v);
                 }}
@@ -351,16 +412,24 @@ export default function MissionControl() {
                 ⋯
               </button>
 
-              <div className={`popout-menu ${menuOpen ? "open" : ""}`} role="menu">
+              {/* ✅ FIXED: cleaned popout-menu element (no duplicates / broken JSX) */}
+              <div
+                className={`popout-menu ${menuOpen ? "open" : ""}`}
+                role="menu"
+                onMouseDown={stopMenuEvent}
+                onClick={stopMenuEvent}
+              >
                 <div className="popout-menu-title">Options</div>
 
                 <button
                   className="popout-menu-item"
                   role="menuitem"
                   type="button"
-                  onClick={() => {
+                  onMouseDown={stopMenuEvent}
+                  onClick={(e) => {
+                    stopMenuEvent(e);
                     popOutMissionControl();
-                    setMenuOpen(false);
+                    closeAllMenus();
                   }}
                 >
                   🪟 Pop out Mission Control
@@ -370,9 +439,11 @@ export default function MissionControl() {
                   className="popout-menu-item"
                   role="menuitem"
                   type="button"
-                  onClick={() => {
-                    console.log("[Mission Control] Settings clicked");
-                    setMenuOpen(false);
+                  onMouseDown={stopMenuEvent}
+                  onClick={(e) => {
+                    stopMenuEvent(e);
+                    closeAllMenus();
+                    setSettingsOpen(true);
                   }}
                 >
                   ⚙️ Settings
@@ -382,9 +453,11 @@ export default function MissionControl() {
                   className="popout-menu-item"
                   role="menuitem"
                   type="button"
-                  onClick={() => {
-                    document.body.classList.toggle("compact-ui");
-                    setMenuOpen(false);
+                  onMouseDown={stopMenuEvent}
+                  onClick={(e) => {
+                    stopMenuEvent(e);
+                    setCompactUi((v) => !v);
+                    closeAllMenus();
                   }}
                 >
                   📐 Toggle compact layout
@@ -394,15 +467,26 @@ export default function MissionControl() {
                   className="popout-menu-item"
                   role="menuitem"
                   type="button"
-                  onClick={() => {
+                  onMouseDown={stopMenuEvent}
+                  onClick={(e) => {
+                    stopMenuEvent(e);
                     popOutLaneCommand();
-                    setMenuOpen(false);
+                    closeAllMenus();
                   }}
                 >
                   🧭 Pop out Lane Command (selected lane)
                 </button>
 
-                <button className="popout-menu-item" role="menuitem" type="button" onClick={() => setMenuOpen(false)}>
+                <button
+                  className="popout-menu-item"
+                  role="menuitem"
+                  type="button"
+                  onMouseDown={stopMenuEvent}
+                  onClick={(e) => {
+                    stopMenuEvent(e);
+                    closeAllMenus();
+                  }}
+                >
                   Close
                 </button>
               </div>
@@ -427,11 +511,19 @@ export default function MissionControl() {
               <div
                 key={kpi.id}
                 className={["kpi-card", kpi.actionable ? "actionable" : ""].join(" ")}
-                onClick={() => (kpi.actionable ? handleKpiClick(kpi.id) : null)}
+                onClick={(e) => {
+                  if (anyOverlayOpen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  if (kpi.actionable) handleKpiClick(kpi.id);
+                }}
                 role={kpi.actionable ? "button" : undefined}
                 tabIndex={kpi.actionable ? 0 : undefined}
                 onKeyDown={(e) => {
                   if (!kpi.actionable) return;
+                  if (anyOverlayOpen) return;
                   if (e.key === "Enter" || e.key === " ") handleKpiClick(kpi.id);
                 }}
                 title={`Open ${kpi.label}`}
@@ -557,8 +649,9 @@ export default function MissionControl() {
                   className="mini-icon"
                   type="button"
                   title="Lane history options"
+                  onMouseDown={stopMenuEvent}
                   onClick={(e) => {
-                    e.stopPropagation();
+                    stopMenuEvent(e);
                     setMenuOpen(false);
                     setLaneHistoryMenuOpen((v) => !v);
                   }}
@@ -568,14 +661,16 @@ export default function MissionControl() {
                   ⋯
                 </button>
 
-                <div className={`lh-menu ${laneHistoryMenuOpen ? "open" : ""}`} role="menu">
+                <div className={`lh-menu ${laneHistoryMenuOpen ? "open" : ""}`} role="menu" onMouseDown={stopMenuEvent} onClick={stopMenuEvent}>
                   <div className="lh-menu-title">Lane History</div>
 
                   <button
                     className="lh-menu-item"
                     role="menuitem"
                     type="button"
-                    onClick={() => {
+                    onMouseDown={stopMenuEvent}
+                    onClick={(e) => {
+                      stopMenuEvent(e);
                       exportLaneHistoryCSV();
                       setLaneHistoryMenuOpen(false);
                     }}
@@ -587,7 +682,9 @@ export default function MissionControl() {
                     className="lh-menu-item"
                     role="menuitem"
                     type="button"
-                    onClick={() => {
+                    onMouseDown={stopMenuEvent}
+                    onClick={(e) => {
+                      stopMenuEvent(e);
                       openLaneCommandHistoryHere();
                       setLaneHistoryMenuOpen(false);
                     }}
@@ -599,7 +696,9 @@ export default function MissionControl() {
                     className="lh-menu-item"
                     role="menuitem"
                     type="button"
-                    onClick={() => {
+                    onMouseDown={stopMenuEvent}
+                    onClick={(e) => {
+                      stopMenuEvent(e);
                       popOutLaneCommand({ tab: "history" });
                       setLaneHistoryMenuOpen(false);
                     }}
@@ -607,7 +706,16 @@ export default function MissionControl() {
                     🪟 Pop out Lane Command (History)
                   </button>
 
-                  <button className="lh-menu-item" role="menuitem" type="button" onClick={() => setLaneHistoryMenuOpen(false)}>
+                  <button
+                    className="lh-menu-item"
+                    role="menuitem"
+                    type="button"
+                    onMouseDown={stopMenuEvent}
+                    onClick={(e) => {
+                      stopMenuEvent(e);
+                      setLaneHistoryMenuOpen(false);
+                    }}
+                  >
                     Close
                   </button>
                 </div>
@@ -646,10 +754,18 @@ export default function MissionControl() {
                     {carrierRows.map((r) => (
                       <tr
                         key={r.carrier}
-                        onClick={() => openCarrierFromPerformance(r.carrier)}
+                        onClick={(e) => {
+                          if (anyOverlayOpen) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                          }
+                          openCarrierFromPerformance(r.carrier);
+                        }}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
+                          if (anyOverlayOpen) return;
                           if (e.key === "Enter" || e.key === " ") openCarrierFromPerformance(r.carrier);
                         }}
                         style={{ cursor: "pointer" }}
@@ -665,9 +781,7 @@ export default function MissionControl() {
                 </table>
               </div>
 
-              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-                Tip: Click a carrier row to open Carrier Command.
-              </div>
+              {showTips ? <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>Tip: Click a carrier row to open Carrier Command.</div> : null}
             </div>
 
             {/* Recent Loads */}
@@ -689,7 +803,14 @@ export default function MissionControl() {
                     {recentLoads.map((r) => (
                       <tr
                         key={`${r.date}-${r.lane}`}
-                        onClick={() => openFromRecentLoad(r.laneId)}
+                        onClick={(e) => {
+                          if (anyOverlayOpen) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                          }
+                          openFromRecentLoad(r.laneId);
+                        }}
                         style={{ cursor: "pointer" }}
                         title="Open Lane Command for this lane"
                       >
@@ -706,14 +827,82 @@ export default function MissionControl() {
                 </table>
               </div>
 
-              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-                Tip: Click a row to open Lane Command for that lane.
-              </div>
+              {showTips ? <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>Tip: Click a row to open Lane Command for that lane.</div> : null}
             </div>
           </div>
-          {/* /bottom-row */}
         </div>
       </div>
+
+      {/* SETTINGS MODAL */}
+      {settingsOpen ? (
+        <div className="mc-overlay" role="dialog" aria-modal="true" onClick={() => setSettingsOpen(false)}>
+          <div className="mc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mc-modalHeader">
+              <div>
+                <div className="mc-modalTitle">Settings</div>
+                <div className="mc-modalSub">Mission Control preferences</div>
+              </div>
+              <button className="mc-close" type="button" onClick={() => setSettingsOpen(false)} aria-label="Close settings" title="Close">
+                ✕
+              </button>
+            </div>
+
+            <div className="mc-modalBody">
+              <div className="mc-settingRow">
+                <div>
+                  <div className="mc-settingLabel">Show tips</div>
+                  <div className="mc-settingHelp">Shows the “Tip:” lines under tables and cards.</div>
+                </div>
+                <label className="mc-toggle" title="Toggle tips">
+                  <input type="checkbox" checked={showTips} onChange={(e) => setShowTips(e.target.checked)} />
+                  <span />
+                </label>
+              </div>
+
+              <div className="mc-settingRow">
+                <div>
+                  <div className="mc-settingLabel">Compact layout</div>
+                  <div className="mc-settingHelp">Tightens spacing using the existing compact-ui class.</div>
+                </div>
+                <label className="mc-toggle" title="Toggle compact layout">
+                  <input type="checkbox" checked={compactUi} onChange={(e) => setCompactUi(e.target.checked)} />
+                  <span />
+                </label>
+              </div>
+
+              <div className="mc-settingRow">
+                <div>
+                  <div className="mc-settingLabel">Mobile compact mode</div>
+                  <div className="mc-settingHelp">Tightens spacing on phones/tablets (used by CSS media queries).</div>
+                </div>
+                <label className="mc-toggle" title="Toggle mobile compact">
+                  <input type="checkbox" checked={mobileCompact} onChange={(e) => setMobileCompact(e.target.checked)} />
+                  <span />
+                </label>
+              </div>
+
+              <div className="mc-settingRow">
+                <div>
+                  <div className="mc-settingLabel">Reset preferences</div>
+                  <div className="mc-settingHelp">Clears saved UI settings (compact, tips, mobile compact, sidebar preference).</div>
+                </div>
+                <button className="mc-btn" type="button" onClick={resetMissionPrefs}>
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="mc-modalFooter">
+              <button className="mc-btn" type="button" onClick={() => setSettingsOpen(false)}>
+                Close
+              </button>
+              <button className="mc-btn mc-btn--primary" type="button" onClick={() => setSettingsOpen(false)}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

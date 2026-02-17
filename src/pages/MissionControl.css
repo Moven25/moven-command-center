@@ -45,7 +45,8 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* Inner wrapper (you added this in JSX; it needs padding so layout stays right) */
+/* Inner wrapper (optional)
+   If you add <div className="mission-inner"> in JSX, this keeps spacing right. */
 .mission-inner {
   padding-bottom: 12px;
 }
@@ -59,6 +60,7 @@
   padding: 12px 14px 8px;
   color: var(--mc-muted);
   position: relative;
+  z-index: 10;
 }
 
 .top-pill {
@@ -77,6 +79,7 @@
   display: inline-flex;
   gap: 8px;
   position: relative;
+  z-index: 50;
 }
 
 .icon-btn {
@@ -115,7 +118,7 @@
   transform: translateY(-6px);
   pointer-events: none;
   transition: opacity 160ms ease, transform 160ms ease;
-  z-index: 5;
+  z-index: 999;
 }
 
 .popout-menu.open {
@@ -146,7 +149,9 @@
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
 }
 
-.popout-menu-item:last-child { margin-bottom: 0; }
+.popout-menu-item:last-child {
+  margin-bottom: 0;
+}
 
 .popout-menu-item:hover {
   transform: translateY(-1px);
@@ -161,6 +166,8 @@
   justify-content: space-between;
 
   padding: 2px 18px 10px;
+  position: relative;
+  z-index: 5;
 }
 
 /* Left brand */
@@ -191,7 +198,7 @@
 
 /* Right spacer to keep title perfectly centered */
 .mission-header-right {
-  width: 110px; /* matches visual weight of left brand block */
+  width: 110px;
 }
 
 /* separators */
@@ -208,6 +215,10 @@
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   padding: 0 18px 12px;
+
+  position: relative;
+  z-index: 30;
+  pointer-events: auto;
 }
 
 .kpi-card {
@@ -218,9 +229,15 @@
   padding: 12px;
   user-select: none;
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+
+  position: relative;
+  z-index: 30;
+  pointer-events: auto;
 }
 
-.kpi-card.actionable { cursor: pointer; }
+.kpi-card.actionable {
+  cursor: pointer;
+}
 
 .kpi-card.actionable:hover {
   transform: translateY(-2px);
@@ -250,9 +267,16 @@
   gap: 10px;
   align-items: center;
   padding: 0 18px 10px;
+
+  position: relative;
+  z-index: 5;
 }
 
-.lane-strip-title { font-size: 12px; font-weight: 900; color: rgba(255,255,255,0.82); }
+.lane-strip-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.82);
+}
 
 .lane-chip {
   border-radius: 12px;
@@ -262,7 +286,9 @@
   padding: 9px 10px;
 }
 
-.lane-chip.wide { padding: 9px 12px; }
+.lane-chip.wide {
+  padding: 9px 12px;
+}
 
 .chip-label { font-size: 10.5px; font-weight: 850; color: rgba(255,255,255,0.62); letter-spacing: 0.02em; }
 .chip-value { margin-top: 4px; font-size: 12.5px; font-weight: 850; color: rgba(255,255,255,0.92); }
@@ -291,6 +317,9 @@
   grid-template-columns: 1.15fr 1.35fr 0.85fr;
   gap: 12px;
   padding: 0 18px 10px;
+
+  position: relative;
+  z-index: 5;
 }
 
 .panel-card {
@@ -301,7 +330,12 @@
   padding: 12px;
 }
 
-.panel-title { font-size: 12px; font-weight: 900; color: rgba(255,255,255,0.86); margin-bottom: 8px; }
+.panel-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.86);
+  margin-bottom: 8px;
+}
 .panel-title.sub { margin-top: 10px; }
 .panel-title.row { display: flex; align-items: center; justify-content: space-between; }
 
@@ -376,7 +410,12 @@
 }
 
 /* HISTORY */
-.history-sub { font-size: 11.5px; font-weight: 850; color: rgba(255,255,255,0.72); margin: 6px 0 8px; }
+.history-sub {
+  font-size: 11.5px;
+  font-weight: 850;
+  color: rgba(255,255,255,0.72);
+  margin: 6px 0 8px;
+}
 
 .history-list { display: grid; gap: 8px; }
 .history-item {
@@ -397,6 +436,8 @@
 
   padding: 0 18px 16px;
   height: 232px;
+  position: relative;
+  z-index: 5;
 }
 
 .table-card { display: flex; flex-direction: column; padding-bottom: 10px; }
@@ -449,14 +490,10 @@
 .tag.ok { background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.28); }
 .tag.risk { background: rgba(244,63,94,0.14); border-color: rgba(244,63,94,0.28); }
 
-/* Responsive */
-@media (max-height: 820px) {
-  .mission-panel { height: calc(100% - 8px); }
-  .bottom-row { height: 210px; }
-}
 /* ===== Lane History Menu (⋯) ===== */
 .lane-history-actions {
   position: relative;
+  z-index: 40;
 }
 
 .lh-menu {
@@ -477,7 +514,7 @@
   transform: translateY(-6px);
   pointer-events: none;
   transition: opacity 160ms ease, transform 160ms ease;
-  z-index: 20;
+  z-index: 999;
 }
 
 .lh-menu.open {
@@ -517,6 +554,7 @@
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.14);
 }
+
 /* KPI click highlight pulse */
 .mc-pulse {
   animation: mcPulse 900ms ease-out;
@@ -527,16 +565,8 @@
   30%  { box-shadow: 0 0 0 3px rgba(96,165,250,0.28), 0 18px 40px rgba(0,0,0,0.25); }
   100% { box-shadow: 0 0 0 rgba(96,165,250,0); }
 }
-/* === KPI CLICK FIX: ensure KPI row is above any visual overlays === */
-.kpi-row,
-.kpi-card {
-  position: relative;
-  z-index: 20;
-  pointer-events: auto;
-}
 
-/* If your panel/canvas uses glow/noise overlays via ::before/::after,
-   this makes sure they never block clicks. */
+/* === CLICK SAFETY: prevent overlays from blocking clicks === */
 .mission-panel::before,
 .mission-panel::after,
 .mission-canvas::before,
@@ -544,4 +574,428 @@
 .mission-inner::before,
 .mission-inner::after {
   pointer-events: none !important;
+}
+
+/* If you ever add a full-screen overlay div, ensure it doesn’t eat clicks unless intended */
+.mission-panel * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Responsive */
+@media (max-height: 820px) {
+  .mission-panel { height: calc(100% - 8px); }
+  .bottom-row { height: 210px; }
+}
+/* ✅ Prevent menu click-through into KPIs */
+.top-actions {
+  position: relative;
+  z-index: 50;
+}
+
+.popout-menu {
+  z-index: 60;
+}
+/* ================================
+   FIX: Menu must be above KPI row
+   ================================ */
+
+/* Top strip sits above everything */
+.mission-topstrip{
+  position: relative;
+  z-index: 200;
+}
+
+/* Menu container above KPI click layer */
+.top-actions{
+  position: relative;
+  z-index: 250;
+}
+
+/* Menu itself must be very high */
+.popout-menu{
+  z-index: 300 !important;
+}
+
+/* Lane history menu also must be high */
+.lh-menu{
+  z-index: 300 !important;
+}
+
+/* KPI row should NOT be above menus */
+.kpi-row,
+.kpi-card{
+  z-index: 10 !important;
+}
+/* ==========================
+   Compact UI mode
+   ========================== */
+body.compact-ui .mission-panel {
+  height: min(780px, calc(100% - 0px));
+}
+
+body.compact-ui .mission-topstrip {
+  padding: 10px 12px 6px;
+}
+
+body.compact-ui .mission-header {
+  padding: 0 16px 8px;
+}
+
+body.compact-ui .kpi-row {
+  gap: 10px;
+  padding: 0 16px 10px;
+}
+
+body.compact-ui .kpi-card {
+  padding: 10px;
+}
+
+body.compact-ui .lane-strip {
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+body.compact-ui .mission-grid {
+  gap: 10px;
+  padding: 0 16px 8px;
+}
+
+body.compact-ui .panel-card {
+  padding: 10px;
+}
+
+body.compact-ui .bottom-row {
+  padding: 0 16px 14px;
+  height: 210px;
+}
+
+body.compact-ui .grid-table thead th,
+body.compact-ui .grid-table tbody td {
+  padding: 8px;
+}
+/* =========================
+   SETTINGS MODAL (Mission Control)
+   ========================= */
+.mc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  padding: 18px;
+}
+
+.mc-modal {
+  width: min(560px, 92vw);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 24, 0.92);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.mc-modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mc-modalTitle {
+  font-size: 14px;
+  font-weight: 950;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.02em;
+}
+
+.mc-modalSub {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 750;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.mc-close {
+  width: 34px;
+  height: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+}
+
+.mc-modalBody {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.mc-settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mc-settingLabel {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.mc-settingHelp {
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 750;
+  color: rgba(255, 255, 255, 0.62);
+  max-width: 360px;
+}
+
+.mc-toggle {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  display: inline-block;
+}
+
+.mc-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.mc-toggle span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.mc-toggle span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.90);
+  transition: transform 160ms ease;
+}
+
+.mc-toggle input:checked + span {
+  background: color-mix(in srgb, var(--accent, #60a5fa) 25%, rgba(255, 255, 255, 0.10));
+  border-color: color-mix(in srgb, var(--accent, #60a5fa) 35%, rgba(255, 255, 255, 0.16));
+}
+
+.mc-toggle input:checked + span::after {
+  transform: translateX(18px);
+}
+
+.mc-modalFooter {
+  padding: 12px 14px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mc-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.mc-btn--primary {
+  background: color-mix(in srgb, var(--accent, #60a5fa) 22%, rgba(255, 255, 255, 0.06));
+  border-color: color-mix(in srgb, var(--accent, #60a5fa) 35%, rgba(255, 255, 255, 0.12));
+}
+/* =========================
+   RESPONSIVE: Tablet + Mobile Optimization
+   (keeps desktop look intact)
+   ========================= */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .mission-canvas {
+    padding: 12px;
+    align-items: stretch;
+  }
+
+  .mission-panel {
+    width: 100%;
+    height: auto;
+    min-height: 720px;
+  }
+
+  .kpi-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mission-grid {
+    grid-template-columns: 1fr 1fr; /* 2 columns */
+  }
+
+  /* Make Lane History span full width on tablet if needed */
+  .mission-grid > .panel-card:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .table-wrap {
+    max-height: 260px;
+  }
+}
+
+/* Phone */
+@media (max-width: 640px) {
+  .mission-canvas {
+    padding: 10px;
+  }
+
+  /* Let the panel scroll internally on small screens */
+  .mission-page {
+    overflow: hidden;
+  }
+
+  .mission-panel {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    border-radius: 16px;
+    overflow: auto; /* important */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mission-topstrip {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 12px 8px;
+  }
+
+  .top-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .mission-header {
+    padding: 2px 12px 10px;
+  }
+
+  .mission-title {
+    font-size: 22px;
+  }
+
+  .mission-header-right {
+    width: 0; /* free space */
+  }
+
+  .soft-sep {
+    margin: 2px 12px 10px;
+  }
+
+  .kpi-row {
+    padding: 0 12px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 10px;
+  }
+
+  .kpi-value {
+    font-size: 16px;
+  }
+
+  /* Lane strip becomes stacked */
+  .lane-strip {
+    padding: 0 12px 10px;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .lane-strip-title {
+    margin-bottom: -2px;
+  }
+
+  .popout-btn {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .mission-grid {
+    padding: 0 12px 10px;
+    grid-template-columns: 1fr; /* single column */
+    gap: 10px;
+  }
+
+  .bottom-row {
+    padding: 0 12px 14px;
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 10px;
+  }
+
+  .table-wrap {
+    max-height: 240px;
+  }
+
+  .grid-table thead th,
+  .grid-table tbody td {
+    padding: 9px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 390px) {
+  .mission-title {
+    font-size: 20px;
+  }
+
+  .top-pill {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  .kpi-row {
+    gap: 8px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  .grid-table {
+    font-size: 11px;
+  }
 }
