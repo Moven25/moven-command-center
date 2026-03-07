@@ -999,3 +999,38 @@ body.compact-ui .grid-table tbody td {
     font-size: 11px;
   }
 }
+/* =========================
+   v5 PATCHES (MissionControl.jsx)
+   - refresh button added
+   - disabled buttons should look disabled
+   - modal overlay always above everything
+   ========================= */
+
+/* Disabled buttons */
+.icon-btn:disabled,
+.popout-btn:disabled,
+.mc-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Make sure settings overlay is always on top */
+.mc-overlay {
+  z-index: 99999 !important;
+}
+
+/* Optional: menu items shouldn't show "press" text selection */
+.popout-menu-item,
+.lh-menu-item,
+.kpi-card {
+  user-select: none;
+}
+
+/* Optional: better scroll on mobile inside panel (you already set this, just reinforce) */
+@media (max-width: 640px) {
+  .mission-panel {
+    -webkit-overflow-scrolling: touch;
+  }
+}

@@ -6,7 +6,13 @@ import React, { createContext, useContext, useMemo, useState, useEffect } from "
 ------------------------------ */
 const LS_TRAINING = "lanesync_training_mode_v1";
 
-/* NEW: persist brokers per mode (optional but recommended) */
+// Persist per-mode datasets
+const LS_LIVE_CARRIERS = "lanesync_live_carriers_v1";
+const LS_LIVE_LOADS = "lanesync_live_loads_v1";
+const LS_TRAIN_CARRIERS = "lanesync_training_carriers_v1";
+const LS_TRAIN_LOADS = "lanesync_training_loads_v1";
+
+// Persist brokers per mode
 const LS_LIVE_BROKERS = "lanesync_live_brokers_v1";
 const LS_TRAIN_BROKERS = "lanesync_training_brokers_v1";
 
@@ -366,7 +372,8 @@ const SEED_BROKERS = [
     creditDays: 30,
     riskScore: 35,
     hotList: true,
-    negotiationNotes: "Baseline: confirm accessorials, detention after 2 hrs, TONU policy, rate floor per lane.",
+    negotiationNotes:
+      "Baseline: confirm accessorials, detention after 2 hrs, TONU policy, rate floor per lane.",
     lanesNotes: "Strong: CHI→DAL, CHI→ATL. Avoid: NE winter last-minute.",
     lastContactAt: daysFromNowISO(-1, 14),
     setupStatus: "Ready",
@@ -441,13 +448,27 @@ function nextBrokerId(prefix = "BR") {
   return `${prefix}-${Math.floor(10000 + Math.random() * 89999)}`;
 }
 
-function safeBoolFromLS(key, fallback) {
-  const v = localStorage.getItem(key);
-  if (v === null || v === undefined) return fallback;
-  return v === "true";
+function hasLS() {
+  try {
+    return typeof window !== "undefined" && !!window.localStorage;
+  } catch {
+    return false;
+  }
 }
 
-function safeJsonFromLS(key, fallback) {
+function safeBoolFromLS(key, fallback) {
+  if (!hasLS()) return fallback;
+  try {
+    const v = localStorage.getItem(key);
+    if (v === null || v === undefined) return fallback;
+    return v === "true";
+  } catch {
+    return fallback;
+  }
+}
+
+function safeArrayFromLS(key, fallback) {
+  if (!hasLS()) return fallback;
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
@@ -458,9 +479,10 @@ function safeJsonFromLS(key, fallback) {
   }
 }
 
-function saveJsonToLS(key, value) {
+function saveArrayToLS(key, value) {
+  if (!hasLS()) return;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(Array.isArray(value) ? value : []));
   } catch {
     // ignore
   }
@@ -468,7 +490,13 @@ function saveJsonToLS(key, value) {
 
 function brokerSetupProgress(b) {
   const s = b?.setup || {};
-  const keys = ["setupPacketReceived", "creditApproved", "rateConfProcessConfirmed", "detentionTonuConfirmed", "afterHoursContact"];
+  const keys = [
+    "setupPacketReceived",
+    "creditApproved",
+    "rateConfProcessConfirmed",
+    "detentionTonuConfirmed",
+    "afterHoursContact",
+  ];
   const done = keys.reduce((acc, k) => acc + (s[k] ? 1 : 0), 0);
   const pct = Math.round((done / keys.length) * 100);
   return { done, total: keys.length, pct };
@@ -481,34 +509,49 @@ const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
   // Training Mode ON by default
-  const [trainingMode, setTrainingMode] = useState(() => safeBoolFromLS(LS_TRAINING, true));
+  const [trainingMode, setTrainingMode] = useState(() =>
+    safeBoolFromLS(LS_TRAINING, true)
+  );
 
-  // Keep two data stores: live + training
-  const [liveCarriers, setLiveCarriers] = useState(SEED_CARRIERS);
-  const [liveLoads, setLiveLoads] = useState(SEED_LOADS);
+  // Live datasets (persisted)
+  const [liveCarriers, setLiveCarriers] = useState(() =>
+    safeArrayFromLS(LS_LIVE_CARRIERS, SEED_CARRIERS)
+  );
+  const [liveLoads, setLiveLoads] = useState(() =>
+    safeArrayFromLS(LS_LIVE_LOADS, SEED_LOADS)
+  );
+  const [liveBrokers, setLiveBrokers] = useState(() =>
+    safeArrayFromLS(LS_LIVE_BROKERS, SEED_BROKERS)
+  );
 
-  const [trainingCarriers, setTrainingCarriers] = useState(TRAINING_CARRIERS);
-  const [trainingLoads, setTrainingLoads] = useState(TRAINING_LOADS);
-
-  // NEW: brokers per mode (persisted)
-  const [liveBrokers, setLiveBrokers] = useState(() => safeJsonFromLS(LS_LIVE_BROKERS, SEED_BROKERS));
-  const [trainingBrokers, setTrainingBrokers] = useState(() => safeJsonFromLS(LS_TRAIN_BROKERS, TRAINING_BROKERS));
+  // Training datasets (persisted)
+  const [trainingCarriers, setTrainingCarriers] = useState(() =>
+    safeArrayFromLS(LS_TRAIN_CARRIERS, TRAINING_CARRIERS)
+  );
+  const [trainingLoads, setTrainingLoads] = useState(() =>
+    safeArrayFromLS(LS_TRAIN_LOADS, TRAINING_LOADS)
+  );
+  const [trainingBrokers, setTrainingBrokers] = useState(() =>
+    safeArrayFromLS(LS_TRAIN_BROKERS, TRAINING_BROKERS)
+  );
 
   // persist training mode
   useEffect(() => {
+    if (!hasLS()) return;
     try {
       localStorage.setItem(LS_TRAINING, String(trainingMode));
     } catch {}
   }, [trainingMode]);
 
-  // persist brokers
-  useEffect(() => {
-    saveJsonToLS(LS_LIVE_BROKERS, liveBrokers);
-  }, [liveBrokers]);
+  // persist live
+  useEffect(() => saveArrayToLS(LS_LIVE_CARRIERS, liveCarriers), [liveCarriers]);
+  useEffect(() => saveArrayToLS(LS_LIVE_LOADS, liveLoads), [liveLoads]);
+  useEffect(() => saveArrayToLS(LS_LIVE_BROKERS, liveBrokers), [liveBrokers]);
 
-  useEffect(() => {
-    saveJsonToLS(LS_TRAIN_BROKERS, trainingBrokers);
-  }, [trainingBrokers]);
+  // persist training
+  useEffect(() => saveArrayToLS(LS_TRAIN_CARRIERS, trainingCarriers), [trainingCarriers]);
+  useEffect(() => saveArrayToLS(LS_TRAIN_LOADS, trainingLoads), [trainingLoads]);
+  useEffect(() => saveArrayToLS(LS_TRAIN_BROKERS, trainingBrokers), [trainingBrokers]);
 
   // Derived “active” dataset based on mode
   const carriers = trainingMode ? trainingCarriers : liveCarriers;
@@ -531,25 +574,25 @@ export function DataProvider({ children }) {
     const carrier = {
       id,
       name,
-      status: input.status ?? "Active",
-      riskScore: input.riskScore ?? 22,
-      mc: input.mc ?? "",
-      dot: input.dot ?? "",
-      phone: input.phone ?? "",
-      email: input.email ?? "",
-      homeBase: input.homeBase ?? "",
-      equipment: input.equipment ?? "",
-      insuranceOnFile: input.insuranceOnFile ?? true,
-      insuranceExp: input.insuranceExp ?? "",
-      w9OnFile: input.w9OnFile ?? true,
-      authorityOnFile: input.authorityOnFile ?? true,
-      onTime: input.onTime ?? 0,
-      claims: input.claims ?? 0,
-      lastContactAt: input.lastContactAt ?? new Date().toISOString(),
-      notes: input.notes ?? "",
-      compliancePerformanceNotes: input.compliancePerformanceNotes ?? "",
-      complianceNotes: input.complianceNotes ?? "",
-      performanceNotes: input.performanceNotes ?? "",
+      status: input?.status ?? "Active",
+      riskScore: input?.riskScore ?? 22,
+      mc: input?.mc ?? "",
+      dot: input?.dot ?? "",
+      phone: input?.phone ?? "",
+      email: input?.email ?? "",
+      homeBase: input?.homeBase ?? "",
+      equipment: input?.equipment ?? "",
+      insuranceOnFile: input?.insuranceOnFile ?? true,
+      insuranceExp: input?.insuranceExp ?? "",
+      w9OnFile: input?.w9OnFile ?? true,
+      authorityOnFile: input?.authorityOnFile ?? true,
+      onTime: input?.onTime ?? 0,
+      claims: input?.claims ?? 0,
+      lastContactAt: input?.lastContactAt ?? new Date().toISOString(),
+      notes: input?.notes ?? "",
+      compliancePerformanceNotes: input?.compliancePerformanceNotes ?? "",
+      complianceNotes: input?.complianceNotes ?? "",
+      performanceNotes: input?.performanceNotes ?? "",
     };
 
     setCarriers((prev) => [carrier, ...prev]);
@@ -557,7 +600,9 @@ export function DataProvider({ children }) {
   }
 
   function updateCarrier(carrierId, patch) {
-    setCarriers((prev) => prev.map((c) => (c.id === carrierId ? { ...c, ...patch } : c)));
+    setCarriers((prev) =>
+      prev.map((c) => (c.id === carrierId ? { ...c, ...(patch || {}) } : c))
+    );
   }
 
   /* -----------------------------
@@ -567,27 +612,31 @@ export function DataProvider({ children }) {
     const idRaw = (input?.id || "").trim();
     const id = idRaw || nextLoadId(trainingMode ? "TL" : "LD");
 
-    const carrierObj = input?.carrierId ? carriers.find((c) => c.id === input.carrierId) : null;
-    const carrierName = carrierObj?.name || (input?.carrier || "").trim() || "—";
+    const carrierObj = input?.carrierId
+      ? carriers.find((c) => c.id === input.carrierId)
+      : null;
+
+    const carrierName =
+      carrierObj?.name || (input?.carrier || "").trim() || "—";
 
     const load = {
       id,
-      status: input.status ?? "Booked",
-      priority: input.priority ?? "Normal",
-      broker: input.broker ?? "",
-      carrierId: input.carrierId ?? "",
+      status: input?.status ?? "Booked",
+      priority: input?.priority ?? "Normal",
+      broker: input?.broker ?? "",
+      carrierId: input?.carrierId ?? "",
       carrier: carrierName,
-      lane: input.lane ?? "",
-      pickupCity: input.pickupCity ?? "",
-      pickupAt: input.pickupAt ?? "",
-      deliveryCity: input.deliveryCity ?? "",
-      deliveryAt: input.deliveryAt ?? "",
-      miles: Number(input.miles || 0),
-      rpm: Number(input.rpm || 0),
-      netRpm: Number(input.netRpm || 0),
-      notes: input.notes ?? "",
-      detentionRisk: !!input.detentionRisk,
-      lastCheckCallAt: input.lastCheckCallAt ?? null,
+      lane: input?.lane ?? "",
+      pickupCity: input?.pickupCity ?? "",
+      pickupAt: input?.pickupAt ?? "",
+      deliveryCity: input?.deliveryCity ?? "",
+      deliveryAt: input?.deliveryAt ?? "",
+      miles: Number(input?.miles || 0),
+      rpm: Number(input?.rpm || 0),
+      netRpm: Number(input?.netRpm || 0),
+      notes: input?.notes ?? "",
+      detentionRisk: !!input?.detentionRisk,
+      lastCheckCallAt: input?.lastCheckCallAt ?? null,
     };
 
     setLoads((prev) => [load, ...prev]);
@@ -598,11 +647,17 @@ export function DataProvider({ children }) {
     setLoads((prev) =>
       prev.map((l) => {
         if (l.id !== loadId) return l;
-        const next = { ...l, ...patch };
-        if ("carrierId" in patch) {
-          const carrierObj = next.carrierId ? carriers.find((c) => c.id === next.carrierId) : null;
+
+        const next = { ...l, ...(patch || {}) };
+
+        // if carrierId changed, refresh carrier display name
+        if (patch && Object.prototype.hasOwnProperty.call(patch, "carrierId")) {
+          const carrierObj = next.carrierId
+            ? carriers.find((c) => c.id === next.carrierId)
+            : null;
           next.carrier = carrierObj?.name || next.carrier || "—";
         }
+
         return next;
       })
     );
@@ -621,29 +676,31 @@ export function DataProvider({ children }) {
     const broker = {
       id,
       name,
-      email: input.email ?? "",
-      phone: input.phone ?? "",
-      city: input.city ?? "",
-      creditDays: Number(input.creditDays ?? 30),
-      riskScore: Number(input.riskScore ?? 35),
-      hotList: !!input.hotList,
-      negotiationNotes: input.negotiationNotes ?? "",
-      lanesNotes: input.lanesNotes ?? "",
-      lastContactAt: input.lastContactAt ?? now,
-      setupStatus: input.setupStatus ?? "Blocked",
-      setup: input.setup ?? {
-        setupPacketReceived: false,
-        creditApproved: false,
-        rateConfProcessConfirmed: false,
-        detentionTonuConfirmed: false,
-        afterHoursContact: false,
-      },
-      activity: Array.isArray(input.activity) ? input.activity : [{ at: now, text: "Broker created." }],
+      email: input?.email ?? "",
+      phone: input?.phone ?? "",
+      city: input?.city ?? "",
+      creditDays: Number(input?.creditDays ?? 30),
+      riskScore: Number(input?.riskScore ?? 35),
+      hotList: !!input?.hotList,
+      negotiationNotes: input?.negotiationNotes ?? "",
+      lanesNotes: input?.lanesNotes ?? "",
+      lastContactAt: input?.lastContactAt ?? now,
+      setupStatus: input?.setupStatus ?? "Blocked",
+      setup:
+        input?.setup ?? {
+          setupPacketReceived: false,
+          creditApproved: false,
+          rateConfProcessConfirmed: false,
+          detentionTonuConfirmed: false,
+          afterHoursContact: false,
+        },
+      activity: Array.isArray(input?.activity)
+        ? input.activity
+        : [{ at: now, text: "Broker created." }],
     };
 
-    // auto status if setup complete
     const prog = brokerSetupProgress(broker);
-    if (prog.pct === 100) broker.setupStatus = "Ready";
+    broker.setupStatus = prog.pct === 100 ? "Ready" : broker.setupStatus;
 
     setBrokers((prev) => [broker, ...prev]);
     return broker;
@@ -654,17 +711,15 @@ export function DataProvider({ children }) {
       prev.map((b) => {
         if (b.id !== brokerId) return b;
 
-        const next = { ...b, ...patch };
+        const next = { ...b, ...(patch || {}) };
 
         // merge nested setup if provided
         if (patch?.setup && typeof patch.setup === "object") {
           next.setup = { ...(b.setup || {}), ...(patch.setup || {}) };
         }
 
-        // keep activity array safe
         next.activity = Array.isArray(next.activity) ? next.activity : [];
 
-        // auto-update setupStatus based on progress
         const prog = brokerSetupProgress(next);
         next.setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
 
@@ -692,16 +747,20 @@ export function DataProvider({ children }) {
     setBrokers((prev) =>
       prev.map((b) => {
         if (b.id !== brokerId) return b;
+
         const setup = { ...(b.setup || {}) };
         setup[itemKey] = !setup[itemKey];
+
         const next = { ...b, setup };
         const prog = brokerSetupProgress(next);
         next.setupStatus = prog.pct === 100 ? "Ready" : "Blocked";
 
         const now = new Date().toISOString();
         const activity = Array.isArray(b.activity) ? b.activity : [];
-        const label = String(itemKey || "");
-        next.activity = [{ at: now, text: `Setup updated: ${label} → ${setup[itemKey] ? "ON" : "OFF"}` }, ...activity].slice(0, 50);
+        next.activity = [
+          { at: now, text: `Setup updated: ${String(itemKey)} → ${setup[itemKey] ? "ON" : "OFF"}` },
+          ...activity,
+        ].slice(0, 50);
 
         return next;
       })

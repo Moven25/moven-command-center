@@ -328,3 +328,66 @@
   50%  { transform: translate3d(-2%, 1%, 0); }
   100% { transform: translate3d(2%, -1%, 0); }
 }
+/* USER PILL */
+
+.user-pill-container {
+  position: relative;
+  margin-top: 10px;
+}
+
+.user-pill {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-pill:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.user-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+}
+
+.user-email {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-dropdown {
+  position: absolute;
+  bottom: 45px;
+  left: 0;
+  width: 100%;
+  background: #1b2430;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.user-dropdown button {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  padding: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-dropdown button:hover {
+  background: rgba(255,255,255,0.05);
+}

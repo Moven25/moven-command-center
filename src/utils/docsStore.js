@@ -1,20 +1,15 @@
 // src/utils/docsStore.js
-/* IndexedDB-backed document storage for LaneSync
-   - Stores uploaded files as Blobs
-   - Keyed by loadId
-   - Supports list/upload/download/delete
-*/
+// Simple IndexedDB doc store for LoadDocsPanel.jsx
+// Stores docs locally per-browser (not synced across devices).
 
-const DB_NAME = "lanesync-docs";
+const DB_NAME = "lanesync_docs_db";
 const DB_VERSION = 1;
 const STORE = "docs";
 
-function uuid() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return `doc_${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-}
-
-function openDB() {
+// -----------------------------
+// Internal helpers
+// -----------------------------
+function openDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -22,8 +17,9 @@ function openDB() {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: "id" });
-        store.createIndex("byLoadId", "loadId", { unique: false });
-        store.createIndex("byLoadIdType", ["loadId", "type"], { unique: false });
+        store.createIndex("by_load", "loadId", { unique: false });
+        store.createIndex("by_load_type", ["loadId", "type"], { unique: false });
+        store.createIndex("by_uploaded", "uploadedAt", { unique: false });
       }
     };
 
@@ -40,16 +36,52 @@ function txDone(tx) {
   });
 }
 
+function uid() {
+  // good enough id for local docs
+  return (crypto?.randomUUID?.() || `doc_${Date.now()}_${Math.random().toString(16).slice(2)}`);
+}
+
+function toRowPreview(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    loadId: row.loadId,
+    type: row.type,
+    name: row.name,
+    size: row.size,
+    mime: row.mime,
+    uploadedAt: row.uploadedAt,
+  };
+}
+
+// -----------------------------
+// Public API (used by LoadDocsPanel)
+// -----------------------------
+
+/**
+ * List docs for a loadId (metadata only; no blob)
+ */
 export async function listDocsForLoad(loadId) {
   if (!loadId) return [];
-  const db = await openDB();
+
+  const db = await openDb();
   const tx = db.transaction(STORE, "readonly");
   const store = tx.objectStore(STORE);
-  const idx = store.index("byLoadId");
-  const req = idx.getAll(loadId);
+  const idx = store.index("by_load");
 
   const rows = await new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result || []);
+    const out = [];
+    const req = idx.openCursor(IDBKeyRange.only(loadId));
+
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return resolve(out);
+
+      const row = cursor.value;
+      out.push(toRowPreview(row));
+      cursor.continue();
+    };
+
     req.onerror = () => reject(req.error);
   });
 
@@ -57,57 +89,84 @@ export async function listDocsForLoad(loadId) {
   db.close();
 
   // newest first
-  return rows.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+  rows.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+  return rows;
 }
 
+/**
+ * Save a doc blob for a load and type.
+ * Accepts a File object from <input type="file">
+ */
 export async function saveDocForLoad(loadId, type, file) {
-  if (!loadId) throw new Error("loadId required");
-  if (!file) throw new Error("file required");
+  if (!loadId) throw new Error("Missing loadId");
+  if (!file) throw new Error("Missing file");
 
-  const db = await openDB();
+  const db = await openDb();
   const tx = db.transaction(STORE, "readwrite");
   const store = tx.objectStore(STORE);
 
   const row = {
-    id: uuid(),
+    id: uid(),
     loadId,
-    type: String(type || "Other"),
-    name: file.name,
-    mime: file.type || "application/octet-stream",
+    type: type || "Other",
+    name: file.name || "document",
     size: file.size || 0,
+    mime: file.type || "application/octet-stream",
     uploadedAt: Date.now(),
-    blob: file, // Blob/File is storable
+    blob: file, // File is a Blob — IndexedDB can store it
   };
 
-  store.put(row);
+  await new Promise((resolve, reject) => {
+    const req = store.put(row);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
 
   await txDone(tx);
   db.close();
 
-  return row;
+  return toRowPreview(row);
 }
 
-export async function deleteDoc(docId) {
-  if (!docId) return;
-  const db = await openDB();
-  const tx = db.transaction(STORE, "readwrite");
-  tx.objectStore(STORE).delete(docId);
-  await txDone(tx);
-  db.close();
-}
-
+/**
+ * Get a doc including blob (used for download)
+ */
 export async function getDoc(docId) {
   if (!docId) return null;
-  const db = await openDB();
+
+  const db = await openDb();
   const tx = db.transaction(STORE, "readonly");
-  const req = tx.objectStore(STORE).get(docId);
+  const store = tx.objectStore(STORE);
 
   const row = await new Promise((resolve, reject) => {
+    const req = store.get(docId);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => reject(req.error);
   });
 
   await txDone(tx);
   db.close();
+
+  // NOTE: LoadDocsPanel expects row.blob to exist
   return row;
+}
+
+/**
+ * Delete a doc by id
+ */
+export async function deleteDoc(docId) {
+  if (!docId) return;
+
+  const db = await openDb();
+  const tx = db.transaction(STORE, "readwrite");
+  const store = tx.objectStore(STORE);
+
+  await new Promise((resolve, reject) => {
+    const req = store.delete(docId);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+
+  await txDone(tx);
+  db.close();
 }

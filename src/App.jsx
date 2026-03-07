@@ -1,13 +1,12 @@
-// src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import AppShell from "./layout/AppShell";
-
-// Data
 import { DataProvider } from "./state/DataContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// Pages (adjust paths if your folder names differ)
+// Pages
+import Login from "./pages/Login";
 import MissionControl from "./pages/MissionControl";
 import LaneCommand from "./pages/LaneCommand";
 import LoadCommand from "./pages/LoadCommand";
@@ -17,19 +16,46 @@ import FinanceCommand from "./pages/FinanceCommand";
 import ComplianceCommand from "./pages/ComplianceCommand";
 import IntelligenceCommand from "./pages/IntelligenceCommand";
 import LearningCommand from "./pages/LearningCommand";
+import SupabaseTest from "./pages/SupabaseTest";
+
+import { supabase } from "./lib/supabaseClient";
+
+/* 🔐 Improved Logout Component */
+function Logout() {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const doLogout = async () => {
+      await supabase.auth.signOut();
+      navigate("/login", { replace: true });
+    };
+
+    doLogout();
+  }, [navigate]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <React.StrictMode>
       <DataProvider>
         <BrowserRouter>
-          {/* AppShell renders Sidebar + background + <Outlet /> */}
           <Routes>
-            <Route element={<AppShell />}>
-              {/* Home */}
-              <Route path="/" element={<MissionControl />} />
+            {/* Public */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/logout" element={<Logout />} />
+            <Route path="/supabase-test" element={<SupabaseTest />} />
 
-              {/* Commands */}
+            {/* Protected OS */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppShell />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Navigate to="/mission-control" replace />} />
               <Route path="/mission-control" element={<MissionControl />} />
               <Route path="/lane-command" element={<LaneCommand />} />
               <Route path="/load-command" element={<LoadCommand />} />
@@ -39,14 +65,10 @@ export default function App() {
               <Route path="/compliance-command" element={<ComplianceCommand />} />
               <Route path="/intelligence-command" element={<IntelligenceCommand />} />
               <Route path="/learning-command" element={<LearningCommand />} />
-
-              {/* Back-compat (optional) */}
-              <Route path="/compliance" element={<Navigate to="/compliance-command" replace />} />
-              <Route path="/carrier" element={<Navigate to="/carrier-command" replace />} />
-
-              {/* 404 */}
-              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
+
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/mission-control" replace />} />
           </Routes>
         </BrowserRouter>
       </DataProvider>

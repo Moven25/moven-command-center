@@ -1,14 +1,26 @@
 // src/pages/LoadCommand.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./CommandShell.css";
 import "./LoadCommand.css";
-import { useData } from "../state/DataContext";
-import LoadDocsPanel from "../components/LoadDocsPanel";
+import { supabase } from "../lib/supabaseClient";
+
+/**
+ * Load Command — Option A (Supabase CRUD)
+ * ✅ Auth-based (gets userId)
+ * ✅ Scopes loads to owner_id = userId
+ * ✅ Add / Edit / Delete loads in Supabase
+ * ✅ Optional carriers dropdown (if carriers table exists)
+ *
+ * Expected tables:
+ * - public.loads (must have owner_id uuid column)
+ * Optional:
+ * - public.carriers (id, company_name, owner_id)
+ */
 
 const STATUS_OPTIONS = ["Booked", "En Route", "At Pickup", "At Delivery", "Completed", "Issue"];
 const PRIORITY_OPTIONS = ["Normal", "High"];
 
-function formatDateTime(iso) {
+function fmt(iso) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
@@ -17,6 +29,14 @@ function formatDateTime(iso) {
   } catch {
     return String(iso);
   }
+}
+
+function pick(row, keys, fallback = "") {
+  for (const k of keys) {
+    const v = row?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+  }
+  return fallback;
 }
 
 // datetime-local -> ISO
@@ -48,34 +68,118 @@ function toNumberOrZero(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+/* -----------------------------
+   DB -> UI mapping (important)
+------------------------------ */
+function dbLoadToUi(row) {
+  if (!row) return null;
+
+  const id = row.id ?? "";
+  const ref = pick(row, ["ref"], "");
+  const status = pick(row, ["status"], "Booked");
+  const priority = pick(row, ["priority"], "Normal");
+  const broker = pick(row, ["broker"], "");
+
+  const carrierId = pick(row, ["carrier_id", "carrierId"], "");
+  const carrierName = pick(row, ["carrier_name", "carrierName", "carrier"], "");
+
+  const lane = pick(row, ["lane"], "");
+
+  const pickupCity = pick(row, ["pickup_city", "pickupCity"], "");
+  const pickupAt = row?.pickup_at ?? row?.pickupAt ?? null;
+
+  const deliveryCity = pick(row, ["delivery_city", "deliveryCity"], "");
+  const deliveryAt = row?.delivery_at ?? row?.deliveryAt ?? null;
+
+  const miles = Number(row?.miles ?? 0) || 0;
+  const rpm = Number(row?.rpm ?? 0) || 0;
+  const netRpm = Number(row?.net_rpm ?? row?.netRpm ?? 0) || 0;
+
+  const notes = pick(row, ["notes"], "");
+  const detentionRisk = !!row?.detention_risk;
+  const lastCheckCallAt = row?.last_check_call_at ?? null;
+
+  const createdAt = row?.created_at ?? null;
+
+  return {
+    id,
+    ref,
+    status,
+    priority,
+    broker,
+    carrierId,
+    carrierName,
+    lane,
+    pickupCity,
+    pickupAt,
+    deliveryCity,
+    deliveryAt,
+    miles,
+    rpm,
+    netRpm,
+    notes,
+    detentionRisk,
+    lastCheckCallAt,
+    createdAt,
+    _raw: row,
+  };
+}
+
+function uiPatchToDb(patch) {
+  const out = {};
+  if ("ref" in patch) out.ref = patch.ref || null;
+  if ("status" in patch) out.status = patch.status || null;
+  if ("priority" in patch) out.priority = patch.priority || null;
+  if ("broker" in patch) out.broker = patch.broker || null;
+
+  if ("carrierId" in patch) out.carrier_id = patch.carrierId || null;
+  if ("carrierName" in patch) out.carrier_name = patch.carrierName || null;
+
+  if ("lane" in patch) out.lane = patch.lane || null;
+
+  if ("pickupCity" in patch) out.pickup_city = patch.pickupCity || null;
+  if ("pickupAt" in patch) out.pickup_at = patch.pickupAt || null;
+
+  if ("deliveryCity" in patch) out.delivery_city = patch.deliveryCity || null;
+  if ("deliveryAt" in patch) out.delivery_at = patch.deliveryAt || null;
+
+  if ("miles" in patch) out.miles = patch.miles ?? 0;
+  if ("rpm" in patch) out.rpm = patch.rpm ?? 0;
+  if ("netRpm" in patch) out.net_rpm = patch.netRpm ?? 0;
+
+  if ("notes" in patch) out.notes = patch.notes || null;
+  if ("detentionRisk" in patch) out.detention_risk = !!patch.detentionRisk;
+
+  if ("lastCheckCallAt" in patch) out.last_check_call_at = patch.lastCheckCallAt || null;
+
+  return out;
+}
+
 export default function LoadCommand() {
-  const { loads, carriers, addLoad, updateLoad } = useData();
+  // auth
+  const [userId, setUserId] = useState(null);
 
-  // UI state
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [onlyRisk, setOnlyRisk] = useState(false);
+  // data
+  const [rows, setRows] = useState([]);
+  const [carriers, setCarriers] = useState([]);
 
-  // Panels / modal
-  const [addOpen, setAddOpen] = useState(false);
-  const [checkCallsOpen, setCheckCallsOpen] = useState(false);
+  // ui
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
-  // RIGHT PANEL EDIT MODE
+  // add/edit
+  const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editDraft, setEditDraft] = useState(null);
 
-  // ✅ Right panel tabs
-  const [detailTab, setDetailTab] = useState("Overview"); // Overview | Docs
-
-  // Add form
   const [draft, setDraft] = useState({
-    id: "",
+    ref: "",
     status: "Booked",
     priority: "Normal",
     broker: "",
     carrierId: "",
-    carrier: "",
+    carrierName: "",
     lane: "",
     pickupCity: "",
     pickupAt: "",
@@ -88,93 +192,143 @@ export default function LoadCommand() {
     detentionRisk: false,
   });
 
-  const filteredLoads = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return loads
-      .filter((l) => (statusFilter === "All" ? true : l.status === statusFilter))
-      .filter((l) => (onlyRisk ? !!l.detentionRisk : true))
-      .filter((l) => {
-        if (!q) return true;
-        const hay = [l.id, l.status, l.priority, l.broker, l.carrier, l.lane, l.pickupCity, l.deliveryCity, l.notes]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      });
-  }, [loads, query, statusFilter, onlyRisk]);
+  const [editDraft, setEditDraft] = useState(null);
 
-  const selectedLoad = useMemo(() => loads.find((l) => l.id === selectedId) || null, [loads, selectedId]);
-
-  // Keep edit draft in sync
+  // Boot auth
   useEffect(() => {
-    if (!editOpen) return;
-    if (!selectedLoad) {
-      setEditOpen(false);
-      setEditDraft(null);
+    let mounted = true;
+
+    async function boot() {
+      const { data } = await supabase.auth.getUser();
+      const uid = data?.user?.id || null;
+      if (mounted) setUserId(uid);
+    }
+
+    boot().catch(() => {});
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id || null);
+    });
+
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, []);
+
+  // Optional: fetch carriers (safe if table doesn't exist)
+  const fetchCarriers = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("carriers")
+        .select("id, company_name, owner_id")
+        .eq("owner_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const ui = (data || []).map((r) => ({
+        id: r.id,
+        name: r.company_name || "",
+      }));
+      setCarriers(ui.filter((c) => c.id && c.name));
+    } catch (e) {
+      // Don’t break Load Command if carriers table isn’t ready
+      console.warn("[LoadCommand] carriers not available:", e?.message || e);
+      setCarriers([]);
+    }
+  }, [userId]);
+
+  // Fetch loads (THIS is where `.eq("owner_id", userId)` belongs)
+  const fetchLoads = useCallback(async () => {
+    if (!userId) return;
+
+    console.log("[LoadCommand] userId:", userId);
+
+    const { data, error } = await supabase
+      .from("loads")
+      .select("*")
+      .eq("owner_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    console.log("[LoadCommand] loads data:", data);
+    console.log("[LoadCommand] loads error:", error);
+
+    if (error) throw error;
+
+    const ui = (data || []).map(dbLoadToUi).filter(Boolean);
+    setRows(ui);
+
+    // keep selection valid
+    if (!ui.length) setSelectedId(null);
+    else setSelectedId((prev) => (prev && ui.some((l) => l.id === prev) ? prev : ui[0].id));
+  }, [userId]);
+
+  // initial load
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      setRows([]);
+      setSelectedId(null);
+      setErr("");
       return;
     }
-    if (!editDraft || editDraft.id !== selectedLoad.id) {
-      setEditDraft(buildEditDraft(selectedLoad));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editOpen, selectedLoad?.id]);
 
-  // When load changes, default tab to Overview
-  useEffect(() => {
-    setDetailTab("Overview");
-  }, [selectedId]);
+    (async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        await Promise.all([fetchCarriers(), fetchLoads()]);
+      } catch (e) {
+        setErr(e?.message || "Failed to load data from Supabase");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [userId, fetchCarriers, fetchLoads]);
 
-  function buildEditDraft(load) {
-    return {
-      id: load.id || "",
-      status: load.status || "Booked",
-      priority: load.priority || "Normal",
-      broker: load.broker || "",
-      carrierId: load.carrierId || "",
-      lane: load.lane || "",
-      pickupCity: load.pickupCity || "",
-      pickupAt: toLocalInputValue(load.pickupAt),
-      deliveryCity: load.deliveryCity || "",
-      deliveryAt: toLocalInputValue(load.deliveryAt),
-      miles: load.miles ?? 0,
-      netRpm: load.netRpm ?? 0,
-      notes: load.notes || "",
-      detentionRisk: !!load.detentionRisk,
-    };
-  }
+  // filtering
+  const filtered = useMemo(() => {
+    const needle = (q || "").trim().toLowerCase();
+    if (!needle) return rows;
 
-  function openEditForLoad(load) {
-    setSelectedId(load.id);
-    setEditDraft(buildEditDraft(load));
-    setEditOpen(true);
-    setDetailTab("Overview");
-  }
+    return rows.filter((r) => {
+      const hay = [
+        r.ref,
+        r.id,
+        r.status,
+        r.priority,
+        r.broker,
+        r.carrierName,
+        r.lane,
+        r.pickupCity,
+        r.deliveryCity,
+        r.notes,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(needle);
+    });
+  }, [rows, q]);
 
-  // KPIs
-  const now = new Date();
-  const sameDay = (iso) => {
-    if (!iso) return false;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return false;
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-  };
+  const selected = useMemo(() => rows.find((r) => r.id === selectedId) || null, [rows, selectedId]);
 
-  const kpis = useMemo(() => {
-    const active = loads.filter((l) => !["Completed"].includes(l.status)).length;
-    const pickupsToday = loads.filter((l) => sameDay(l.pickupAt)).length;
-    const deliveriesToday = loads.filter((l) => sameDay(l.deliveryAt)).length;
-    const risk = loads.filter((l) => l.detentionRisk && !["Completed"].includes(l.status)).length;
-    return { active, pickupsToday, deliveriesToday, risk };
-  }, [loads]);
+  const displayId = (r) => (r?.ref && String(r.ref).trim() ? String(r.ref).trim() : String(r?.id || "").slice(0, 8));
 
+  /* -----------------------------
+     CRUD
+  ------------------------------ */
   function openAdd() {
     setDraft({
-      id: "",
+      ref: "",
       status: "Booked",
       priority: "Normal",
       broker: "",
       carrierId: "",
-      carrier: "",
+      carrierName: "",
       lane: "",
       pickupCity: "",
       pickupAt: "",
@@ -189,64 +343,113 @@ export default function LoadCommand() {
     setAddOpen(true);
   }
 
-  function saveDraft(e) {
+  async function saveNewLoad(e) {
     e.preventDefault();
-
-    if (!draft.carrierId) {
-      alert("Please select a Carrier before saving.");
+    if (!userId) {
+      alert("Not logged in. Go to /login.");
       return;
     }
 
-    const selectedCarrier = carriers.find((c) => c.id === draft.carrierId) || null;
-    const carrierName = selectedCarrier?.name || (draft.carrier || "").trim();
-
     const pickupCity = (draft.pickupCity || "").trim();
     const deliveryCity = (draft.deliveryCity || "").trim();
+
     const lane =
       (draft.lane || "").trim() ||
       (pickupCity || deliveryCity ? `${pickupCity || "—"} → ${deliveryCity || "—"}` : "");
 
-    const pickupAtISO = toISOOrNull(draft.pickupAt);
-    const deliveryAtISO = toISOOrNull(draft.deliveryAt);
+    // carrier resolution
+    let carrierName = (draft.carrierName || "").trim();
+    if (draft.carrierId && carriers.length) {
+      const c = carriers.find((x) => x.id === draft.carrierId);
+      if (c?.name) carrierName = c.name;
+    }
 
-    const newLoad = addLoad({
-      ...draft,
-      broker: (draft.broker || "").trim(),
-      carrier: carrierName,
-      lane,
-      pickupCity,
-      deliveryCity,
-      pickupAt: pickupAtISO,
-      deliveryAt: deliveryAtISO,
+    const insertRow = {
+      owner_id: userId,
+      ref: (draft.ref || "").trim() || null,
+      status: draft.status || "Booked",
+      priority: draft.priority || "Normal",
+      broker: (draft.broker || "").trim() || null,
+
+      carrier_id: draft.carrierId || null,
+      carrier_name: carrierName || null,
+
+      lane: lane || null,
+
+      pickup_city: pickupCity || null,
+      pickup_at: toISOOrNull(draft.pickupAt),
+      delivery_city: deliveryCity || null,
+      delivery_at: toISOOrNull(draft.deliveryAt),
+
       miles: draft.miles === "" ? 0 : Number(draft.miles),
       rpm: draft.rpm === "" ? 0 : Number(draft.rpm),
-      netRpm: draft.netRpm === "" ? 0 : Number(draft.netRpm),
-      lastCheckCallAt: null,
-    });
+      net_rpm: draft.netRpm === "" ? 0 : Number(draft.netRpm),
 
-    setAddOpen(false);
-    setSelectedId(newLoad.id);
-  }
+      notes: (draft.notes || "").trim() || null,
+      detention_risk: !!draft.detentionRisk,
+      last_check_call_at: null,
+    };
 
-  function markCheckCall(loadId) {
-    updateLoad(loadId, { lastCheckCallAt: new Date().toISOString() });
-  }
-
-  function cycleStatus(loadId) {
-    const l = loads.find((x) => x.id === loadId);
-    if (!l) return;
-    const idx = STATUS_OPTIONS.indexOf(l.status);
-    const next = STATUS_OPTIONS[(idx + 1) % STATUS_OPTIONS.length];
-    updateLoad(loadId, { status: next });
-  }
-
-  function saveEdits() {
-    if (!selectedLoad || !editDraft) return;
-
-    if (!editDraft.carrierId) {
-      alert("Please select a Carrier before saving.");
+    const { data, error } = await supabase.from("loads").insert(insertRow).select("*").single();
+    if (error) {
+      alert(error.message || "Failed to save load");
       return;
     }
+
+    const created = dbLoadToUi(data);
+    setRows((prev) => [created, ...prev]);
+    setAddOpen(false);
+    setSelectedId(created.id);
+  }
+
+  function buildEditDraft(load) {
+    return {
+      id: load.id || "",
+      ref: load.ref || "",
+      status: load.status || "Booked",
+      priority: load.priority || "Normal",
+      broker: load.broker || "",
+      carrierId: load.carrierId || "",
+      carrierName: load.carrierName || "",
+      lane: load.lane || "",
+      pickupCity: load.pickupCity || "",
+      pickupAt: toLocalInputValue(load.pickupAt),
+      deliveryCity: load.deliveryCity || "",
+      deliveryAt: toLocalInputValue(load.deliveryAt),
+      miles: load.miles ?? 0,
+      rpm: load.rpm ?? 0,
+      netRpm: load.netRpm ?? 0,
+      notes: load.notes || "",
+      detentionRisk: !!load.detentionRisk,
+    };
+  }
+
+  function openEdit() {
+    if (!selected) return;
+    setEditDraft(buildEditDraft(selected));
+    setEditOpen(true);
+  }
+
+  function cancelEdit() {
+    setEditOpen(false);
+    setEditDraft(null);
+  }
+
+  async function updateLoad(loadId, patch) {
+    // optimistic
+    setRows((prev) => prev.map((l) => (l.id === loadId ? { ...l, ...patch } : l)));
+
+    const dbPatch = uiPatchToDb(patch);
+    const { error } = await supabase.from("loads").update(dbPatch).eq("id", loadId).eq("owner_id", userId);
+
+    if (error) {
+      console.error("[LoadCommand] update failed:", error);
+      await fetchLoads(); // rollback safely
+    }
+  }
+
+  async function saveEdits() {
+    if (!selected || !editDraft) return;
 
     const pickupCity = (editDraft.pickupCity || "").trim();
     const deliveryCity = (editDraft.deliveryCity || "").trim();
@@ -254,137 +457,124 @@ export default function LoadCommand() {
       (editDraft.lane || "").trim() ||
       (pickupCity || deliveryCity ? `${pickupCity || "—"} → ${deliveryCity || "—"}` : "");
 
+    // carrier name resolution
+    let carrierName = (editDraft.carrierName || "").trim();
+    if (editDraft.carrierId && carriers.length) {
+      const c = carriers.find((x) => x.id === editDraft.carrierId);
+      if (c?.name) carrierName = c.name;
+    }
+
     const patch = {
+      ref: (editDraft.ref || "").trim(),
       status: editDraft.status,
       priority: editDraft.priority,
       broker: (editDraft.broker || "").trim(),
-      carrierId: editDraft.carrierId,
+      carrierId: editDraft.carrierId || "",
+      carrierName,
       lane,
       pickupCity,
       pickupAt: toISOOrNull(editDraft.pickupAt),
       deliveryCity,
       deliveryAt: toISOOrNull(editDraft.deliveryAt),
       miles: toNumberOrZero(editDraft.miles),
+      rpm: toNumberOrZero(editDraft.rpm),
       netRpm: toNumberOrZero(editDraft.netRpm),
       notes: (editDraft.notes || "").trim(),
       detentionRisk: !!editDraft.detentionRisk,
     };
 
-    updateLoad(selectedLoad.id, patch);
+    await updateLoad(selected.id, patch);
     setEditOpen(false);
     setEditDraft(null);
   }
 
-  function cancelEdits() {
-    setEditOpen(false);
-    setEditDraft(null);
+  async function deleteSelected() {
+    if (!selected) return;
+    const ok = window.confirm(`Delete load ${displayId(selected)}? This cannot be undone.`);
+    if (!ok) return;
+
+    // optimistic remove
+    setRows((prev) => prev.filter((l) => l.id !== selected.id));
+
+    const { error } = await supabase.from("loads").delete().eq("id", selected.id).eq("owner_id", userId);
+    if (error) {
+      console.error("[LoadCommand] delete failed:", error);
+      alert(error.message || "Delete failed");
+      await fetchLoads();
+      return;
+    }
+
+    // selection fix
+    setSelectedId((prev) => {
+      if (prev !== selected.id) return prev;
+      const remaining = rows.filter((l) => l.id !== selected.id);
+      return remaining[0]?.id ?? null;
+    });
   }
 
+  /* -----------------------------
+     Render
+  ------------------------------ */
   return (
     <div className="command-shell loadcmd">
-      {/* HEADER */}
       <header className="command-shell__header">
         <div>
           <div className="command-shell__kicker">Operations</div>
           <h1 className="command-shell__title">Load Command</h1>
-          <p className="command-shell__subtitle">
-            Manage active loads, booking flow, check calls, and execution status from pickup to delivery.
-          </p>
+          <p className="command-shell__subtitle">Supabase (Option A): scoped to your account, with Add/Edit/Delete.</p>
+
+          {!userId ? (
+            <div style={{ marginTop: 6, color: "#ffb86b", fontSize: 12 }}>
+              Not logged in. Go to <b>/login</b> so loads can filter by owner_id.
+            </div>
+          ) : null}
+
+          {loading ? <div style={{ marginTop: 6, opacity: 0.75, fontSize: 12 }}>Loading from Supabase…</div> : null}
+          {err ? <div style={{ marginTop: 6, color: "#ff7b7b", fontSize: 12 }}>{err}</div> : null}
+
+          <div style={{ marginTop: 6, opacity: 0.7, fontSize: 12 }}>
+            Debug: userId = <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{userId || "—"}</span>
+          </div>
         </div>
 
         <div className="command-shell__actions">
-          <button className="command-shell__btn" type="button" onClick={() => setCheckCallsOpen(true)}>
-            Check Calls
+          <button className="command-shell__btn" type="button" onClick={fetchLoads} disabled={!userId}>
+            Refresh
           </button>
 
-          <button className="command-shell__btn command-shell__btn--primary" type="button" onClick={openAdd}>
+          <button className="command-shell__btn command-shell__btn--primary" type="button" onClick={openAdd} disabled={!userId}>
             Add Load
           </button>
         </div>
       </header>
 
-      {/* KPI STRIP */}
-      <section className="loadcmd__kpis">
-        <button
-          className="loadcmd__kpi"
-          type="button"
-          onClick={() => {
-            setStatusFilter("All");
-            setOnlyRisk(false);
-          }}
-        >
-          <div className="loadcmd__kpiLabel">Active</div>
-          <div className="loadcmd__kpiValue">{kpis.active}</div>
-        </button>
-
-        <button className="loadcmd__kpi" type="button" onClick={() => setQuery("pickup")}>
-          <div className="loadcmd__kpiLabel">Pickups Today</div>
-          <div className="loadcmd__kpiValue">{kpis.pickupsToday}</div>
-        </button>
-
-        <button className="loadcmd__kpi" type="button" onClick={() => setQuery("delivery")}>
-          <div className="loadcmd__kpiLabel">Deliveries Today</div>
-          <div className="loadcmd__kpiValue">{kpis.deliveriesToday}</div>
-        </button>
-
-        <button className="loadcmd__kpi loadcmd__kpi--warn" type="button" onClick={() => setOnlyRisk((v) => !v)}>
-          <div className="loadcmd__kpiLabel">Detention Risk</div>
-          <div className="loadcmd__kpiValue">{kpis.risk}</div>
-        </button>
-      </section>
-
-      {/* TOOLBAR */}
       <section className="loadcmd__toolbar">
         <div className="loadcmd__search">
           <input
             className="loadcmd__input"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search loads, brokers, carriers, cities, notes…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search loads, brokers, carriers, lanes…"
           />
         </div>
 
-        <div className="loadcmd__filters">
-          <select className="loadcmd__select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="All">All Status</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-
-          <label className="loadcmd__toggle">
-            <input type="checkbox" checked={onlyRisk} onChange={(e) => setOnlyRisk(e.target.checked)} />
-            <span>Risk Only</span>
-          </label>
+        <div className="loadcmd__filters" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>
+            Showing <b>{filtered.length}</b> of <b>{rows.length}</b>
+          </div>
+          <button className="command-shell__btn" type="button" onClick={() => setQ("")}>
+            Clear
+          </button>
         </div>
       </section>
 
-      {/* MAIN GRID */}
       <section className="loadcmd__grid">
         {/* TABLE */}
         <div className="loadcmd__card loadcmd__card--wide">
           <div className="loadcmd__cardHeader">
             <div>
-              <div className="loadcmd__cardTitle">Active Loads</div>
-              <div className="loadcmd__cardSub">
-                Showing <strong>{filteredLoads.length}</strong> of <strong>{loads.length}</strong>
-              </div>
-            </div>
-
-            <div className="loadcmd__cardActions">
-              <button
-                className="command-shell__btn"
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  setStatusFilter("All");
-                  setOnlyRisk(false);
-                }}
-              >
-                Reset
-              </button>
+              <div className="loadcmd__cardTitle">Loads</div>
+              <div className="loadcmd__cardSub">Click a row to view detail.</div>
             </div>
           </div>
 
@@ -398,86 +588,58 @@ export default function LoadCommand() {
                   <th>Pickup</th>
                   <th>Delivery</th>
                   <th>Net RPM</th>
-                  <th>Check Call</th>
                 </tr>
               </thead>
+
               <tbody>
-                {filteredLoads.map((l) => (
+                {filtered.map((r) => (
                   <tr
-                    key={l.id}
-                    className={selectedId === l.id ? "is-selected" : ""}
-                    onClick={() => setSelectedId(l.id)}
-                    onDoubleClick={() => openEditForLoad(l)}
+                    key={r.id}
+                    className={selectedId === r.id ? "is-selected" : ""}
+                    onClick={() => setSelectedId(r.id)}
                     role="button"
                     tabIndex={0}
-                    title="Double-click to edit"
                   >
                     <td>
-                      <div className="loadcmd__cellMain">{l.id}</div>
-                      <div className="loadcmd__cellSub">{(l.broker || "—")} · {(l.carrier || "—")}</div>
-                    </td>
-
-                    <td>
-                      <span
-                        className={`loadcmd__chip loadcmd__chip--${String(l.status || "").replace(/\s+/g, "-").toLowerCase()}`}
-                      >
-                        {l.status || "—"}
-                      </span>
-                      {l.priority === "High" ? <span className="loadcmd__badge">High</span> : null}
-                      {l.detentionRisk ? <span className="loadcmd__badge loadcmd__badge--warn">Risk</span> : null}
-                    </td>
-
-                    <td>
-                      <div className="loadcmd__cellMain">{l.lane || "—"}</div>
-                    </td>
-
-                    <td>
-                      <div className="loadcmd__cellMain">{l.pickupCity || "—"}</div>
-                      <div className="loadcmd__cellSub">{formatDateTime(l.pickupAt)}</div>
-                    </td>
-
-                    <td>
-                      <div className="loadcmd__cellMain">{l.deliveryCity || "—"}</div>
-                      <div className="loadcmd__cellSub">{formatDateTime(l.deliveryAt)}</div>
-                    </td>
-
-                    <td>
-                      <div className="loadcmd__cellMain">{Number(l.netRpm || 0).toFixed(2)}</div>
-                      <div className="loadcmd__cellSub">{l.miles ?? 0} mi</div>
-                    </td>
-
-                    <td>
-                      <div className="loadcmd__cellMain">{l.lastCheckCallAt ? formatDateTime(l.lastCheckCallAt) : "—"}</div>
-                      <div className="loadcmd__rowActions">
-                        <button
-                          className="loadcmd__miniBtn"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markCheckCall(l.id);
-                          }}
-                        >
-                          Mark
-                        </button>
-                        <button
-                          className="loadcmd__miniBtn"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cycleStatus(l.id);
-                          }}
-                        >
-                          Next
-                        </button>
+                      <div className="loadcmd__cellMain">{displayId(r)}</div>
+                      <div className="loadcmd__cellSub">
+                        {(r.broker || "—")} · {(r.carrierName || "—")}
                       </div>
+                    </td>
+
+                    <td>
+                      <span className={`loadcmd__chip loadcmd__chip--${String(r.status || "").replace(/\s+/g, "-").toLowerCase()}`}>
+                        {r.status || "—"}
+                      </span>
+                      {r.priority === "High" ? <span className="loadcmd__badge">High</span> : null}
+                      {r.detentionRisk ? <span className="loadcmd__badge loadcmd__badge--warn">Risk</span> : null}
+                    </td>
+
+                    <td>
+                      <div className="loadcmd__cellMain">{r.lane || "—"}</div>
+                    </td>
+
+                    <td>
+                      <div className="loadcmd__cellMain">{r.pickupCity || "—"}</div>
+                      <div className="loadcmd__cellSub">{fmt(r.pickupAt)}</div>
+                    </td>
+
+                    <td>
+                      <div className="loadcmd__cellMain">{r.deliveryCity || "—"}</div>
+                      <div className="loadcmd__cellSub">{fmt(r.deliveryAt)}</div>
+                    </td>
+
+                    <td>
+                      <div className="loadcmd__cellMain">{Number(r.netRpm || 0).toFixed(2)}</div>
+                      <div className="loadcmd__cellSub">{r.miles} mi</div>
                     </td>
                   </tr>
                 ))}
 
-                {filteredLoads.length === 0 ? (
+                {!loading && filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="loadcmd__empty">
-                      No loads match your filters.
+                    <td colSpan={6} className="loadcmd__empty">
+                      {userId ? "No rows found for this user." : "Login to see your loads."}
                     </td>
                   </tr>
                 ) : null}
@@ -486,217 +648,147 @@ export default function LoadCommand() {
           </div>
         </div>
 
-        {/* DETAILS */}
+        {/* DETAIL */}
         <div className="loadcmd__card">
           <div className="loadcmd__cardHeader">
             <div>
-              <div className="loadcmd__cardTitle">{editOpen ? "Edit Load" : "Load Detail"}</div>
-              <div className="loadcmd__cardSub">{selectedLoad ? selectedLoad.id : "Select a load from the table"}</div>
-
-              {/* ✅ Tabs (only when a load is selected and not editing) */}
-              {selectedLoad && !editOpen ? (
-                <div className="loadcmd__tabs" style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {["Overview", "Docs"].map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      className={`loadcmd__tabBtn ${detailTab === t ? "is-active" : ""}`}
-                      onClick={() => setDetailTab(t)}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+              <div className="loadcmd__cardTitle">Load Detail</div>
+              <div className="loadcmd__cardSub">{selected ? displayId(selected) : "Select a load from the table"}</div>
             </div>
 
-            {selectedLoad ? (
+            {selected ? (
               <div className="loadcmd__cardActions">
                 {!editOpen ? (
-                  <button className="command-shell__btn" type="button" onClick={() => openEditForLoad(selectedLoad)} title="Edit this load">
-                    Edit
-                  </button>
+                  <>
+                    <button className="command-shell__btn" type="button" onClick={openEdit}>
+                      Edit
+                    </button>
+                    <button className="command-shell__btn" type="button" onClick={deleteSelected}>
+                      Delete
+                    </button>
+                  </>
                 ) : null}
               </div>
             ) : null}
           </div>
 
-          {!selectedLoad ? (
-            <div className="loadcmd__detailEmpty">Click a row to view details. Double-click a row to edit.</div>
+          {!selected ? (
+            <div className="loadcmd__detailEmpty">Click a row to view details.</div>
           ) : editOpen && editDraft ? (
-            // EDIT MODE (unchanged)
             <div className="loadcmd__detail">
-              {/* Status */}
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Load Ref</div>
+                <div className="loadcmd__value">
+                  <input className="loadcmd__input" value={editDraft.ref} onChange={(e) => setEditDraft((d) => ({ ...d, ref: e.target.value }))} />
+                </div>
+              </div>
+
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Status</div>
                 <div className="loadcmd__value">
-                  <select
-                    className="loadcmd__select"
-                    value={editDraft.status}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, status: e.target.value }))}
-                  >
+                  <select className="loadcmd__select" value={editDraft.status} onChange={(e) => setEditDraft((d) => ({ ...d, status: e.target.value }))}>
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Priority */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Priority</div>
                 <div className="loadcmd__value">
-                  <select
-                    className="loadcmd__select"
-                    value={editDraft.priority}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, priority: e.target.value }))}
-                  >
+                  <select className="loadcmd__select" value={editDraft.priority} onChange={(e) => setEditDraft((d) => ({ ...d, priority: e.target.value }))}>
                     {PRIORITY_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
+                      <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Broker */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Broker</div>
                 <div className="loadcmd__value">
+                  <input className="loadcmd__input" value={editDraft.broker} onChange={(e) => setEditDraft((d) => ({ ...d, broker: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Carrier</div>
+                <div className="loadcmd__value" style={{ display: "grid", gap: 8 }}>
+                  {carriers.length ? (
+                    <select
+                      className="loadcmd__select"
+                      value={editDraft.carrierId}
+                      onChange={(e) => {
+                        const carrierId = e.target.value;
+                        const c = carriers.find((x) => x.id === carrierId) || null;
+                        setEditDraft((d) => ({ ...d, carrierId, carrierName: c?.name || d.carrierName }));
+                      }}
+                    >
+                      <option value="">(No carrier selected)</option>
+                      {carriers.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>Carriers table not loaded (optional). Using text field.</div>
+                  )}
+
                   <input
                     className="loadcmd__input"
-                    value={editDraft.broker}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, broker: e.target.value }))}
-                    placeholder="Broker name (optional)"
+                    value={editDraft.carrierName}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, carrierName: e.target.value }))}
+                    placeholder="Carrier name (text fallback)"
                   />
                 </div>
               </div>
 
-              {/* Carrier */}
-              <div className="loadcmd__detailRow">
-                <div className="loadcmd__label">Carrier</div>
-                <div className="loadcmd__value">
-                  <select
-                    className="loadcmd__select"
-                    value={editDraft.carrierId}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, carrierId: e.target.value }))}
-                  >
-                    <option value="" disabled>
-                      Select carrier…
-                    </option>
-                    {carriers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Lane */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Lane</div>
                 <div className="loadcmd__value">
-                  <input
-                    className="loadcmd__input"
-                    value={editDraft.lane}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, lane: e.target.value }))}
-                    placeholder="City, ST → City, ST (optional)"
-                  />
+                  <input className="loadcmd__input" value={editDraft.lane} onChange={(e) => setEditDraft((d) => ({ ...d, lane: e.target.value }))} />
                 </div>
               </div>
 
-              {/* Pickup */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Pickup</div>
-                <div className="loadcmd__value">
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <input
-                      className="loadcmd__input"
-                      value={editDraft.pickupCity}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, pickupCity: e.target.value }))}
-                      placeholder="Pickup city (optional)"
-                    />
-                    <input
-                      className="loadcmd__input"
-                      type="datetime-local"
-                      value={editDraft.pickupAt}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, pickupAt: e.target.value }))}
-                    />
-                  </div>
+                <div className="loadcmd__value" style={{ display: "grid", gap: 10 }}>
+                  <input className="loadcmd__input" value={editDraft.pickupCity} onChange={(e) => setEditDraft((d) => ({ ...d, pickupCity: e.target.value }))} placeholder="Pickup city" />
+                  <input className="loadcmd__input" type="datetime-local" value={editDraft.pickupAt} onChange={(e) => setEditDraft((d) => ({ ...d, pickupAt: e.target.value }))} />
                 </div>
               </div>
 
-              {/* Delivery */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Delivery</div>
-                <div className="loadcmd__value">
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <input
-                      className="loadcmd__input"
-                      value={editDraft.deliveryCity}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, deliveryCity: e.target.value }))}
-                      placeholder="Delivery city (optional)"
-                    />
-                    <input
-                      className="loadcmd__input"
-                      type="datetime-local"
-                      value={editDraft.deliveryAt}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, deliveryAt: e.target.value }))}
-                    />
-                  </div>
+                <div className="loadcmd__value" style={{ display: "grid", gap: 10 }}>
+                  <input className="loadcmd__input" value={editDraft.deliveryCity} onChange={(e) => setEditDraft((d) => ({ ...d, deliveryCity: e.target.value }))} placeholder="Delivery city" />
+                  <input className="loadcmd__input" type="datetime-local" value={editDraft.deliveryAt} onChange={(e) => setEditDraft((d) => ({ ...d, deliveryAt: e.target.value }))} />
                 </div>
               </div>
 
-              {/* Pricing */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Pricing</div>
-                <div className="loadcmd__value">
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <input
-                      className="loadcmd__input"
-                      value={editDraft.netRpm}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, netRpm: e.target.value }))}
-                      placeholder="Net RPM"
-                    />
-                    <input
-                      className="loadcmd__input"
-                      value={editDraft.miles}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, miles: e.target.value }))}
-                      placeholder="Miles"
-                    />
-                  </div>
+                <div className="loadcmd__value" style={{ display: "grid", gap: 10 }}>
+                  <input className="loadcmd__input" value={editDraft.netRpm} onChange={(e) => setEditDraft((d) => ({ ...d, netRpm: e.target.value }))} placeholder="Net RPM" />
+                  <input className="loadcmd__input" value={editDraft.miles} onChange={(e) => setEditDraft((d) => ({ ...d, miles: e.target.value }))} placeholder="Miles" />
+                  <input className="loadcmd__input" value={editDraft.rpm} onChange={(e) => setEditDraft((d) => ({ ...d, rpm: e.target.value }))} placeholder="RPM (optional)" />
                 </div>
               </div>
 
-              {/* Risk */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Risk</div>
                 <div className="loadcmd__value">
                   <label className="loadcmd__toggle">
-                    <input
-                      type="checkbox"
-                      checked={!!editDraft.detentionRisk}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, detentionRisk: e.target.checked }))}
-                    />
+                    <input type="checkbox" checked={!!editDraft.detentionRisk} onChange={(e) => setEditDraft((d) => ({ ...d, detentionRisk: e.target.checked }))} />
                     <span>Detention Risk</span>
                   </label>
                 </div>
               </div>
 
-              {/* Notes */}
               <div className="loadcmd__detailRow">
                 <div className="loadcmd__label">Notes</div>
                 <div className="loadcmd__value">
-                  <textarea
-                    className="loadcmd__textarea"
-                    value={editDraft.notes}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                    placeholder="Notes (optional)"
-                  />
+                  <textarea className="loadcmd__textarea" value={editDraft.notes} onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))} />
                 </div>
               </div>
 
@@ -704,96 +796,58 @@ export default function LoadCommand() {
                 <button className="command-shell__btn command-shell__btn--primary" type="button" onClick={saveEdits}>
                   Save Changes
                 </button>
-                <button className="command-shell__btn" type="button" onClick={cancelEdits}>
+                <button className="command-shell__btn" type="button" onClick={cancelEdit}>
                   Cancel
-                </button>
-
-                <button className="command-shell__btn" type="button" onClick={() => markCheckCall(selectedLoad.id)}>
-                  Mark Check Call
-                </button>
-                <button className="command-shell__btn" type="button" onClick={() => cycleStatus(selectedLoad.id)}>
-                  Advance Status
                 </button>
               </div>
             </div>
           ) : (
-            // VIEW MODE (Overview / Docs)
             <div className="loadcmd__detail">
-              {detailTab === "Docs" ? (
-                <LoadDocsPanel loadId={selectedLoad.id} />
-              ) : (
-                <>
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Status</div>
-                    <div className="loadcmd__value">
-                      <span
-                        className={`loadcmd__chip loadcmd__chip--${String(selectedLoad.status || "").replace(/\s+/g, "-").toLowerCase()}`}
-                      >
-                        {selectedLoad.status || "—"}
-                      </span>
-                      {selectedLoad.detentionRisk ? <span className="loadcmd__badge loadcmd__badge--warn">Detention Risk</span> : null}
-                    </div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Status</div>
+                <div className="loadcmd__value">{selected.status || "—"}</div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Broker</div>
-                    <div className="loadcmd__value">{selectedLoad.broker || "—"}</div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Broker</div>
+                <div className="loadcmd__value">{selected.broker || "—"}</div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Carrier</div>
-                    <div className="loadcmd__value">{selectedLoad.carrier || "—"}</div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Carrier</div>
+                <div className="loadcmd__value">{selected.carrierName || "—"}</div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Lane</div>
-                    <div className="loadcmd__value">{selectedLoad.lane || "—"}</div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Lane</div>
+                <div className="loadcmd__value">{selected.lane || "—"}</div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Pickup</div>
-                    <div className="loadcmd__value">
-                      {(selectedLoad.pickupCity || "—")} · {formatDateTime(selectedLoad.pickupAt)}
-                    </div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Pickup</div>
+                <div className="loadcmd__value">
+                  {(selected.pickupCity || "—")} · {fmt(selected.pickupAt)}
+                </div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Delivery</div>
-                    <div className="loadcmd__value">
-                      {(selectedLoad.deliveryCity || "—")} · {formatDateTime(selectedLoad.deliveryAt)}
-                    </div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Delivery</div>
+                <div className="loadcmd__value">
+                  {(selected.deliveryCity || "—")} · {fmt(selected.deliveryAt)}
+                </div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Pricing</div>
-                    <div className="loadcmd__value">
-                      Net RPM {Number(selectedLoad.netRpm || 0).toFixed(2)} · {selectedLoad.miles ?? 0} miles
-                    </div>
-                  </div>
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Pricing</div>
+                <div className="loadcmd__value">
+                  Net RPM {Number(selected.netRpm || 0).toFixed(2)} · {selected.miles} miles
+                </div>
+              </div>
 
-                  <div className="loadcmd__detailRow">
-                    <div className="loadcmd__label">Notes</div>
-                    <div className="loadcmd__value loadcmd__value--notes">{selectedLoad.notes || "—"}</div>
-                  </div>
-
-                  <div className="loadcmd__detailActions">
-                    <button className="command-shell__btn command-shell__btn--primary" type="button" onClick={() => openEditForLoad(selectedLoad)}>
-                      Edit
-                    </button>
-
-                    <button className="command-shell__btn" type="button" onClick={() => markCheckCall(selectedLoad.id)}>
-                      Mark Check Call
-                    </button>
-                    <button className="command-shell__btn" type="button" onClick={() => cycleStatus(selectedLoad.id)}>
-                      Advance Status
-                    </button>
-
-                    <button className="command-shell__btn" type="button" onClick={() => setDetailTab("Docs")}>
-                      Open Docs
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="loadcmd__detailRow">
+                <div className="loadcmd__label">Created</div>
+                <div className="loadcmd__value">{fmt(selected.createdAt)}</div>
+              </div>
             </div>
           )}
         </div>
@@ -806,57 +860,68 @@ export default function LoadCommand() {
             <div className="loadcmd__modalHeader">
               <div>
                 <div className="loadcmd__modalTitle">Add Load</div>
-                <div className="loadcmd__modalSub">Shared store — saving here updates Carrier Load History instantly.</div>
+                <div className="loadcmd__modalSub">Saved to Supabase (owner_id = your user).</div>
               </div>
               <button className="loadcmd__close" type="button" onClick={() => setAddOpen(false)}>
                 ✕
               </button>
             </div>
 
-            <form className="loadcmd__form" onSubmit={saveDraft}>
+            <form className="loadcmd__form" onSubmit={saveNewLoad}>
               <div className="loadcmd__formGrid">
                 <label className="loadcmd__field">
-                  <span>Load ID (optional)</span>
-                  <input className="loadcmd__input" value={draft.id} onChange={(e) => setDraft((d) => ({ ...d, id: e.target.value }))} placeholder="LD-10299" />
+                  <span>Load Ref (optional)</span>
+                  <input className="loadcmd__input" value={draft.ref} onChange={(e) => setDraft((d) => ({ ...d, ref: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__field">
                   <span>Status</span>
                   <select className="loadcmd__select" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Broker (optional)</span>
-                  <input className="loadcmd__input" value={draft.broker} onChange={(e) => setDraft((d) => ({ ...d, broker: e.target.value }))} placeholder="Broker name" />
+                  <span>Priority</span>
+                  <select className="loadcmd__select" value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value }))}>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Carrier (required)</span>
-                  <select
-                    className="loadcmd__select"
-                    value={draft.carrierId}
-                    onChange={(e) => {
-                      const carrierId = e.target.value;
-                      const c = carriers.find((x) => x.id === carrierId) || null;
-                      setDraft((d) => ({ ...d, carrierId, carrier: c?.name || "" }));
-                    }}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select carrier…
-                    </option>
-                    {carriers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.id})
-                      </option>
-                    ))}
-                  </select>
+                  <span>Broker</span>
+                  <input className="loadcmd__input" value={draft.broker} onChange={(e) => setDraft((d) => ({ ...d, broker: e.target.value }))} />
+                </label>
+
+                <label className="loadcmd__field">
+                  <span>Carrier (optional)</span>
+                  {carriers.length ? (
+                    <select
+                      className="loadcmd__select"
+                      value={draft.carrierId}
+                      onChange={(e) => {
+                        const carrierId = e.target.value;
+                        const c = carriers.find((x) => x.id === carrierId) || null;
+                        setDraft((d) => ({ ...d, carrierId, carrierName: c?.name || d.carrierName }));
+                      }}
+                    >
+                      <option value="">(No carrier selected)</option>
+                      {carriers.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      className="loadcmd__input"
+                      value={draft.carrierName}
+                      onChange={(e) => setDraft((d) => ({ ...d, carrierName: e.target.value }))}
+                      placeholder="Carrier name (text fallback)"
+                    />
+                  )}
                 </label>
 
                 <label className="loadcmd__field loadcmd__field--wide">
@@ -865,38 +930,43 @@ export default function LoadCommand() {
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Pickup City (optional)</span>
-                  <input className="loadcmd__input" value={draft.pickupCity} onChange={(e) => setDraft((d) => ({ ...d, pickupCity: e.target.value }))} placeholder="Chicago, IL" />
+                  <span>Pickup City</span>
+                  <input className="loadcmd__input" value={draft.pickupCity} onChange={(e) => setDraft((d) => ({ ...d, pickupCity: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Pickup Date/Time (optional)</span>
+                  <span>Pickup Date/Time</span>
                   <input className="loadcmd__input" type="datetime-local" value={draft.pickupAt} onChange={(e) => setDraft((d) => ({ ...d, pickupAt: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Delivery City (optional)</span>
-                  <input className="loadcmd__input" value={draft.deliveryCity} onChange={(e) => setDraft((d) => ({ ...d, deliveryCity: e.target.value }))} placeholder="Dallas, TX" />
+                  <span>Delivery City</span>
+                  <input className="loadcmd__input" value={draft.deliveryCity} onChange={(e) => setDraft((d) => ({ ...d, deliveryCity: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Delivery Date/Time (optional)</span>
+                  <span>Delivery Date/Time</span>
                   <input className="loadcmd__input" type="datetime-local" value={draft.deliveryAt} onChange={(e) => setDraft((d) => ({ ...d, deliveryAt: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Miles (optional)</span>
-                  <input className="loadcmd__input" value={draft.miles} onChange={(e) => setDraft((d) => ({ ...d, miles: e.target.value }))} placeholder="925" />
+                  <span>Miles</span>
+                  <input className="loadcmd__input" value={draft.miles} onChange={(e) => setDraft((d) => ({ ...d, miles: e.target.value }))} placeholder="0" />
                 </label>
 
                 <label className="loadcmd__field">
-                  <span>Net RPM (optional)</span>
-                  <input className="loadcmd__input" value={draft.netRpm} onChange={(e) => setDraft((d) => ({ ...d, netRpm: e.target.value }))} placeholder="2.18" />
+                  <span>RPM</span>
+                  <input className="loadcmd__input" value={draft.rpm} onChange={(e) => setDraft((d) => ({ ...d, rpm: e.target.value }))} placeholder="0" />
+                </label>
+
+                <label className="loadcmd__field">
+                  <span>Net RPM</span>
+                  <input className="loadcmd__input" value={draft.netRpm} onChange={(e) => setDraft((d) => ({ ...d, netRpm: e.target.value }))} placeholder="0" />
                 </label>
 
                 <label className="loadcmd__field loadcmd__field--wide">
-                  <span>Notes (optional)</span>
-                  <textarea className="loadcmd__textarea" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} placeholder="Special instructions, appointment notes, contact preferences…" />
+                  <span>Notes</span>
+                  <textarea className="loadcmd__textarea" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} />
                 </label>
 
                 <label className="loadcmd__toggle loadcmd__toggle--wide">
@@ -914,49 +984,6 @@ export default function LoadCommand() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
-
-      {/* CHECK CALLS PANEL */}
-      {checkCallsOpen ? (
-        <div className="loadcmd__modalOverlay" role="dialog" aria-modal="true">
-          <div className="loadcmd__modal loadcmd__modal--panel">
-            <div className="loadcmd__modalHeader">
-              <div>
-                <div className="loadcmd__modalTitle">Check Calls</div>
-                <div className="loadcmd__modalSub">Quick list of loads that need updates. (Shared)</div>
-              </div>
-              <button className="loadcmd__close" type="button" onClick={() => setCheckCallsOpen(false)}>
-                ✕
-              </button>
-            </div>
-
-            <div className="loadcmd__panelBody">
-              {loads
-                .filter((l) => !["Completed"].includes(l.status))
-                .map((l) => (
-                  <div key={l.id} className="loadcmd__panelRow">
-                    <div>
-                      <div className="loadcmd__cellMain">
-                        {l.id} · {(l.carrier || "—")}
-                      </div>
-                      <div className="loadcmd__cellSub">{l.lane || "—"}</div>
-                    </div>
-
-                    <div className="loadcmd__panelRight">
-                      <span
-                        className={`loadcmd__chip loadcmd__chip--${String(l.status || "").replace(/\s+/g, "-").toLowerCase()}`}
-                      >
-                        {l.status || "—"}
-                      </span>
-                      <button className="loadcmd__miniBtn" type="button" onClick={() => markCheckCall(l.id)}>
-                        Mark
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
           </div>
         </div>
       ) : null}

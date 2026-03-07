@@ -1,9 +1,16 @@
 // src/pages/CarrierCommand.jsx
-import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./CommandShell.css";
 import "./CarrierCommand.css";
-import { useData } from "../state/DataContext";
+import { createClient } from "@supabase/supabase-js";
+
+/* -----------------------------
+   Supabase (Vite env)
+------------------------------ */
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON ? createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
 /* -----------------------------
    Helpers
@@ -11,6 +18,7 @@ import { useData } from "../state/DataContext";
 function formatWhen(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString([], {
     month: "short",
     day: "2-digit",
@@ -20,142 +28,187 @@ function formatWhen(iso) {
 }
 
 function riskLabel(score) {
-  if (score <= 25) return "Low";
-  if (score <= 55) return "Medium";
+  const n = Number(score ?? 0);
+  if (n <= 25) return "Low";
+  if (n <= 55) return "Medium";
   return "High";
 }
 
 function daysUntil(dateStr) {
   if (!dateStr) return null;
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
   const now = new Date();
-  const d = new Date(dateStr + "T00:00:00");
   const diff = d.getTime() - now.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 function loadChipKey(status = "") {
-  return String(status).toLowerCase().replace(/\s+/g, "-");
-}
-
-function nextCarrierId() {
-  return `CR-${Math.floor(10000 + Math.random() * 89999)}`;
-}
-
-function normalize(s) {
-  return String(s || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
-}
-
-function statusKey(status = "") {
   const s = String(status || "").toLowerCase();
-  if (s.includes("risk")) return "risk";
-  if (s.includes("onboard")) return "onboarding";
-  return "active";
+  if (s.includes("book")) return "booked";
+  if (s.includes("pick")) return "pickup";
+  if (s.includes("in")) return "intransit";
+  if (s.includes("deliver")) return "delivered";
+  if (s.includes("cancel")) return "cancelled";
+  return "default";
 }
 
-function complianceKey(c) {
-  const ok = !!c?.insuranceOnFile && !!c?.w9OnFile && !!c?.authorityOnFile;
-  return ok ? "complete" : "missing";
+/* -----------------------------
+   Normalizers (handles snake_case or camelCase columns)
+------------------------------ */
+function stableId(row) {
+  return (
+    row?.id ??
+    row?.carrier_id ??
+    row?.uuid ??
+    row?.mc ??
+    row?.mc_number ??
+    row?.dot ??
+    row?.dot_number ??
+    (row
+      ? JSON.stringify([row.name ?? row.carrier_name ?? "carrier", row.created_at ?? row.createdAt ?? ""])
+      : "—")
+  );
 }
 
-function calcSuggestedAction(carrier) {
-  if (!carrier) return null;
+function detectPkColumn(row) {
+  if (!row) return "id";
+  if (row.id != null) return "id";
+  if (row.carrier_id != null) return "carrier_id";
+  if (row.uuid != null) return "uuid";
+  // fallback (not ideal, but avoids hard crash)
+  return "id";
+}
 
-  const missingDocs =
-    !carrier.insuranceOnFile || !carrier.w9OnFile || !carrier.authorityOnFile;
-
-  if (missingDocs) {
-    const missing = [];
-    if (!carrier.insuranceOnFile) missing.push("Insurance");
-    if (!carrier.w9OnFile) missing.push("W-9");
-    if (!carrier.authorityOnFile) missing.push("Authority");
-    return {
-      tone: "warn",
-      icon: "📄",
-      title: "Docs Missing",
-      detail: `Request: ${missing.join(", ")}.`,
-      cta: "Open Compliance",
-      tab: "Compliance",
-    };
-  }
-
-  const insuranceDays =
-    carrier.insuranceExp && typeof carrier.insuranceExp === "string"
-      ? daysUntil(carrier.insuranceExp)
-      : null;
-
-  if (insuranceDays !== null && insuranceDays <= 30) {
-    return {
-      tone: "warn",
-      icon: "⏳",
-      title: "Insurance Expiring",
-      detail: `Expires in ${insuranceDays} day(s). Request updated COI.`,
-      cta: "Open Compliance",
-      tab: "Compliance",
-    };
-  }
-
-  if (carrier.status === "At Risk") {
-    const claims = Number(carrier.claims ?? 0);
-    if (claims > 0) {
-      return {
-        tone: "warn",
-        icon: "⚠️",
-        title: "At Risk: Claims",
-        detail: `Review recent claims (${claims}) and confirm check-call expectations.`,
-        cta: "Open Performance",
-        tab: "Performance",
-      };
-    }
-    return {
-      tone: "warn",
-      icon: "⚠️",
-      title: "At Risk",
-      detail: "Verify on-time performance and set a follow-up check call.",
-      cta: "Mark Contact",
-      tab: null,
-    };
-  }
-
-  const last = carrier.lastContactAt ? new Date(carrier.lastContactAt).getTime() : 0;
-  const daysSince = last ? Math.floor((Date.now() - last) / (1000 * 60 * 60 * 24)) : null;
-  if (daysSince !== null && daysSince >= 2) {
-    return {
-      tone: "info",
-      icon: "📞",
-      title: "Follow Up",
-      detail: `No contact in ${daysSince} day(s). Quick check-in recommended.`,
-      cta: "Mark Contact",
-      tab: null,
-    };
-  }
-
+function normalizeCarrier(row) {
+  if (!row) return row;
   return {
-    tone: "ok",
-    icon: "✅",
-    title: "Healthy",
-    detail: "No urgent actions. Keep monitoring loads and check calls.",
-    cta: "Open Overview",
-    tab: "Overview",
+    id: stableId(row),
+    _pkCol: detectPkColumn(row),
+
+    name: row.name ?? row.carrier_name ?? row.company_name ?? row.legal_name ?? "—",
+    status: row.status ?? row.carrier_status ?? "—",
+
+    riskScore: row.riskScore ?? row.risk_score ?? row.risk ?? 0,
+    equipment: row.equipment ?? row.equipment_type ?? row.trailer_type ?? "—",
+    mc: row.mc ?? row.mc_number ?? row.mc_num ?? "—",
+    dot: row.dot ?? row.dot_number ?? row.dot_num ?? "—",
+    homeBase: row.homeBase ?? row.home_base ?? row.home_city ?? row.base ?? "—",
+
+    phone: row.phone ?? row.phone_number ?? row.contact_phone ?? "—",
+    email: row.email ?? row.contact_email ?? "—",
+    notes: row.notes ?? row.dispatch_notes ?? row.internal_notes ?? "",
+
+    lastContactAt: row.lastContactAt ?? row.last_contact_at ?? row.last_contact ?? null,
+
+    insuranceOnFile: row.insuranceOnFile ?? row.insurance_on_file ?? row.insurance_onfile ?? false,
+    w9OnFile: row.w9OnFile ?? row.w9_on_file ?? row.w9_onfile ?? false,
+    authorityOnFile: row.authorityOnFile ?? row.authority_on_file ?? row.authority_onfile ?? false,
+
+    insuranceExp:
+      row.insuranceExp ??
+      row.insurance_exp ??
+      row.insurance_expiration ??
+      row.insurance_expiry ??
+      null,
+
+    onTime: row.onTime ?? row.on_time ?? row.ontime_pct ?? null,
+    claims: row.claims ?? row.claim_count ?? 0,
+
+    recentLoadCount: row.recentLoadCount ?? row.recent_load_count ?? row.recent_loads ?? null,
+
+    created_at: row.created_at ?? row.createdAt ?? null,
+
+    _raw: row,
+  };
+}
+
+function normalizeLoad(row) {
+  if (!row) return row;
+  return {
+    id: row.id ?? row.load_id ?? row.reference ?? "—",
+    broker: row.broker ?? row.broker_name ?? row.brokerCompany ?? "—",
+    status: row.status ?? row.load_status ?? "—",
+    lane: row.lane ?? row.route ?? row.origin_destination ?? "—",
+    pickupAt: row.pickupAt ?? row.pickup_at ?? row.pickup_datetime ?? row.pickup_date ?? null,
+    deliveryAt: row.deliveryAt ?? row.delivery_at ?? row.delivery_datetime ?? row.delivery_date ?? null,
+    netRpm: row.netRpm ?? row.net_rpm ?? row.net_rpm_calc ?? row.net ?? 0,
+    carrier_id: row.carrier_id ?? row.carrierId ?? row.carrier ?? null,
+    createdAt: row.createdAt ?? row.created_at ?? null,
   };
 }
 
 /* -----------------------------
-   IndexedDB (Docs storage)
-   - Persists uploads locally
+   Safe write helper:
+   - If your table doesn't have a column we try to write,
+     Supabase throws: "Could not find the '<col>' column of '<table>' in the schema cache"
+   - We parse that and retry with the offending key removed.
 ------------------------------ */
-const DOC_DB = "lanesync_docs_db_v1";
-const DOC_STORE = "docs";
+function extractMissingColumn(msg = "") {
+  const m = String(msg).match(/Could not find the '([^']+)' column/i);
+  return m?.[1] || null;
+}
 
-function openDocsDB() {
+async function safeInsert(table, payload) {
+  let obj = { ...payload };
+  for (let i = 0; i < 10; i++) {
+    const res = await supabase.from(table).insert(obj).select("*").maybeSingle();
+    if (!res.error) return res;
+    const col = extractMissingColumn(res.error.message);
+    if (!col) throw res.error;
+    if (Object.prototype.hasOwnProperty.call(obj, col)) {
+      const { [col]: _omit, ...rest } = obj;
+      obj = rest;
+      continue;
+    }
+    throw res.error;
+  }
+  throw new Error("Insert failed after retries (schema mismatch).");
+}
+
+async function safeUpdate(table, pkCol, pkVal, patch) {
+  let obj = { ...patch };
+  for (let i = 0; i < 10; i++) {
+    const res = await supabase.from(table).update(obj).eq(pkCol, pkVal).select("*").maybeSingle();
+    if (!res.error) return res;
+    const col = extractMissingColumn(res.error.message);
+    if (!col) throw res.error;
+    if (Object.prototype.hasOwnProperty.call(obj, col)) {
+      const { [col]: _omit, ...rest } = obj;
+      obj = rest;
+      continue;
+    }
+    throw res.error;
+  }
+  throw new Error("Update failed after retries (schema mismatch).");
+}
+
+/* -----------------------------
+   IndexedDB (local docs)
+------------------------------ */
+const DB_NAME = "lanesync_docs";
+const DB_VERSION = 1;
+const STORE = "carrier_docs";
+
+function idbAvailable() {
+  try {
+    return typeof indexedDB !== "undefined";
+  } catch {
+    return false;
+  }
+}
+
+function idbOpen() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DOC_DB, 1);
+    if (!idbAvailable()) {
+      reject(new Error("IndexedDB not available in this browser/session."));
+      return;
+    }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains(DOC_STORE)) {
-        db.createObjectStore(DOC_STORE, { keyPath: "key" });
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: "key" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -163,1288 +216,1408 @@ function openDocsDB() {
   });
 }
 
-async function dbGetDoc(key) {
-  const db = await openDocsDB();
+async function idbGet(key) {
+  const db = await idbOpen();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(DOC_STORE, "readonly");
-    const store = tx.objectStore(DOC_STORE);
-    const req = store.get(key);
+    const tx = db.transaction(STORE, "readonly");
+    const st = tx.objectStore(STORE);
+    const req = st.get(key);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => reject(req.error);
-    tx.oncomplete = () => db.close();
   });
 }
 
-async function dbPutDoc(record) {
-  const db = await openDocsDB();
+async function idbPut(rec) {
+  const db = await idbOpen();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(DOC_STORE, "readwrite");
-    const store = tx.objectStore(DOC_STORE);
-    const req = store.put(record);
+    const tx = db.transaction(STORE, "readwrite");
+    const st = tx.objectStore(STORE);
+    const req = st.put(rec);
     req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);
-    tx.oncomplete = () => db.close();
   });
 }
 
-async function dbDeleteDoc(key) {
-  const db = await openDocsDB();
+async function idbDel(key) {
+  const db = await idbOpen();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(DOC_STORE, "readwrite");
-    const store = tx.objectStore(DOC_STORE);
-    const req = store.delete(key);
+    const tx = db.transaction(STORE, "readwrite");
+    const st = tx.objectStore(STORE);
+    const req = st.delete(key);
     req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);
-    tx.oncomplete = () => db.close();
   });
-}
-
-function docKey(carrierId, docType) {
-  return `${carrierId}::${docType}`;
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename || "document";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 /* -----------------------------
-   Query param helpers
+   DocRow
 ------------------------------ */
-function qp(location) {
-  return new URLSearchParams(location.search || "");
+function DocRow({ label, docType, record, highlight, onUpload, onDownload, onRemove }) {
+  return (
+    <div className={`carriercmd__docRow ${highlight ? "is-highlight" : ""}`}>
+      <div className="carriercmd__docLeft">
+        <div className="carriercmd__docLabel">{label}</div>
+        <div className="carriercmd__docSub">
+          {record?.name ? (
+            <>
+              <span className="carriercmd__docStatus is-on">On file</span>
+              <span className="carriercmd__docName">{record.name}</span>
+            </>
+          ) : (
+            <>
+              <span className="carriercmd__docStatus is-off">Missing</span>
+              <span className="carriercmd__docName">—</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="carriercmd__docActions">
+        <label className="carriercmd__miniBtn">
+          Upload
+          <input
+            type="file"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onUpload(docType, f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+
+        <button
+          className="carriercmd__miniBtn"
+          type="button"
+          onClick={() => onDownload(docType)}
+          disabled={!record}
+        >
+          Download
+        </button>
+
+        <button
+          className="carriercmd__miniBtn carriercmd__miniBtn--warn"
+          type="button"
+          onClick={() => onRemove(docType)}
+          disabled={!record}
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  );
 }
 
-function mapFilterToListFilter(filter) {
-  const f = String(filter || "").toLowerCase();
-
-  if (f === "active") return "ACTIVE";
-  if (f === "onboarding") return "ONBOARDING";
-  if (f === "atrisk" || f === "at_risk" || f === "at-risk" || f === "risk") return "ATRISK";
-
-  // ComplianceCommand filters
-  if (f === "insurance_missing" || f === "docs_missing" || f === "missing_docs") return "MISSINGDOCS";
-
-  if (f === "insurance_on_file") return "ALL";
-  if (f === "insurance_expiring") return "ALL";
-
-  if (f === "below-target") return "ALL";
-
-  return "ALL";
-}
-
-function mapFocusToTab(focus, doc) {
-  const f = String(focus || "").toLowerCase();
-  const d = String(doc || "").toLowerCase();
-
-  if (d === "w9" || d === "coi" || d === "authority") return "Docs";
-
-  if (f === "docs") return "Docs";
-  if (f === "insurance") return "Compliance";
-  if (f === "onboarding") return "Compliance";
-  if (f === "risk") return "Performance";
-  if (f === "reminders") return "Notes";
-  if (f === "performance") return "Performance";
-  if (f === "loads") return "Loads";
-  return null;
-}
-
-/* =============================
-   Carrier Command
-============================= */
+/* -----------------------------
+   Main
+------------------------------ */
 export default function CarrierCommand() {
-  const location = useLocation();
-  const { carriers, loads, addCarrier, updateCarrier } = useData();
+  const carriersTable = "carriers";
+  const loadsTable = "loads";
 
-  const [selectedId, setSelectedId] = useState(carriers[0]?.id || null);
+  // auth (Option A: scoped)
+  const [userId, setUserId] = useState("");
+  const [authErr, setAuthErr] = useState("");
 
-  // KPI filter state
-  const [listFilter, setListFilter] = useState("ALL");
+  // Supabase-backed state
+  const [carriers, setCarriers] = useState([]);
+  const [carriersLoading, setCarriersLoading] = useState(true);
+  const [carriersErr, setCarriersErr] = useState("");
 
-  // Drawer state
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [profileTab, setProfileTab] = useState("Overview");
-
-  // Docs focus (for Compliance -> Docs deep link)
-  const [docFocus, setDocFocus] = useState(null); // "insurance" | "w9" | "authority"
-
-  // Add Carrier modal
+  // Add/Edit/Delete modal
   const [addOpen, setAddOpen] = useState(false);
-  const [draftCarrier, setDraftCarrier] = useState({
-    id: "",
+  const [addBusy, setAddBusy] = useState(false);
+  const [addErr, setAddErr] = useState("");
+
+  const [editBusy, setEditBusy] = useState(false);
+  const [editErr, setEditErr] = useState("");
+
+  const blankCarrierForm = {
     name: "",
-    status: "Active",
+    status: "active",
     mc: "",
     dot: "",
-    phone: "",
-    email: "",
     homeBase: "",
     equipment: "",
-    insuranceOnFile: true,
-    insuranceExp: "",
-    w9OnFile: true,
-    authorityOnFile: true,
+    phone: "",
+    email: "",
     notes: "",
-  });
+    riskScore: 0,
+    insuranceOnFile: false,
+    w9OnFile: false,
+    authorityOnFile: false,
+    insuranceExp: "", // YYYY-MM-DD
+  };
+  const [carrierForm, setCarrierForm] = useState(blankCarrierForm);
+
+  // left panel controls
+  const [q, setQ] = useState("");
+  const [filterMode, setFilterMode] = useState("all"); // all | atRisk | missingDocs
+  const [selectedId, setSelectedId] = useState(null);
+
+  // drawer
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState("Overview");
+  const [docFocus, setDocFocus] = useState(null);
+
+  // notes editor
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [notesErr, setNotesErr] = useState("");
+
+  // docs state
+  const [docs, setDocs] = useState({ insurance: null, w9: null, authority: null });
+  const [docBusy, setDocBusy] = useState(false);
+
+  // loads in drawer (fetched from Supabase on demand)
+  const [loadingLoads, setLoadingLoads] = useState(false);
+  const [loadErr, setLoadErr] = useState("");
+  const [selectedLoads, setSelectedLoads] = useState([]);
+
+  // KPI ack
+  const ackRef = useRef({ atRisk: false, missingDocs: false });
+  const acknowledgeKpi = (key) => {
+    ackRef.current[key] = true;
+  };
 
   const selected = useMemo(
-    () => carriers.find((c) => c.id === selectedId) || null,
+    () => carriers.find((c) => String(c.id) === String(selectedId)) || null,
     [carriers, selectedId]
   );
 
-  // keep selectedId valid if carriers swap (training/live) or list changes
-  useEffect(() => {
-    if (!carriers?.length) return;
-    const exists = carriers.some((c) => c.id === selectedId);
-    if (!exists) setSelectedId(carriers[0]?.id || null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const insuranceDays = useMemo(() => {
+    const d = daysUntil(selected?.insuranceExp);
+    return d == null ? null : d;
+  }, [selected?.insuranceExp]);
+
+  const insuranceSoon = useMemo(() => {
+    if (insuranceDays == null) return false;
+    return insuranceDays <= 14;
+  }, [insuranceDays]);
+
+  const missingDocsCount = useMemo(() => {
+    const list = carriers || [];
+    let missing = 0;
+    for (const c of list) {
+      const miss =
+        (c.insuranceOnFile === false ? 1 : 0) +
+        (c.w9OnFile === false ? 1 : 0) +
+        (c.authorityOnFile === false ? 1 : 0);
+      if (miss > 0) missing += 1;
+    }
+    return missing;
   }, [carriers]);
 
-  /* ---------------------------------------------------
-     URL PARAM SUPPORT
-  --------------------------------------------------- */
-  useEffect(() => {
-    if (!carriers.length) return;
+  const atRiskCount = useMemo(() => {
+    const list = carriers || [];
+    return list.filter((c) => Number(c.riskScore ?? 0) > 55).length;
+  }, [carriers]);
 
-    const params = qp(location);
-    const qpCarrierId = (params.get("carrierId") || "").trim();
-    const qpCarrierName = (params.get("carrier") || "").trim();
-    const qpFilter = (params.get("filter") || "").trim();
-    const qpFocus = (params.get("focus") || "").trim();
-    const qpDoc = (params.get("doc") || "").trim();
+  const activeCount = useMemo(() => {
+    const list = carriers || [];
+    return list.filter((c) => String(c.status || "").toLowerCase() !== "inactive").length;
+  }, [carriers]);
 
-    if (qpFilter) setListFilter(mapFilterToListFilter(qpFilter));
+  const filtered = useMemo(() => {
+    const list = carriers || [];
+    const qq = q.trim().toLowerCase();
+    let out = list;
 
-    let match = null;
-    if (qpCarrierId) {
-      match = carriers.find((c) => c.id === qpCarrierId) || null;
-    } else if (qpCarrierName) {
-      const wanted = normalize(qpCarrierName);
-      match =
-        carriers.find((c) => normalize(c.name) === wanted) ||
-        carriers.find((c) => normalize(c.name).includes(wanted)) ||
-        carriers.find((c) => wanted.includes(normalize(c.name))) ||
-        null;
+    if (filterMode === "atRisk") out = out.filter((c) => Number(c.riskScore ?? 0) > 55);
+
+    if (filterMode === "missingDocs") {
+      out = out.filter(
+        (c) => c.insuranceOnFile === false || c.w9OnFile === false || c.authorityOnFile === false
+      );
     }
-    if (match) setSelectedId(match.id);
 
-    const tab = mapFocusToTab(qpFocus, qpDoc);
-    if (tab) {
-      setProfileTab(tab);
-      setProfileOpen(true);
-      if (qpDoc) {
-        const d = qpDoc.toLowerCase();
-        if (d === "coi") setDocFocus("insurance");
-        if (d === "w9") setDocFocus("w9");
-        if (d === "authority") setDocFocus("authority");
+    if (qq) {
+      out = out.filter((c) => {
+        const hay = [c.name, c.id, c.mc, c.dot, c.homeBase, c.phone, c.email, c.notes]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(qq);
+      });
+    }
+
+    return out;
+  }, [carriers, q, filterMode]);
+
+  /* -----------------------------
+     Auth + carriers fetch (Option A)
+  ------------------------------ */
+  async function getUserId() {
+    if (!supabase) return "";
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    return data?.user?.id || "";
+  }
+
+  async function fetchCarriers() {
+    if (!supabase) {
+      setCarriersErr("Supabase env missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      setCarriers([]);
+      setCarriersLoading(false);
+      return;
+    }
+
+    setCarriersLoading(true);
+    setCarriersErr("");
+
+    try {
+      let uid = userId;
+      if (!uid) {
+        uid = await getUserId();
+        setUserId(uid);
       }
+
+      if (!uid) {
+        setCarriersErr("No logged-in user found. Option A requires Supabase Auth sign-in.");
+        setCarriers([]);
+        setCarriersLoading(false);
+        return;
+      }
+
+      // Try ordering safely, but ALWAYS scope by owner_id
+      let data = null;
+      let error = null;
+
+      // Attempt 1: created_at
+      {
+        const res = await supabase
+          .from(carriersTable)
+          .select("*")
+          .eq("owner_id", uid)
+          .order("created_at", { ascending: false });
+        data = res.data;
+        error = res.error;
+      }
+
+      // Attempt 2: createdAt
+      if (error && String(error.message || "").toLowerCase().includes("column")) {
+        const res2 = await supabase
+          .from(carriersTable)
+          .select("*")
+          .eq("owner_id", uid)
+          .order("createdAt", { ascending: false });
+        data = res2.data;
+        error = res2.error;
+      }
+
+      // Attempt 3: no order
+      if (error && String(error.message || "").toLowerCase().includes("column")) {
+        const res3 = await supabase.from(carriersTable).select("*").eq("owner_id", uid);
+        data = res3.data;
+        error = res3.error;
+      }
+
+      if (error) throw error;
+
+      const normalized = (data || []).map(normalizeCarrier);
+      setCarriers(normalized);
+
+      if (selectedId != null && !normalized.some((c) => String(c.id) === String(selectedId))) {
+        setSelectedId(null);
+        setProfileOpen(false);
+      }
+    } catch (e) {
+      setCarriersErr(e?.message || "Could not load carriers from Supabase.");
+      setCarriers([]);
+    } finally {
+      setCarriersLoading(false);
     }
-  }, [location.search, carriers]);
-
-  /* -----------------------------
-     KPI values
-  ------------------------------ */
-  const kpis = useMemo(() => {
-    return {
-      total: carriers.length,
-      active: carriers.filter((c) => c.status === "Active").length,
-      onboarding: carriers.filter((c) => c.status === "Onboarding").length,
-      atRisk: carriers.filter((c) => c.status === "At Risk").length,
-      missingDocs: carriers.filter(
-        (c) => !c.insuranceOnFile || !c.w9OnFile || !c.authorityOnFile
-      ).length,
-    };
-  }, [carriers]);
-
-  /* -----------------------------
-     KPI "seen" (acknowledge) state
-  ------------------------------ */
-  const [kpiSeen, setKpiSeen] = useState({ atRisk: 0, missingDocs: 0 });
+  }
 
   useEffect(() => {
-    setKpiSeen((prev) => ({
-      atRisk: prev.atRisk === kpis.atRisk ? prev.atRisk : 0,
-      missingDocs: prev.missingDocs === kpis.missingDocs ? prev.missingDocs : 0,
-    }));
-  }, [kpis.atRisk, kpis.missingDocs]);
+    (async () => {
+      if (!supabase) return;
+      try {
+        const uid = await getUserId();
+        setUserId(uid);
+        setAuthErr(uid ? "" : "No logged-in user. Sign in to enable Add/Edit/Delete.");
+      } catch (e) {
+        setAuthErr(e?.message || "Auth error.");
+      } finally {
+        fetchCarriers();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const acknowledgeKpi = useCallback(
-    (key) => {
-      if (key === "atRisk") setKpiSeen((p) => ({ ...p, atRisk: kpis.atRisk }));
-      if (key === "missingDocs") setKpiSeen((p) => ({ ...p, missingDocs: kpis.missingDocs }));
-    },
-    [kpis.atRisk, kpis.missingDocs]
-  );
-
-  const atRiskPulse = kpis.atRisk > 0 && kpiSeen.atRisk !== kpis.atRisk;
-  const missingDocsPulse = kpis.missingDocs > 0 && kpiSeen.missingDocs !== kpis.missingDocs;
-
-  /* -----------------------------
-     Filtered list
-  ------------------------------ */
-  const filteredCarriers = useMemo(() => {
-    switch (listFilter) {
-      case "ACTIVE":
-        return carriers.filter((c) => c.status === "Active");
-      case "ONBOARDING":
-        return carriers.filter((c) => c.status === "Onboarding");
-      case "ATRISK":
-        return carriers.filter((c) => c.status === "At Risk");
-      case "MISSINGDOCS":
-        return carriers.filter(
-          (c) => !c.insuranceOnFile || !c.w9OnFile || !c.authorityOnFile
-        );
-      default:
-        return carriers;
-    }
-  }, [carriers, listFilter]);
-
-  function toggleFilter(next) {
-    setListFilter((prev) => (prev === next ? "ALL" : next));
-  }
-
-  function markContact() {
-    if (!selected) return;
-    updateCarrier(selected.id, { lastContactAt: new Date().toISOString() });
-  }
-
-  function openProfile(tab = "Overview") {
-    if (!selected) return;
-    setProfileTab(tab);
+  const openProfile = (carrierId) => {
+    setSelectedId(carrierId);
     setProfileOpen(true);
+    setProfileTab("Overview");
+    setDocFocus(null);
 
-    if (tab === "Performance") acknowledgeKpi("atRisk");
-    if (tab === "Compliance" || tab === "Docs") acknowledgeKpi("missingDocs");
-  }
-
-  function openDocs(docType) {
-    if (!selected) return;
-    setDocFocus(docType);
-    setProfileTab("Docs");
-    setProfileOpen(true);
-    acknowledgeKpi("missingDocs");
-  }
-
-  // helper to make div "button" tiles behave like buttons
-  const onTileKeyDown = (e, onActivate) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onActivate?.();
+    const c = carriers.find((x) => String(x.id) === String(carrierId));
+    if (c) {
+      // preload edit form from selected row
+      setCarrierForm({
+        ...blankCarrierForm,
+        name: c.name === "—" ? "" : c.name,
+        status: c.status === "—" ? "active" : c.status,
+        mc: c.mc === "—" ? "" : c.mc,
+        dot: c.dot === "—" ? "" : c.dot,
+        homeBase: c.homeBase === "—" ? "" : c.homeBase,
+        equipment: c.equipment === "—" ? "" : c.equipment,
+        phone: c.phone === "—" ? "" : c.phone,
+        email: c.email === "—" ? "" : c.email,
+        notes: c.notes || "",
+        riskScore: Number(c.riskScore || 0),
+        insuranceOnFile: Boolean(c.insuranceOnFile),
+        w9OnFile: Boolean(c.w9OnFile),
+        authorityOnFile: Boolean(c.authorityOnFile),
+        insuranceExp: c.insuranceExp || "",
+      });
     }
   };
 
-  // Loads tied to selected carrier
-  const selectedLoads = useMemo(() => {
-    if (!selected) return [];
-    const byId = loads.filter((l) => l.carrierId && l.carrierId === selected.id);
-    if (byId.length) return byId;
-    const name = (selected.name || "").trim().toLowerCase();
-    return loads.filter((l) => (l.carrier || "").trim().toLowerCase() === name);
-  }, [loads, selected]);
-
-  const recentLoads = useMemo(() => {
-    const sorted = [...selectedLoads].sort((a, b) => {
-      const ad = new Date(a.pickupAt || a.deliveryAt || 0).getTime();
-      const bd = new Date(b.pickupAt || b.deliveryAt || 0).getTime();
-      return bd - ad;
-    });
-    return sorted.slice(0, 4);
-  }, [selectedLoads]);
-
-  const insuranceDays = useMemo(() => {
-    if (!selected?.insuranceExp) return null;
-    return daysUntil(selected.insuranceExp);
-  }, [selected]);
-
-  const insuranceSoon = insuranceDays !== null && insuranceDays <= 30;
-  const suggested = useMemo(() => calcSuggestedAction(selected), [selected]);
-
-  function openAddCarrier() {
-    setDraftCarrier({
-      id: "",
-      name: "",
-      status: "Active",
-      mc: "",
-      dot: "",
-      phone: "",
-      email: "",
-      homeBase: "",
-      equipment: "",
-      insuranceOnFile: true,
-      insuranceExp: "",
-      w9OnFile: true,
-      authorityOnFile: true,
-      notes: "",
-    });
+  /* -----------------------------
+     Add Carrier (Option A)
+  ------------------------------ */
+  function openAdd() {
+    setAddErr("");
+    setCarrierForm(blankCarrierForm);
     setAddOpen(true);
   }
 
-  function saveCarrier(e) {
-    e.preventDefault();
+  function dbCarrierFromForm(form, uid) {
+    // Prefer snake_case columns that are most likely in DB
+    // safeInsert/safeUpdate will automatically drop columns that don't exist in your schema.
+    const payload = {
+      owner_id: uid,
+      name: form.name?.trim() || null,
+      status: form.status?.trim() || "active",
+      mc: form.mc?.trim() || null,
+      dot: form.dot?.trim() || null,
+      home_base: form.homeBase?.trim() || null,
+      equipment: form.equipment?.trim() || null,
+      phone: form.phone?.trim() || null,
+      email: form.email?.trim() || null,
+      notes: form.notes || "",
+      risk_score: Number(form.riskScore || 0),
+      insurance_on_file: Boolean(form.insuranceOnFile),
+      w9_on_file: Boolean(form.w9OnFile),
+      authority_on_file: Boolean(form.authorityOnFile),
+      insurance_exp: form.insuranceExp?.trim() || null,
+      last_contact_at: null,
+    };
 
-    const id = (draftCarrier.id || "").trim() || nextCarrierId();
-    const name = (draftCarrier.name || "").trim();
-    if (!name) return;
-
-    const created = addCarrier({
-      ...draftCarrier,
-      id,
-      name,
-      riskScore: 22,
-      onTime: 0,
-      claims: 0,
-      lastContactAt: new Date().toISOString(),
+    // Remove nulls (keeps inserts clean)
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === null || payload[k] === "") delete payload[k];
     });
 
-    if (!created) return;
-    setSelectedId(created.id);
-    setAddOpen(false);
+    return payload;
   }
 
-  // Keyboard navigation inside list
-  const onListKeyDown = useCallback(
-    (e) => {
-      if (!filteredCarriers?.length) return;
+  async function addCarrier() {
+    if (!supabase) return;
+    setAddBusy(true);
+    setAddErr("");
 
-      const idx = filteredCarriers.findIndex((c) => c.id === selectedId);
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        const next = filteredCarriers[Math.min(filteredCarriers.length - 1, Math.max(0, idx) + 1)];
-        if (next) setSelectedId(next.id);
+    try {
+      const uid = userId || (await getUserId());
+      setUserId(uid);
+
+      if (!uid) throw new Error("No logged-in user. Sign in to add a carrier.");
+
+      if (!carrierForm.name.trim()) {
+        throw new Error("Carrier name is required.");
       }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        const prev = filteredCarriers[Math.max(0, Math.max(0, idx) - 1)];
-        if (prev) setSelectedId(prev.id);
-      }
-      if (e.key === "Enter") {
-        e.preventDefault();
-        if (selected) {
-          setProfileTab("Overview");
-          setProfileOpen(true);
-        }
-      }
-    },
-    [filteredCarriers, selectedId, selected]
-  );
+
+      const payload = dbCarrierFromForm(carrierForm, uid);
+      const res = await safeInsert(carriersTable, payload);
+      const created = normalizeCarrier(res.data);
+
+      setCarriers((prev) => [created, ...prev]);
+      setAddOpen(false);
+      setSelectedId(created.id);
+    } catch (e) {
+      setAddErr(e?.message || "Could not add carrier.");
+    } finally {
+      setAddBusy(false);
+    }
+  }
 
   /* -----------------------------
-     REAL DOCS (IndexedDB)
+     Edit / Delete (Option A)
   ------------------------------ */
-  const [docs, setDocs] = useState({
-    insurance: null,
-    w9: null,
-    authority: null,
-  });
-  const [docBusy, setDocBusy] = useState(false);
-
-  const insuranceInputRef = useRef(null);
-  const w9InputRef = useRef(null);
-  const authorityInputRef = useRef(null);
-
-  const insuranceRowRef = useRef(null);
-  const w9RowRef = useRef(null);
-  const authorityRowRef = useRef(null);
-
-  const inputRefByType = useMemo(
-    () => ({
-      insurance: insuranceInputRef,
-      w9: w9InputRef,
-      authority: authorityInputRef,
-    }),
-    []
-  );
-
-  const rowRefByType = useMemo(
-    () => ({
-      insurance: insuranceRowRef,
-      w9: w9RowRef,
-      authority: authorityRowRef,
-    }),
-    []
-  );
-
-  async function refreshDocsForSelected() {
+  async function saveCarrierEdits() {
     if (!selected?.id) return;
-    const [ins, w9, auth] = await Promise.all([
-      dbGetDoc(docKey(selected.id, "insurance")),
-      dbGetDoc(docKey(selected.id, "w9")),
-      dbGetDoc(docKey(selected.id, "authority")),
-    ]);
-    setDocs({ insurance: ins, w9: w9, authority: auth });
+    if (!supabase) return;
+
+    setEditBusy(true);
+    setEditErr("");
+
+    try {
+      const uid = userId || (await getUserId());
+      setUserId(uid);
+      if (!uid) throw new Error("No logged-in user. Sign in to edit.");
+
+      const pkCol = selected._pkCol || "id";
+      const patch = dbCarrierFromForm(carrierForm, uid);
+      // never allow ownership change in UI beyond ensuring it's set
+      patch.owner_id = uid;
+
+      const res = await safeUpdate(carriersTable, pkCol, selected._raw?.[pkCol] ?? selected.id, patch);
+      const updated = normalizeCarrier(res.data);
+
+      setCarriers((prev) =>
+        prev.map((c) => (String(c.id) === String(selected.id) ? { ...c, ...updated } : c))
+      );
+    } catch (e) {
+      setEditErr(e?.message || "Could not save changes.");
+    } finally {
+      setEditBusy(false);
+    }
   }
 
-  useEffect(() => {
+  async function deleteCarrier() {
     if (!selected?.id) return;
-    refreshDocsForSelected().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id, profileOpen]);
+    if (!supabase) return;
 
-  // auto-scroll/highlight when Docs tab opens via focus
-  useEffect(() => {
-    if (!profileOpen) return;
-    if (profileTab !== "Docs") return;
-    if (!docFocus) return;
+    const ok = window.confirm(`Delete carrier "${selected.name}"? This cannot be undone.`);
+    if (!ok) return;
 
-    const el = rowRefByType[docFocus]?.current;
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setEditBusy(true);
+    setEditErr("");
 
-    const t = setTimeout(() => setDocFocus(null), 1200);
-    return () => clearTimeout(t);
-  }, [profileOpen, profileTab, docFocus, rowRefByType]);
+    try {
+      const uid = userId || (await getUserId());
+      setUserId(uid);
+      if (!uid) throw new Error("No logged-in user. Sign in to delete.");
 
-  async function handleUpload(docType, file) {
-    if (!selected?.id || !file) return;
+      const pkCol = selected._pkCol || "id";
+      const pkVal = selected._raw?.[pkCol] ?? selected.id;
+
+      const res = await supabase.from(carriersTable).delete().eq(pkCol, pkVal);
+      if (res.error) throw res.error;
+
+      setCarriers((prev) => prev.filter((c) => String(c.id) !== String(selected.id)));
+      setProfileOpen(false);
+      setSelectedId(null);
+    } catch (e) {
+      setEditErr(e?.message || "Could not delete carrier.");
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  /* -----------------------------
+     Docs + Loads
+  ------------------------------ */
+  const docKey = (carrierId, docType) => `carrier:${carrierId}:${docType}`;
+
+  async function loadDocsForCarrier(carrierId) {
+    if (!carrierId) return;
     setDocBusy(true);
     try {
-      const record = {
-        key: docKey(selected.id, docType),
-        carrierId: selected.id,
-        docType,
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size || 0,
-        updatedAt: new Date().toISOString(),
-        blob: file,
-      };
-      await dbPutDoc(record);
-
-      setDocs((prev) => ({ ...prev, [docType]: record }));
-
-      if (docType === "insurance") updateCarrier(selected.id, { insuranceOnFile: true });
-      if (docType === "w9") updateCarrier(selected.id, { w9OnFile: true });
-      if (docType === "authority") updateCarrier(selected.id, { authorityOnFile: true });
-
-      acknowledgeKpi("missingDocs");
+      const [insurance, w9, authority] = await Promise.all([
+        idbGet(docKey(carrierId, "insurance")),
+        idbGet(docKey(carrierId, "w9")),
+        idbGet(docKey(carrierId, "authority")),
+      ]);
+      setDocs({
+        insurance: insurance?.payload || null,
+        w9: w9?.payload || null,
+        authority: authority?.payload || null,
+      });
+    } catch {
+      setDocs({ insurance: null, w9: null, authority: null });
     } finally {
       setDocBusy(false);
     }
+  }
+
+  async function handleUpload(docType, file) {
+    if (!selected?.id) return;
+    setDocBusy(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+
+      const payload = {
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        updatedAt: new Date().toISOString(),
+        data: bytes,
+      };
+      await idbPut({ key: docKey(selected.id, docType), payload });
+      await loadDocsForCarrier(selected.id);
+    } finally {
+      setDocBusy(false);
+    }
+  }
+
+  function downloadBlob(payload) {
+    const blob = new Blob([payload.data], { type: payload.type || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = payload.name || "document";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function handleDownload(docType) {
+    const rec = docs[docType];
+    if (!rec) return;
+    downloadBlob(rec);
   }
 
   async function handleRemove(docType) {
     if (!selected?.id) return;
     setDocBusy(true);
     try {
-      await dbDeleteDoc(docKey(selected.id, docType));
-      setDocs((prev) => ({ ...prev, [docType]: null }));
-
-      // IMPORTANT: removing a real uploaded doc should reflect in compliance flags too
-      if (docType === "insurance") updateCarrier(selected.id, { insuranceOnFile: false });
-      if (docType === "w9") updateCarrier(selected.id, { w9OnFile: false });
-      if (docType === "authority") updateCarrier(selected.id, { authorityOnFile: false });
+      await idbDel(docKey(selected.id, docType));
+      await loadDocsForCarrier(selected.id);
     } finally {
       setDocBusy(false);
     }
   }
 
-  function DocRow({ label, docType, record, highlight }) {
-    const ref = inputRefByType[docType];
-    const rowRef = rowRefByType[docType];
+  const openDocs = (focusType) => {
+    setProfileTab("Docs");
+    setDocFocus(focusType);
+  };
 
-    return (
-      <div
-        ref={rowRef}
-        style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 12px",
-          border: highlight
-            ? "1px solid rgba(255,255,255,0.28)"
-            : "1px solid rgba(255,255,255,0.08)",
-          boxShadow: highlight ? "0 0 0 2px rgba(255,255,255,0.10)" : "none",
-          borderRadius: 12,
-          marginBottom: 10,
-        }}
-      >
-        <div style={{ minWidth: 240 }}>
-          <div style={{ fontWeight: 700, marginBottom: 2 }}>{label}</div>
-          <div style={{ opacity: 0.8, fontSize: 12 }}>
-            {record ? (
-              <>
-                {record.name} · {(record.size / 1024).toFixed(1)} KB ·{" "}
-                {formatWhen(record.updatedAt)}
-              </>
-            ) : (
-              "No file uploaded yet."
-            )}
-          </div>
-        </div>
+  async function loadLoadsForCarrier(carrierId) {
+    setLoadingLoads(true);
+    setLoadErr("");
+    try {
+      if (!supabase) throw new Error("Supabase env missing.");
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <input
-            ref={ref}
-            type="file"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleUpload(docType, f);
-              e.target.value = "";
-            }}
-          />
+      const carrierIdStr = String(carrierId);
 
-          <button
-            className="command-shell__btn"
-            type="button"
-            onClick={() => ref?.current?.click()}
-            disabled={docBusy}
-          >
-            {record ? "Replace" : "Upload"}
-          </button>
+      let data = null;
+      let error = null;
 
-          <button
-            className="command-shell__btn"
-            type="button"
-            onClick={() => {
-              if (!record?.blob) return;
-              downloadBlob(record.blob, record.name || `${label}.pdf`);
-            }}
-            disabled={!record || docBusy}
-          >
-            Download
-          </button>
+      {
+        const res = await supabase
+          .from(loadsTable)
+          .select("*")
+          .eq("carrier_id", carrierIdStr)
+          .order("pickup_at", { ascending: false });
+        data = res.data;
+        error = res.error;
+      }
 
-          <button
-            className="command-shell__btn"
-            type="button"
-            onClick={() => handleRemove(docType)}
-            disabled={!record || docBusy}
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    );
+      if (error && String(error.message || "").toLowerCase().includes("column")) {
+        const res2 = await supabase
+          .from(loadsTable)
+          .select("*")
+          .eq("carrierId", carrierIdStr)
+          .order("pickupAt", { ascending: false });
+        data = res2.data;
+        error = res2.error;
+      }
+
+      if (error && String(error.message || "").toLowerCase().includes("column")) {
+        const res3 = await supabase.from(loadsTable).select("*").eq("carrier_id", carrierIdStr);
+        data = res3.data;
+        error = res3.error;
+      }
+
+      if (error) throw error;
+
+      const mine = (data || []).map(normalizeLoad);
+      mine.sort((a, b) => {
+        const ad = new Date(a.pickupAt || a.createdAt || 0).getTime();
+        const bd = new Date(b.pickupAt || b.createdAt || 0).getTime();
+        return bd - ad;
+      });
+
+      setSelectedLoads(mine);
+    } catch (e) {
+      setLoadErr(e?.message || "Could not load loads for this carrier.");
+      setSelectedLoads([]);
+    } finally {
+      setLoadingLoads(false);
+    }
   }
 
+  useEffect(() => {
+    if (!profileOpen || !selected?.id) return;
+    loadDocsForCarrier(selected.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileOpen, selected?.id]);
+
+  useEffect(() => {
+    setNotesErr("");
+    setNotesDraft(selected?.notes ?? "");
+  }, [selected?.id]);
+
+  async function saveNotes() {
+    if (!selected?.id) return;
+    if (!supabase) {
+      setNotesErr("Supabase env missing. Cannot save notes.");
+      return;
+    }
+    setSavingNotes(true);
+    setNotesErr("");
+
+    try {
+      const nowIso = new Date().toISOString();
+      const pkCol = selected._pkCol || "id";
+      const pkVal = selected._raw?.[pkCol] ?? selected.id;
+
+      let res = await supabase
+        .from(carriersTable)
+        .update({ notes: notesDraft, last_contact_at: nowIso })
+        .eq(pkCol, pkVal)
+        .select("*")
+        .maybeSingle();
+
+      if (res.error && String(res.error.message || "").toLowerCase().includes("column")) {
+        res = await supabase
+          .from(carriersTable)
+          .update({ notes: notesDraft })
+          .eq(pkCol, pkVal)
+          .select("*")
+          .maybeSingle();
+      }
+
+      if (res.error) throw res.error;
+
+      const updated = normalizeCarrier(res.data || { ...selected, notes: notesDraft });
+      setCarriers((prev) =>
+        prev.map((c) => (String(c.id) === String(selected.id) ? { ...c, ...updated } : c))
+      );
+    } catch (e) {
+      setNotesErr(e?.message || "Could not save notes.");
+    } finally {
+      setSavingNotes(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!profileOpen || !selected?.id) return;
+    if (profileTab !== "Loads") return;
+    loadLoadsForCarrier(selected.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileTab, profileOpen, selected?.id]);
+
   return (
-    <div className="command-shell carriercmd">
-      {/* HEADER */}
-      <header className="command-shell__header">
-        <div>
-          <div className="command-shell__kicker">Operations</div>
-          <h1 className="command-shell__title">Carrier Command</h1>
-          <p className="command-shell__subtitle">
-            Carrier profiles, onboarding, compliance, performance, and carrier-linked load history.
-          </p>
+    <div className="commandshell">
+      <div className="commandshell__header">
+        <div className="commandshell__title">
+          <div className="commandshell__kicker">OPERATIONS</div>
+          <div className="commandshell__h1">Carrier Command</div>
+          <div className="commandshell__sub">
+            Manage carriers, compliance, performance, documents, and load history.
+          </div>
+
+          {userId ? (
+            <div style={{ marginTop: 6, opacity: 0.75, fontSize: 12 }}>Debug userId: {userId}</div>
+          ) : authErr ? (
+            <div style={{ marginTop: 6, color: "#ffb86b", fontSize: 12 }}>{authErr}</div>
+          ) : null}
         </div>
 
-        <div className="command-shell__actions">
-          <button className="command-shell__btn" onClick={markContact}>
-            Mark Contact
+        <div className="commandshell__actions">
+          <button className="commandshell__btn" type="button" onClick={fetchCarriers}>
+            Refresh
           </button>
+
           <button
-            className="command-shell__btn command-shell__btn--primary"
+            className="commandshell__btn"
             type="button"
-            onClick={openAddCarrier}
+            onClick={openAdd}
+            disabled={!userId}
+            title={!userId ? "Sign in to enable Add Carrier (Option A)." : "Add Carrier"}
           >
             Add Carrier
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* KPIs (CLICKABLE) */}
-      <section className="carriercmd__kpis">
-        <div
-          className={`carriercmd__kpi carriercmd__kpi--neutral ${listFilter === "ALL" ? "is-selected" : ""}`}
-          role="button"
-          tabIndex={0}
-          title="Show all carriers"
-          onClick={() => setListFilter("ALL")}
-          onKeyDown={(e) => onTileKeyDown(e, () => setListFilter("ALL"))}
-        >
-          <div className="carriercmd__kpiLabel">Total</div>
-          <div className="carriercmd__kpiValue">{kpis.total}</div>
-        </div>
-
-        <div
-          className={`carriercmd__kpi carriercmd__kpi--ok ${listFilter === "ACTIVE" ? "is-selected" : ""}`}
-          role="button"
-          tabIndex={0}
-          title="Filter Active carriers"
-          onClick={() => toggleFilter("ACTIVE")}
-          onKeyDown={(e) => onTileKeyDown(e, () => toggleFilter("ACTIVE"))}
-        >
-          <div className="carriercmd__kpiLabel">Active</div>
-          <div className="carriercmd__kpiValue">{kpis.active}</div>
-        </div>
-
-        <div
-          className={`carriercmd__kpi carriercmd__kpi--info ${listFilter === "ONBOARDING" ? "is-selected" : ""}`}
-          role="button"
-          tabIndex={0}
-          title="Filter Onboarding carriers"
-          onClick={() => toggleFilter("ONBOARDING")}
-          onKeyDown={(e) => onTileKeyDown(e, () => toggleFilter("ONBOARDING"))}
-        >
-          <div className="carriercmd__kpiLabel">Onboarding</div>
-          <div className="carriercmd__kpiValue">{kpis.onboarding}</div>
-        </div>
-
-        <div
-          className={`carriercmd__kpi carriercmd__kpi--warn ${listFilter === "ATRISK" ? "is-selected" : ""} ${atRiskPulse ? "is-pulsing" : ""}`}
-          role="button"
-          tabIndex={0}
-          title="Filter At Risk carriers"
-          onClick={() => {
-            toggleFilter("ATRISK");
-            acknowledgeKpi("atRisk");
-          }}
-          onKeyDown={(e) =>
-            onTileKeyDown(e, () => {
-              toggleFilter("ATRISK");
-              acknowledgeKpi("atRisk");
-            })
-          }
-        >
-          <div className="carriercmd__kpiLabel">At Risk</div>
-          <div className="carriercmd__kpiValue">{kpis.atRisk}</div>
-        </div>
-
-        <div
-          className={`carriercmd__kpi carriercmd__kpi--warn ${listFilter === "MISSINGDOCS" ? "is-selected" : ""} ${missingDocsPulse ? "is-pulsing" : ""}`}
-          role="button"
-          tabIndex={0}
-          title="Filter carriers missing documents"
-          onClick={() => {
-            toggleFilter("MISSINGDOCS");
-            acknowledgeKpi("missingDocs");
-          }}
-          onKeyDown={(e) =>
-            onTileKeyDown(e, () => {
-              toggleFilter("MISSINGDOCS");
-              acknowledgeKpi("missingDocs");
-            })
-          }
-        >
-          <div className="carriercmd__kpiLabel">Docs Missing</div>
-          <div className="carriercmd__kpiValue">{kpis.missingDocs}</div>
-        </div>
-      </section>
-
-      {/* MAIN GRID */}
-      <section className="carriercmd__grid">
-        {/* LIST */}
-        <div className="carriercmd__card carriercmd__card--wide">
-          <div className="carriercmd__cardHeader">
-            <div>
-              <div className="carriercmd__cardTitle">Carrier List</div>
-              <div className="carriercmd__cardSub">
-                Showing {filteredCarriers.length}
-                {listFilter !== "ALL" ? " (filtered)" : ""}
-                <span className="carriercmd__kbdHint">↑ ↓ to move · Enter to open</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="carriercmd__tableWrap" tabIndex={0} onKeyDown={onListKeyDown}>
-            <table className="carriercmd__table">
-              <thead>
-                <tr>
-                  <th>Carrier</th>
-                  <th>Status</th>
-                  <th>Compliance</th>
-                  <th>Performance</th>
-                  <th>Last Contact</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredCarriers.map((c) => {
-                  const sKey = statusKey(c.status);
-                  const comp = complianceKey(c);
-                  const compText = comp === "complete" ? "Complete" : "Docs Missing";
-
-                  const onTime = Number(c.onTime || 0);
-                  const claims = Number(c.claims ?? 0);
-
-                  const perfHint =
-                    claims > 0 || (onTime > 0 && onTime < 85)
-                      ? "Needs attention"
-                      : onTime >= 85
-                      ? "Solid"
-                      : "—";
-
-                  return (
-                    <tr
-                      key={c.id}
-                      className={[
-                        selectedId === c.id ? "is-selected" : "",
-                        `row--${sKey}`,
-                        `row--comp-${comp}`,
-                      ].filter(Boolean).join(" ")}
-                      onClick={() => setSelectedId(c.id)}
-                      onDoubleClick={() => {
-                        setSelectedId(c.id);
-                        setProfileTab("Overview");
-                        setProfileOpen(true);
-                      }}
-                      title="Click to view · Double-click to open Full Profile"
-                    >
-                      <td>
-                        <div className="carriercmd__cellMain">{c.name}</div>
-                        <div className="carriercmd__cellSub">
-                          {c.id} · {c.homeBase || "—"}
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className={`carriercmd__chip carriercmd__chip--${sKey}`}>
-                          {sKey === "active" ? "Active" : sKey === "onboarding" ? "Onboarding" : "At Risk"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className={`carriercmd__pill carriercmd__pill--${comp}`}>
-                          {comp === "complete" ? "✓" : "!"}
-                        </span>
-                        <span className="carriercmd__inlineText">{compText}</span>
-                      </td>
-
-                      <td>
-                        <span className="carriercmd__inlinePerf">
-                          ⏱ {c.onTime || "—"}% · 🧾 {claims}
-                        </span>
-                        <span className={`carriercmd__perfHint ${perfHint === "Needs attention" ? "is-warn" : ""}`}>
-                          {perfHint}
-                        </span>
-                      </td>
-
-                      <td>{formatWhen(c.lastContactAt)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* DETAIL */}
-        <div className="carriercmd__card">
-          <div className="carriercmd__cardHeader">
-            <div>
-              <div className="carriercmd__cardTitle">Carrier Detail</div>
-              <div className="carriercmd__cardSub">
-                {selected ? selected.name : "Select a carrier"}
-              </div>
-            </div>
-          </div>
-
-          {!selected ? (
-            <div className="carriercmd__detailEmpty">Select a carrier.</div>
-          ) : (
-            <div className="carriercmd__detail">
-              {suggested ? (
-                <div className={`carriercmd__suggest carriercmd__suggest--${suggested.tone}`}>
-                  <div className="carriercmd__suggestTop">
-                    <div className="carriercmd__suggestTitle">
-                      <span className="carriercmd__suggestIcon">{suggested.icon}</span>
-                      <span>Suggested Action</span>
-                    </div>
-                    <span className="carriercmd__suggestBadge">{suggested.title}</span>
-                  </div>
-
-                  <div className="carriercmd__suggestDetail">{suggested.detail}</div>
-
-                  <div className="carriercmd__suggestActions">
-                    {suggested.cta === "Mark Contact" ? (
-                      <button className="command-shell__btn" onClick={markContact}>
-                        Mark Contact
-                      </button>
-                    ) : (
-                      <button
-                        className="command-shell__btn command-shell__btn--primary"
-                        onClick={() => {
-                          if (suggested.tab) openProfile(suggested.tab);
-                          else openProfile("Overview");
-                        }}
-                      >
-                        {suggested.cta}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="carriercmd__detailRow">
-                <div className="carriercmd__label">Status</div>
-                <div className="carriercmd__value">
-                  <span className={`carriercmd__chip carriercmd__chip--${statusKey(selected.status)}`}>
-                    {selected.status}
-                  </span>
-                  <span className="carriercmd__inlineText">
-                    Risk: <strong>{riskLabel(selected.riskScore)}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="carriercmd__detailRow">
-                <div className="carriercmd__label">MC / DOT</div>
-                <div className="carriercmd__value">
-                  {selected.mc || "—"} · {selected.dot || "—"}
-                </div>
-              </div>
-
-              <div className="carriercmd__detailRow">
-                <div className="carriercmd__label">Contact</div>
-                <div className="carriercmd__value">
-                  {selected.phone || "—"}
-                  <br />
-                  {selected.email || "—"}
-                </div>
-              </div>
-
-              <div className="carriercmd__detailRow carriercmd__detailRow--stack">
-                <div className="carriercmd__label">Recent Loads</div>
-                <div className="carriercmd__value">
-                  {recentLoads.length === 0 ? (
-                    <div className="carriercmd__muted">No loads tied to this carrier yet.</div>
-                  ) : (
-                    <div className="carriercmd__loadList">
-                      {recentLoads.map((l) => (
-                        <div key={l.id} className="carriercmd__loadItem">
-                          <div>
-                            <div className="carriercmd__loadTop">
-                              <span className="carriercmd__loadId">{l.id}</span>
-                              <span className={`carriercmd__loadChip carriercmd__loadChip--${loadChipKey(l.status)}`}>
-                                {l.status}
-                              </span>
-                            </div>
-                            <div className="carriercmd__loadSub">
-                              {l.lane} · Net {Number(l.netRpm || 0).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="carriercmd__loadTime">{formatWhen(l.pickupAt)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="carriercmd__detailActions">
-                <button className="command-shell__btn" onClick={markContact}>
-                  Mark Contact
-                </button>
-
-                <button className="command-shell__btn" onClick={() => openProfile("Overview")}>
-                  Open Full Profile
-                </button>
-
-                <button className="command-shell__btn" onClick={() => openProfile("Loads")}>
-                  View Load History
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ADD CARRIER MODAL */}
+      {/* ADD MODAL */}
       {addOpen ? (
-        <div className="carriercmd__modalOverlay" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
-          <div className="carriercmd__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="carriercmd__modalHeader">
-              <div>
-                <div className="carriercmd__modalTitle">Add Carrier</div>
-                <div className="carriercmd__modalSub">
-                  Shared store — adding here shows up in Load Command dropdown instantly.
-                </div>
-              </div>
-              <button className="carriercmd__close" type="button" onClick={() => setAddOpen(false)}>
-                ✕
-              </button>
-            </div>
-
-            <form className="carriercmd__form" onSubmit={saveCarrier}>
-              <div className="carriercmd__formGrid">
-                <label className="carriercmd__field">
-                  <span>Carrier ID (optional)</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.id}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, id: e.target.value }))}
-                    placeholder="CR-10201"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Status</span>
-                  <select
-                    className="carriercmd__select"
-                    value={draftCarrier.status}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, status: e.target.value }))}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Onboarding">Onboarding</option>
-                    <option value="At Risk">At Risk</option>
-                  </select>
-                </label>
-
-                <label className="carriercmd__field carriercmd__field--wide">
-                  <span>Carrier Name</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.name}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, name: e.target.value }))}
-                    placeholder="Carrier legal name"
-                    required
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>MC</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.mc}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, mc: e.target.value }))}
-                    placeholder="MC-123456"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>DOT</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.dot}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, dot: e.target.value }))}
-                    placeholder="DOT-123456"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Phone</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.phone}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, phone: e.target.value }))}
-                    placeholder="(555) 555-5555"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Email</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.email}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, email: e.target.value }))}
-                    placeholder="dispatch@carrier.com"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Home Base</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.homeBase}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, homeBase: e.target.value }))}
-                    placeholder="City, ST"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Equipment</span>
-                  <input
-                    className="carriercmd__input"
-                    value={draftCarrier.equipment}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, equipment: e.target.value }))}
-                    placeholder="Dry Van / Reefer / Flatbed"
-                  />
-                </label>
-
-                <label className="carriercmd__field">
-                  <span>Insurance Exp</span>
-                  <input
-                    className="carriercmd__input"
-                    type="date"
-                    value={draftCarrier.insuranceExp}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, insuranceExp: e.target.value }))}
-                  />
-                </label>
-
-                <label className="carriercmd__toggle carriercmd__toggle--wide">
-                  <input
-                    type="checkbox"
-                    checked={draftCarrier.insuranceOnFile}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, insuranceOnFile: e.target.checked }))}
-                  />
-                  <span>Insurance On File</span>
-                </label>
-
-                <label className="carriercmd__toggle carriercmd__toggle--wide">
-                  <input
-                    type="checkbox"
-                    checked={draftCarrier.w9OnFile}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, w9OnFile: e.target.checked }))}
-                  />
-                  <span>W-9 On File</span>
-                </label>
-
-                <label className="carriercmd__toggle carriercmd__toggle--wide">
-                  <input
-                    type="checkbox"
-                    checked={draftCarrier.authorityOnFile}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, authorityOnFile: e.target.checked }))}
-                  />
-                  <span>Authority Verified</span>
-                </label>
-
-                <label className="carriercmd__field carriercmd__field--wide">
-                  <span>Notes</span>
-                  <textarea
-                    className="carriercmd__textarea"
-                    value={draftCarrier.notes}
-                    onChange={(e) => setDraftCarrier((d) => ({ ...d, notes: e.target.value }))}
-                    placeholder="Preferences, performance notes, special instructions…"
-                  />
-                </label>
-              </div>
-
-              <div className="carriercmd__formActions">
-                <button className="command-shell__btn" type="button" onClick={() => setAddOpen(false)}>
-                  Cancel
-                </button>
-                <button className="command-shell__btn command-shell__btn--primary" type="submit">
-                  Save Carrier
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
-
-      {/* FULL PROFILE DRAWER */}
-      {profileOpen && selected ? (
-        <div className="carriercmd__drawerOverlay" role="dialog" aria-modal="true" onClick={() => setProfileOpen(false)}>
+        <div className="carriercmd__drawerOverlay" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
           <aside className="carriercmd__drawer" onClick={(e) => e.stopPropagation()}>
             <div className="carriercmd__drawerHeader">
               <div>
-                <div className="carriercmd__drawerTitle">{selected.name}</div>
-                <div className="carriercmd__drawerSub">
-                  {selected.id} · {selected.mc || "—"} · {selected.homeBase || "—"}
-                </div>
+                <div className="carriercmd__drawerTitle">Add Carrier</div>
+                <div className="carriercmd__drawerSub">Saved to Supabase (owner_id = your user).</div>
               </div>
-
-              <button className="carriercmd__drawerClose" type="button" onClick={() => setProfileOpen(false)} aria-label="Close">
+              <button className="carriercmd__drawerClose" type="button" onClick={() => setAddOpen(false)} aria-label="Close">
                 ✕
               </button>
             </div>
 
-            <div className="carriercmd__drawerTabs" role="tablist" aria-label="Carrier profile tabs">
-              {["Overview", "Compliance", "Performance", "Notes", "Docs", "Loads"].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  aria-selected={profileTab === t}
-                  className={`carriercmd__tab ${profileTab === t ? "is-active" : ""}`}
-                  onClick={() => {
-                    setProfileTab(t);
-                    if (t === "Performance") acknowledgeKpi("atRisk");
-                    if (t === "Compliance" || t === "Docs") acknowledgeKpi("missingDocs");
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
+            <div className="carriercmd__drawerBody">
+              <div className="carriercmd__drawerGrid">
+                <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                  <div className="carriercmd__drawerCardTitle">Carrier Info</div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.name}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Carrier name (required)"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.homeBase}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))}
+                      placeholder="Home base (City, ST)"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.mc}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, mc: e.target.value }))}
+                      placeholder="MC (optional)"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.dot}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, dot: e.target.value }))}
+                      placeholder="DOT (optional)"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.phone}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, phone: e.target.value }))}
+                      placeholder="Phone"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.email}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="Email"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.equipment}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, equipment: e.target.value }))}
+                      placeholder="Equipment (e.g., Dry Van)"
+                    />
+                    <select
+                      className="carriercmd__search"
+                      value={carrierForm.status}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, status: e.target.value }))}
+                    >
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                      <option value="onboarding">onboarding</option>
+                    </select>
+
+                    <input
+                      className="carriercmd__search"
+                      type="number"
+                      value={carrierForm.riskScore}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, riskScore: Number(e.target.value || 0) }))}
+                      placeholder="Risk score (0-100)"
+                    />
+                    <input
+                      className="carriercmd__search"
+                      value={carrierForm.insuranceExp}
+                      onChange={(e) => setCarrierForm((p) => ({ ...p, insuranceExp: e.target.value }))}
+                      placeholder="Insurance exp (YYYY-MM-DD)"
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                      <input
+                        type="checkbox"
+                        checked={carrierForm.insuranceOnFile}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, insuranceOnFile: e.target.checked }))}
+                      />
+                      Insurance on file
+                    </label>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                      <input
+                        type="checkbox"
+                        checked={carrierForm.w9OnFile}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, w9OnFile: e.target.checked }))}
+                      />
+                      W-9 on file
+                    </label>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                      <input
+                        type="checkbox"
+                        checked={carrierForm.authorityOnFile}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, authorityOnFile: e.target.checked }))}
+                      />
+                      Authority on file
+                    </label>
+                  </div>
+
+                  <textarea
+                    value={carrierForm.notes}
+                    onChange={(e) => setCarrierForm((p) => ({ ...p, notes: e.target.value }))}
+                    placeholder="Notes (preferences, lanes, check-call rules, etc.)"
+                    style={{
+                      width: "100%",
+                      minHeight: 120,
+                      resize: "vertical",
+                      padding: 10,
+                      borderRadius: 10,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(0,0,0,0.25)",
+                      color: "inherit",
+                      outline: "none",
+                      marginTop: 10,
+                    }}
+                  />
+
+                  {addErr ? (
+                    <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b", marginTop: 10 }}>
+                      {addErr}
+                    </div>
+                  ) : null}
+
+                  <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                    <button className="carriercmd__primaryBtn" type="button" onClick={addCarrier} disabled={addBusy}>
+                      {addBusy ? "Saving…" : "Save Carrier"}
+                    </button>
+                    <button className="carriercmd__filterBtn" type="button" onClick={() => setAddOpen(false)} disabled={addBusy}>
+                      Cancel
+                    </button>
+                  </div>
+
+                  <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>
+                    If you get a “Could not find column…” error, your DB schema doesn’t include that field.
+                    This build auto-retries by removing unknown fields.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      <div className="carriercmd">
+        {/* KPI cards */}
+        <div className="carriercmd__kpis">
+          <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("all")}>
+            <div className="carriercmd__kpiLabel">ACTIVE</div>
+            <div className="carriercmd__kpiValue">{activeCount}</div>
+          </button>
+
+          <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("atRisk")}>
+            <div className="carriercmd__kpiLabel">AT RISK</div>
+            <div className="carriercmd__kpiValue">{atRiskCount}</div>
+          </button>
+
+          <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("missingDocs")}>
+            <div className="carriercmd__kpiLabel">MISSING DOCS</div>
+            <div className="carriercmd__kpiValue">{missingDocsCount}</div>
+          </button>
+        </div>
+
+        {/* Search / filters */}
+        <div className="carriercmd__toolbar">
+          <input
+            className="carriercmd__search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search carriers, MC/DOT, phone, email, notes…"
+          />
+
+          <div className="carriercmd__filters">
+            <button
+              className={`carriercmd__filterBtn ${filterMode === "all" ? "is-on" : ""}`}
+              type="button"
+              onClick={() => setFilterMode("all")}
+            >
+              All
+            </button>
+            <button
+              className={`carriercmd__filterBtn ${filterMode === "atRisk" ? "is-on" : ""}`}
+              type="button"
+              onClick={() => setFilterMode("atRisk")}
+            >
+              At Risk
+            </button>
+            <button
+              className={`carriercmd__filterBtn ${filterMode === "missingDocs" ? "is-on" : ""}`}
+              type="button"
+              onClick={() => setFilterMode("missingDocs")}
+            >
+              Missing Docs
+            </button>
+
+            <button
+              className="carriercmd__filterBtn"
+              type="button"
+              onClick={() => {
+                setQ("");
+                setFilterMode("all");
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="carriercmd__content">
+          {/* list */}
+          <div className="carriercmd__listWrap">
+            <div className="carriercmd__listMeta">
+              <div className="carriercmd__listMetaLeft">
+                <strong>Carriers</strong>
+                <span className="carriercmd__listMetaSub">
+                  {carriersLoading ? "Loading…" : `Showing ${filtered.length} of ${carriers.length}`}
+                </span>
+              </div>
             </div>
 
-            <div className="carriercmd__drawerBody">
-              {profileTab === "Overview" ? (
-                <div className="carriercmd__drawerGrid">
-                  <div className="carriercmd__drawerCard">
-                    <div className="carriercmd__drawerCardTitle">Profile</div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Status</span>
-                      <strong>{selected.status}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Risk</span>
-                      <strong>{riskLabel(selected.riskScore)}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Equipment</span>
-                      <strong>{selected.equipment || "—"}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>MC</span>
-                      <strong>{selected.mc || "—"}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>DOT</span>
-                      <strong>{selected.dot || "—"}</strong>
+            <div className="carriercmd__tableWrap">
+              <table className="carriercmd__table">
+                <thead>
+                  <tr>
+                    <th>Carrier</th>
+                    <th>Status</th>
+                    <th>MC/DOT</th>
+                    <th>Home Base</th>
+                    <th>Risk</th>
+                    <th>Docs</th>
+                    <th>Last Contact</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {carriersErr ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="carriercmd__muted" style={{ color: "#ff7b7b" }}>
+                          {carriersErr}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : carriersLoading ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="carriercmd__muted">Loading carriers from Supabase…</div>
+                      </td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="carriercmd__muted">No carriers match this filter/search.</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((c) => {
+                      const docsMissing =
+                        (c.insuranceOnFile ? 0 : 1) + (c.w9OnFile ? 0 : 1) + (c.authorityOnFile ? 0 : 1);
+
+                      return (
+                        <tr
+                          key={c.id}
+                          onClick={() => openProfile(c.id)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>
+                            <div className="carriercmd__cellMain">{c.name || "—"}</div>
+                            <div className="carriercmd__cellSub">{c.id}</div>
+                          </td>
+                          <td>{c.status || "—"}</td>
+                          <td>
+                            <div className="carriercmd__cellMain">{c.mc || "—"}</div>
+                            <div className="carriercmd__cellSub">{c.dot ? `DOT ${c.dot}` : "—"}</div>
+                          </td>
+                          <td>{c.homeBase || "—"}</td>
+                          <td>
+                            <span className={`carriercmd__chip carriercmd__chip--${riskLabel(c.riskScore).toLowerCase()}`}>
+                              {riskLabel(c.riskScore)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`carriercmd__chip ${docsMissing > 0 ? "carriercmd__chip--warn" : "carriercmd__chip--ok"}`}>
+                              {docsMissing > 0 ? `${docsMissing} missing` : "OK"}
+                            </span>
+                          </td>
+                          <td>{formatWhen(c.lastContactAt)}</td>
+                          <td style={{ textAlign: "right" }}>
+                            <button
+                              className="carriercmd__rowBtn"
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProfile(c.id);
+                              }}
+                            >
+                              Open
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* right side quick detail */}
+          <div className="carriercmd__side">
+            <div className="carriercmd__sideCard">
+              <div className="carriercmd__sideTitle">Carrier Detail</div>
+              {!selected ? (
+                <div className="carriercmd__muted">Select a carrier to see details.</div>
+              ) : (
+                <>
+                  <div className="carriercmd__detailRow">
+                    <div className="carriercmd__label">Status</div>
+                    <div className="carriercmd__value">{selected.status || "—"}</div>
+                  </div>
+
+                  <div className="carriercmd__detailRow">
+                    <div className="carriercmd__label">MC / DOT</div>
+                    <div className="carriercmd__value">
+                      {selected.mc || "—"} {selected.dot ? `/ DOT ${selected.dot}` : ""}
                     </div>
                   </div>
 
-                  <div className="carriercmd__drawerCard">
-                    <div className="carriercmd__drawerCardTitle">Contact</div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Phone</span>
-                      <strong>{selected.phone || "—"}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Email</span>
-                      <strong>{selected.email || "—"}</strong>
-                    </div>
-                    <div className="carriercmd__drawerLine">
-                      <span>Last contact</span>
-                      <strong>{formatWhen(selected.lastContactAt)}</strong>
+                  <div className="carriercmd__detailRow">
+                    <div className="carriercmd__label">Home Base</div>
+                    <div className="carriercmd__value">{selected.homeBase || "—"}</div>
+                  </div>
+
+                  <div className="carriercmd__detailRow">
+                    <div className="carriercmd__label">Contact</div>
+                    <div className="carriercmd__value">
+                      {selected.phone || "—"} {selected.email ? ` / ${selected.email}` : ""}
                     </div>
                   </div>
 
-                  <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Notes</div>
-                    <div className="carriercmd__drawerHint">{selected.notes || "—"}</div>
+                  <div className="carriercmd__sideActions">
+                    <button className="carriercmd__primaryBtn" type="button" onClick={() => setProfileOpen(true)}>
+                      Open Profile
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* FULL PROFILE DRAWER */}
+        {profileOpen && selected ? (
+          <div className="carriercmd__drawerOverlay" role="dialog" aria-modal="true" onClick={() => setProfileOpen(false)}>
+            <aside className="carriercmd__drawer" onClick={(e) => e.stopPropagation()}>
+              <div className="carriercmd__drawerHeader">
+                <div>
+                  <div className="carriercmd__drawerTitle">{selected.name}</div>
+                  <div className="carriercmd__drawerSub">
+                    {selected.id} · {selected.mc || "—"} · {selected.homeBase || "—"}
                   </div>
                 </div>
-              ) : null}
 
-              {profileTab === "Compliance" ? (
-                <div className="carriercmd__drawerGrid">
+                <button className="carriercmd__drawerClose" type="button" onClick={() => setProfileOpen(false)} aria-label="Close">
+                  ✕
+                </button>
+              </div>
+
+              <div className="carriercmd__drawerTabs" role="tablist" aria-label="Carrier profile tabs">
+                {["Overview", "Compliance", "Performance", "Notes", "Docs", "Loads"].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={profileTab === t}
+                    className={`carriercmd__tab ${profileTab === t ? "is-active" : ""}`}
+                    onClick={() => {
+                      setProfileTab(t);
+                      if (t === "Performance") acknowledgeKpi("atRisk");
+                      if (t === "Compliance" || t === "Docs") acknowledgeKpi("missingDocs");
+                    }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              <div className="carriercmd__drawerBody">
+                {/* QUICK EDIT BAR (always visible inside drawer) */}
+                <div className="carriercmd__drawerGrid" style={{ marginBottom: 10 }}>
                   <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Compliance Snapshot</div>
+                    <div className="carriercmd__drawerCardTitle">Edit Carrier</div>
 
-                    {insuranceSoon ? (
-                      <div className="carriercmd__drawerAlert">
-                        Insurance expires in <strong>{insuranceDays} day(s)</strong>.
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.name}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="Carrier name"
+                      />
+                      <select
+                        className="carriercmd__search"
+                        value={carrierForm.status}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, status: e.target.value }))}
+                      >
+                        <option value="active">active</option>
+                        <option value="inactive">inactive</option>
+                        <option value="onboarding">onboarding</option>
+                      </select>
+
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.homeBase}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))}
+                        placeholder="Home base"
+                      />
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.equipment}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, equipment: e.target.value }))}
+                        placeholder="Equipment"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.mc}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, mc: e.target.value }))}
+                        placeholder="MC"
+                      />
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.dot}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, dot: e.target.value }))}
+                        placeholder="DOT"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.phone}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, phone: e.target.value }))}
+                        placeholder="Phone"
+                      />
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.email}
+                        onChange={(e) => setCarrierForm((p) => ({ ...p, email: e.target.value }))}
+                        placeholder="Email"
+                      />
+                    </div>
+
+                    {editErr ? (
+                      <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b", marginTop: 10 }}>
+                        {editErr}
                       </div>
                     ) : null}
 
-                    <div className="carriercmd__drawerDocs">
-                      <button
-                        className={`carriercmd__doc ${selected.insuranceOnFile ? "is-on" : "is-off"}`}
-                        type="button"
-                        onClick={() => openDocs("insurance")}
-                        title="Open Docs tab (Insurance)"
-                      >
-                        <span>Insurance</span>
-                        <span className="carriercmd__docMeta">
-                          {selected.insuranceExp ? `exp ${selected.insuranceExp}` : "no exp date"}
-                        </span>
+                    <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center" }}>
+                      <button className="carriercmd__primaryBtn" type="button" onClick={saveCarrierEdits} disabled={!userId || editBusy}>
+                        {editBusy ? "Saving…" : "Save Changes"}
+                      </button>
+                      <button className="carriercmd__filterBtn" type="button" onClick={deleteCarrier} disabled={!userId || editBusy}>
+                        Delete
                       </button>
 
-                      <button
-                        className={`carriercmd__doc ${selected.w9OnFile ? "is-on" : "is-off"}`}
-                        type="button"
-                        onClick={() => openDocs("w9")}
-                        title="Open Docs tab (W-9)"
-                      >
-                        <span>W-9</span>
-                        <span className="carriercmd__docMeta">
-                          {selected.w9OnFile ? "on file" : "missing"}
+                      {!userId ? (
+                        <span style={{ fontSize: 12, opacity: 0.75 }}>
+                          (Sign in to enable edit/delete)
                         </span>
-                      </button>
-
-                      <button
-                        className={`carriercmd__doc ${selected.authorityOnFile ? "is-on" : "is-off"}`}
-                        type="button"
-                        onClick={() => openDocs("authority")}
-                        title="Open Docs tab (Authority)"
-                      >
-                        <span>Authority</span>
-                        <span className="carriercmd__docMeta">
-                          {selected.authorityOnFile ? "verified" : "missing"}
-                        </span>
-                      </button>
-                    </div>
-
-                    <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>
-                      Tip: Docs tab is where you upload / download / replace the actual files.
+                      ) : null}
                     </div>
                   </div>
                 </div>
-              ) : null}
 
-              {profileTab === "Performance" ? (
-                <div className="carriercmd__drawerGrid">
-                  <div className="carriercmd__drawerCard">
-                    <div className="carriercmd__drawerCardTitle">On-time</div>
-                    <div className="carriercmd__drawerBig">
-                      {selected.onTime ? `${selected.onTime}%` : "—"}
-                    </div>
-                  </div>
+                {/* Existing tabs (your original content) */}
+                {profileTab === "Compliance" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                      <div className="carriercmd__drawerCardTitle">Compliance Snapshot</div>
 
-                  <div className="carriercmd__drawerCard">
-                    <div className="carriercmd__drawerCardTitle">Claims</div>
-                    <div className="carriercmd__drawerBig">{selected.claims ?? 0}</div>
-                  </div>
+                      {insuranceSoon ? (
+                        <div className="carriercmd__drawerAlert">
+                          Insurance expires in <strong>{insuranceDays} day(s)</strong>.
+                        </div>
+                      ) : null}
 
-                  <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Risk Model Notes</div>
-                    <div className="carriercmd__drawerHint">
-                      Risk label: <strong>{riskLabel(selected.riskScore)}</strong>. Later: combine
-                      claims, on-time %, check-call compliance, and doc expiry.
-                    </div>
-                  </div>
-                </div>
-              ) : null}
+                      <div className="carriercmd__drawerDocs">
+                        <button
+                          className={`carriercmd__doc ${selected.insuranceOnFile ? "is-on" : "is-off"}`}
+                          type="button"
+                          onClick={() => openDocs("insurance")}
+                          title="Open Docs tab (Insurance)"
+                        >
+                          <span>Insurance</span>
+                          <span className="carriercmd__docMeta">
+                            {selected.insuranceExp ? `exp ${selected.insuranceExp}` : "no exp date"}
+                          </span>
+                        </button>
 
-              {profileTab === "Notes" ? (
-                <div className="carriercmd__drawerGrid">
-                  <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Notes</div>
-                    <div className="carriercmd__drawerNotes">{selected.notes || "—"}</div>
-                  </div>
-                </div>
-              ) : null}
+                        <button
+                          className={`carriercmd__doc ${selected.w9OnFile ? "is-on" : "is-off"}`}
+                          type="button"
+                          onClick={() => openDocs("w9")}
+                          title="Open Docs tab (W-9)"
+                        >
+                          <span>W-9</span>
+                          <span className="carriercmd__docMeta">{selected.w9OnFile ? "on file" : "missing"}</span>
+                        </button>
 
-              {profileTab === "Docs" ? (
-                <div className="carriercmd__drawerGrid">
-                  <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Documents</div>
-                    <div className="carriercmd__drawerHint">
-                      Real uploads stored locally (IndexedDB). Next step later: sync to Zoho/Drive.
-                    </div>
+                        <button
+                          className={`carriercmd__doc ${selected.authorityOnFile ? "is-on" : "is-off"}`}
+                          type="button"
+                          onClick={() => openDocs("authority")}
+                          title="Open Docs tab (Authority)"
+                        >
+                          <span>Authority</span>
+                          <span className="carriercmd__docMeta">{selected.authorityOnFile ? "verified" : "missing"}</span>
+                        </button>
+                      </div>
 
-                    <div style={{ marginTop: 12 }}>
-                      <DocRow label="Insurance" docType="insurance" record={docs.insurance} highlight={docFocus === "insurance"} />
-                      <DocRow label="W-9" docType="w9" record={docs.w9} highlight={docFocus === "w9"} />
-                      <DocRow label="Authority" docType="authority" record={docs.authority} highlight={docFocus === "authority"} />
-                    </div>
-
-                    {docBusy ? (
                       <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>
-                        Saving…
+                        Tip: Docs tab is where you upload / download / replace the actual files.
                       </div>
-                    ) : null}
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {profileTab === "Loads" ? (
-                <div className="carriercmd__drawerGrid">
-                  <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
-                    <div className="carriercmd__drawerCardTitle">Load History</div>
-
-                    {selectedLoads.length === 0 ? (
+                {profileTab === "Performance" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">On-time</div>
+                      <div className="carriercmd__drawerBig">{selected.onTime ? `${selected.onTime}%` : "—"}</div>
+                    </div>
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Claims</div>
+                      <div className="carriercmd__drawerBig">{selected.claims ?? 0}</div>
+                    </div>
+                    <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                      <div className="carriercmd__drawerCardTitle">Risk Model Notes</div>
                       <div className="carriercmd__drawerHint">
-                        No loads tied to this carrier yet. Once loads use <strong>carrierId</strong>, they will appear here automatically.
+                        Risk label: <strong>{riskLabel(selected.riskScore)}</strong>. Later: combine claims, on-time %,
+                        check-call compliance, and doc expiry.
                       </div>
-                    ) : (
-                      <div className="carriercmd__loadsTableWrap">
-                        <table className="carriercmd__loadsTable">
-                          <thead>
-                            <tr>
-                              <th>Load</th>
-                              <th>Status</th>
-                              <th>Lane</th>
-                              <th>Pickup</th>
-                              <th>Delivery</th>
-                              <th>Net</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedLoads
-                              .slice()
-                              .sort((a, b) => new Date(b.pickupAt || 0).getTime() - new Date(a.pickupAt || 0).getTime())
-                              .map((l) => (
+                    </div>
+                  </div>
+                ) : null}
+
+                {profileTab === "Notes" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                      <div className="carriercmd__drawerCardTitle">Notes</div>
+
+                      <textarea
+                        value={notesDraft}
+                        onChange={(e) => setNotesDraft(e.target.value)}
+                        placeholder="Add dispatch notes, preferences, lanes, check-call rules…"
+                        style={{
+                          width: "100%",
+                          minHeight: 160,
+                          resize: "vertical",
+                          padding: 10,
+                          borderRadius: 10,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(0,0,0,0.25)",
+                          color: "inherit",
+                          outline: "none",
+                        }}
+                      />
+
+                      {notesErr ? (
+                        <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b", marginTop: 10 }}>
+                          {notesErr}
+                        </div>
+                      ) : null}
+
+                      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                        <button className="carriercmd__primaryBtn" type="button" onClick={saveNotes} disabled={savingNotes}>
+                          {savingNotes ? "Saving…" : "Save Notes"}
+                        </button>
+                        <button className="carriercmd__filterBtn" type="button" onClick={() => setNotesDraft(selected?.notes ?? "")} disabled={savingNotes}>
+                          Reset
+                        </button>
+                        <button className="carriercmd__filterBtn" type="button" onClick={() => setNotesDraft("")} disabled={savingNotes}>
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {profileTab === "Docs" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                      <div className="carriercmd__drawerCardTitle">Documents</div>
+                      <div className="carriercmd__drawerHint">
+                        Real uploads stored locally (IndexedDB). Next step later: sync to Supabase Storage.
+                      </div>
+
+                      <div style={{ marginTop: 12 }}>
+                        <DocRow
+                          label="Insurance"
+                          docType="insurance"
+                          record={docs.insurance}
+                          highlight={docFocus === "insurance"}
+                          onUpload={handleUpload}
+                          onDownload={handleDownload}
+                          onRemove={handleRemove}
+                        />
+                        <DocRow
+                          label="W-9"
+                          docType="w9"
+                          record={docs.w9}
+                          highlight={docFocus === "w9"}
+                          onUpload={handleUpload}
+                          onDownload={handleDownload}
+                          onRemove={handleRemove}
+                        />
+                        <DocRow
+                          label="Authority"
+                          docType="authority"
+                          record={docs.authority}
+                          highlight={docFocus === "authority"}
+                          onUpload={handleUpload}
+                          onDownload={handleDownload}
+                          onRemove={handleRemove}
+                        />
+                      </div>
+
+                      {docBusy ? <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>Saving…</div> : null}
+
+                      {!idbAvailable() ? (
+                        <div className="carriercmd__drawerHint" style={{ marginTop: 10, color: "#ffb86b" }}>
+                          IndexedDB is not available in this browser/session, so uploads may not work here.
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+
+                {profileTab === "Loads" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
+                      <div className="carriercmd__drawerCardTitle">Load History</div>
+
+                      {loadingLoads ? (
+                        <div className="carriercmd__drawerHint">Loading loads…</div>
+                      ) : loadErr ? (
+                        <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b" }}>{loadErr}</div>
+                      ) : selectedLoads.length === 0 ? (
+                        <div className="carriercmd__drawerHint">
+                          No loads tied to this carrier yet. Once loads use <strong>carrier_id</strong>, they will appear here automatically.
+                        </div>
+                      ) : (
+                        <div className="carriercmd__loadsTableWrap">
+                          <table className="carriercmd__loadsTable">
+                            <thead>
+                              <tr>
+                                <th>Load</th>
+                                <th>Status</th>
+                                <th>Lane</th>
+                                <th>Pickup</th>
+                                <th>Delivery</th>
+                                <th>Net</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedLoads.map((l) => (
                                 <tr key={l.id}>
                                   <td>
                                     <div className="carriercmd__cellMain">{l.id}</div>
@@ -1461,17 +1634,18 @@ export default function CarrierCommand() {
                                   <td>{Number(l.netRpm || 0).toFixed(2)}</td>
                                 </tr>
                               ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : null}
-            </div>
-          </aside>
-        </div>
-      ) : null}
+                ) : null}
+              </div>
+            </aside>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

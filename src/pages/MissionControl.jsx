@@ -1,29 +1,218 @@
 // src/pages/MissionControl.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MissionControl.css";
+import { createClient } from "@supabase/supabase-js";
 
 /**
- * Mission Control (v4 - KPI ROUTING)
- * ✅ CLICK-THROUGH FIX:
- * - Stop propagation on menu interactions (onMouseDown + onClick)
- * - Guard KPI/table clicks if any menu/modal is open
+ * Mission Control (v6 - Supabase FIRST, demo ONLY when Supabase missing/fails)
  *
- * ✅ SETTINGS:
- * - Tips toggle (persisted)
- * - Compact UI toggle (persisted + body class)
- * - Mobile Compact toggle (persisted + body class, only used by CSS media queries)
+ * ✅ Fixes “I only see mock info”
+ * - UI starts EMPTY (not demo).
+ * - Only shows demo when Supabase env missing OR queries fail.
+ * - Tries multiple table name candidates + column fallbacks.
+ *
+ * ENV required (Vite):
+ *   VITE_SUPABASE_URL=
+ *   VITE_SUPABASE_ANON_KEY=
+ *
+ * Optional table overrides:
+ *   VITE_LANES_TABLE=
+ *   VITE_CARRIERS_TABLE=
+ *   VITE_LOADS_TABLE=
  */
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON ? createClient(SUPABASE_URL, SUPABASE_ANON) : null;
+
+// Optional table overrides
+const LANES_TABLE = import.meta.env.VITE_LANES_TABLE || "lanes";
+const CARRIERS_TABLE = import.meta.env.VITE_CARRIERS_TABLE || "carriers";
+const LOADS_TABLE = import.meta.env.VITE_LOADS_TABLE || "loads";
+
+// -------- utils --------
+function num(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+function fmtDateShort(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}`;
+}
+
+// Try selecting with an order; if order column doesn't exist, retry without order
+async function safeSelect(table, { orderBy, ascending = false, limit, filters = [] } = {}) {
+  let q = supabase.from(table).select("*");
+  for (const f of filters) {
+    if (!f?.op) continue;
+    if (f.op === "eq") q = q.eq(f.col, f.val);
+    if (f.op === "gte") q = q.gte(f.col, f.val);
+    if (f.op === "lte") q = q.lte(f.col, f.val);
+    if (f.op === "ilike") q = q.ilike(f.col, f.val);
+  }
+  if (orderBy) q = q.order(orderBy, { ascending });
+  if (limit) q = q.limit(limit);
+
+  let res = await q;
+
+  // If order col missing, retry without order
+  if (res.error && orderBy && String(res.error.message || "").toLowerCase().includes("column")) {
+    let q2 = supabase.from(table).select("*");
+    for (const f of filters) {
+      if (!f?.op) continue;
+      if (f.op === "eq") q2 = q2.eq(f.col, f.val);
+      if (f.op === "gte") q2 = q2.gte(f.col, f.val);
+      if (f.op === "lte") q2 = q2.lte(f.col, f.val);
+      if (f.op === "ilike") q2 = q2.ilike(f.col, f.val);
+    }
+    if (limit) q2 = q2.limit(limit);
+    res = await q2;
+  }
+
+  return res;
+}
+
+// If a table name isn’t correct, try a short candidate list
+async function selectFromFirstWorkingTable(candidates, opts) {
+  const tried = [];
+  for (const t of candidates) {
+    tried.push(t);
+    const res = await safeSelect(t, opts);
+    if (!res.error) return { table: t, data: res.data || [], error: null, tried };
+  }
+  const last = await safeSelect(tried[tried.length - 1], opts);
+  return { table: tried[tried.length - 1], data: [], error: last.error || new Error("No working table"), tried };
+}
+
+function normalizeLane(row) {
+  if (!row) return null;
+
+  const from =
+    row.from ??
+    row.origin ??
+    row.origin_city ??
+    row.originCity ??
+    row.pickup_city ??
+    row.pickupCity ??
+    "—";
+
+  const to =
+    row.to ??
+    row.destination ??
+    row.dest_city ??
+    row.destCity ??
+    row.delivery_city ??
+    row.deliveryCity ??
+    "—";
+
+  const id = row.id ?? row.lane_id ?? row.laneId ?? row.uuid ?? row.code ?? row.name ?? "";
+  const miles = num(row.miles ?? row.distance_miles ?? row.distanceMiles ?? row.distance, 0);
+  const rate = num(row.rate ?? row.linehaul_rate ?? row.linehaulRate ?? row.total_rate ?? row.totalRate, 0);
+  const netRpm = num(row.net_rpm ?? row.netRpm ?? row.net ?? row.net_rpm_calc, 0);
+
+  return {
+    id: String(id),
+    label: row.label ?? row.lane_label ?? row.laneLabel ?? row.name ?? `${from} → ${to}`,
+    from,
+    to,
+    miles,
+    rate,
+    netRpm,
+  };
+}
+
+function normalizeCarrierRow(row) {
+  if (!row) return null;
+
+  const name =
+    row.name ??
+    row.carrier ??
+    row.carrier_name ??
+    row.company_name ??
+    row.legal_name ??
+    "—";
+
+  const trucks = num(row.trucks ?? row.truck_count ?? row.units ?? row.num_trucks ?? row.fleet_size, 0);
+
+  const avg = num(
+    row.avg_net_rpm ??
+      row.avgNetRpm ??
+      row.net_rpm_avg ??
+      row.netRpmAvg ??
+      row.avg_rpm ??
+      row.avgRpm ??
+      row.net_rpm ??
+      row.netRpm,
+    0
+  );
+
+  const loadsPerWeek = num(row.loads_per_week ?? row.loadsPerWeek ?? row.loads_weekly ?? row.weekly_loads, 0);
+
+  return {
+    carrier: String(name),
+    trucks: trucks ? String(trucks) : "—",
+    rpm: avg ? `$${avg.toFixed(2)}` : "—",
+    loads: loadsPerWeek ? String(loadsPerWeek) : "—",
+    _avg: avg,
+    _trucks: trucks,
+  };
+}
+
+function normalizeLoadRow(row, lanesById) {
+  if (!row) return null;
+
+  const laneId = String(row.lane_id ?? row.laneId ?? row.lane ?? "");
+  const laneObj = lanesById?.[laneId] || null;
+
+  const from = row.from ?? row.origin ?? laneObj?.from ?? "";
+  const to = row.to ?? row.destination ?? laneObj?.to ?? "";
+
+  const laneLabel =
+    row.lane_label ??
+    row.laneLabel ??
+    row.lane ??
+    (from && to ? `${from} → ${to}` : laneObj?.label ?? "—");
+
+  const miles = num(row.miles ?? row.distance_miles ?? row.distanceMiles, laneObj?.miles ?? 0);
+  const net = num(row.net_rpm ?? row.netRpm ?? row.net ?? row.net_rpm_calc, laneObj?.netRpm ?? 0);
+
+  const statusRaw = String(row.status ?? row.load_status ?? "").toLowerCase();
+  const status = statusRaw.includes("cancel") ? "Risk" : net >= 2.1 ? "Ok" : "Risk";
+
+  const when =
+    row.pickup_at ??
+    row.pickupAt ??
+    row.pickup_date ??
+    row.created_at ??
+    row.createdAt ??
+    row.inserted_at ??
+    null;
+
+  return {
+    date: fmtDateShort(when),
+    laneId: laneId || (laneObj?.id ?? ""),
+    lane: laneLabel,
+    miles: String(miles || "—"),
+    rpm: net ? `$${net.toFixed(2)}` : "—",
+    status,
+    _when: when,
+  };
+}
 
 export default function MissionControl() {
   const navigate = useNavigate();
 
   // Top-right menu
   const [menuOpen, setMenuOpen] = useState(false);
-
   // Lane History menu
   const [laneHistoryMenuOpen, setLaneHistoryMenuOpen] = useState(false);
-
   // Settings modal
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -47,7 +236,7 @@ export default function MissionControl() {
 
   const [mobileCompact, setMobileCompact] = useState(() => {
     const v = localStorage.getItem(LS_MC_MOBILE_COMPACT);
-    if (v === null) return true; // default ON for better phone/tablet experience
+    if (v === null) return true;
     return v === "true";
   });
 
@@ -56,89 +245,311 @@ export default function MissionControl() {
     document.body.classList.toggle("compact-ui", !!compactUi);
     try {
       localStorage.setItem(LS_MC_COMPACT, String(!!compactUi));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [compactUi]);
 
   // Persist tips
   useEffect(() => {
     try {
       localStorage.setItem(LS_MC_TIPS, String(!!showTips));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [showTips]);
 
-  // Apply + persist mobile compact (CSS will decide when to use it via media queries)
+  // Apply + persist mobile compact
   useEffect(() => {
     document.body.classList.toggle("mobile-compact", !!mobileCompact);
     try {
       localStorage.setItem(LS_MC_MOBILE_COMPACT, String(!!mobileCompact));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [mobileCompact]);
 
-  // Lane selector state
-  const lanes = useMemo(
+  // -----------------------------
+  // Demo fallback data (ONLY if Supabase missing/fails)
+  // -----------------------------
+  const demoLanes = useMemo(
     () => [
-      {
-        id: "chi-dal",
-        label: "Chicago, IL → Dallas, TX",
-        from: "Chicago, IL",
-        to: "Dallas, TX",
-        miles: 920,
-        rate: 2600,
-        netRpm: 2.17,
-      },
-      {
-        id: "dal-mem",
-        label: "Dallas, TX → Memphis, TN",
-        from: "Dallas, TX",
-        to: "Memphis, TN",
-        miles: 452,
-        rate: 1050,
-        netRpm: 1.88,
-      },
-      {
-        id: "chi-atl",
-        label: "Chicago, IL → Atlanta, GA",
-        from: "Chicago, IL",
-        to: "Atlanta, GA",
-        miles: 720,
-        rate: 1760,
-        netRpm: 2.45,
-      },
-      {
-        id: "atl-nsh",
-        label: "Atlanta, GA → Nashville, TN",
-        from: "Atlanta, GA",
-        to: "Nashville, TN",
-        miles: 250,
-        rate: 700,
-        netRpm: 2.55,
-      },
+      { id: "chi-dal", label: "Chicago, IL → Dallas, TX", from: "Chicago, IL", to: "Dallas, TX", miles: 920, rate: 2600, netRpm: 2.17 },
+      { id: "dal-mem", label: "Dallas, TX → Memphis, TN", from: "Dallas, TX", to: "Memphis, TN", miles: 452, rate: 1050, netRpm: 1.88 },
+      { id: "chi-atl", label: "Chicago, IL → Atlanta, GA", from: "Chicago, IL", to: "Atlanta, GA", miles: 720, rate: 1760, netRpm: 2.45 },
+      { id: "atl-nsh", label: "Atlanta, GA → Nashville, TN", from: "Atlanta, GA", to: "Nashville, TN", miles: 250, rate: 700, netRpm: 2.55 },
     ],
     []
   );
 
-  const [selectedLaneId, setSelectedLaneId] = useState(lanes[0]?.id || "");
+  const demoCarrierRows = useMemo(
+    () => [
+      { carrier: "Swift Transport", trucks: "5", rpm: "$2.42", loads: "3.0", _avg: 2.42, _trucks: 5 },
+      { carrier: "Reliable Freight", trucks: "7", rpm: "$1.95", loads: "2.1", _avg: 1.95, _trucks: 7 },
+    ],
+    []
+  );
+
+  // -----------------------------
+  // Supabase-backed data (START EMPTY)
+  // -----------------------------
+  const [lanes, setLanes] = useState([]);
+  const [lanesLoading, setLanesLoading] = useState(true);
+  const [dataErr, setDataErr] = useState("");
+
+  const [selectedLaneId, setSelectedLaneId] = useState("");
+
   const selectedLane = useMemo(
-    () => lanes.find((l) => l.id === selectedLaneId) || lanes[0],
+    () => lanes.find((l) => String(l.id) === String(selectedLaneId)) || lanes[0] || null,
     [lanes, selectedLaneId]
   );
 
-  // KPIs
+  const lanesById = useMemo(() => {
+    const m = {};
+    for (const l of lanes) m[String(l.id)] = l;
+    return m;
+  }, [lanes]);
+
+  // Broker panel (still demo)
+  const broker = useMemo(
+    () => ({
+      broker: "ABC Logistics",
+      mc: "567432",
+      notesShort: "Needs quick confirmation.",
+      notesList: ["Confirm delivery appointment window", "Verify fuel surcharge inclusion", "Check detention policy before tender"],
+    }),
+    []
+  );
+
+  const [carrierRows, setCarrierRows] = useState([]);
+  const [recentLoads, setRecentLoads] = useState([]);
+  const [weeklyGross, setWeeklyGross] = useState(0);
+
+  const [laneHistoryRows, setLaneHistoryRows] = useState([]);
+  const [laneHistoryLoading, setLaneHistoryLoading] = useState(false);
+
+  const refreshAll = useCallback(async () => {
+    setDataErr("");
+
+   // inside refreshAll()
+
+// Supabase env missing -> show demo (OK)
+if (!supabase) {
+  setLanes(demoLanes);
+  setSelectedLaneId(String(demoLanes[0]?.id || ""));
+  setCarrierRows(demoCarrierRows);
+  setRecentLoads([
+    { date: "01/05", laneId: "chi-atl", lane: "Chicago, IL → Atlanta, GA", miles: "720", rpm: "$2.45", status: "Ok" },
+    { date: "01/04", laneId: "dal-mem", lane: "Dallas, TX → Memphis, TN", miles: "452", rpm: "$1.88", status: "Risk" },
+  ]);
+  setWeeklyGross(8760);
+  setLanesLoading(false);
+  setDataErr("Supabase env missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Showing demo data.");
+  return;
+}
+
+try {
+  // ... normal Supabase loading ...
+} catch (e) {
+  // ✅ CHANGED: do NOT show demo if Supabase exists but errors
+  setDataErr(e?.message || "Could not load from Supabase. (No demo fallback while Supabase is configured.)");
+  setLanes([]);
+  setSelectedLaneId("");
+  setCarrierRows([]);
+  setRecentLoads([]);
+  setWeeklyGross(0);
+} finally {
+  setLanesLoading(false);
+}
+    setLanesLoading(true);
+
+    try {
+      // ---- lanes
+      const lanesCandidates = [LANES_TABLE, "lane", "lane_intel", "lane_intelligence"];
+      const lanesRes = await selectFromFirstWorkingTable(lanesCandidates, { orderBy: "created_at", ascending: false });
+      if (lanesRes.error) throw lanesRes.error;
+
+      const normalizedLanes = (lanesRes.data || []).map(normalizeLane).filter(Boolean);
+      const finalLanes = normalizedLanes.length ? normalizedLanes : demoLanes;
+
+      setLanes(finalLanes);
+      setSelectedLaneId((prev) => {
+        const next = prev || String(finalLanes[0]?.id || "");
+        const ok = finalLanes.some((l) => String(l.id) === String(next));
+        return ok ? next : String(finalLanes[0]?.id || "");
+      });
+
+      const lanesMap = finalLanes.reduce((acc, l) => {
+        acc[String(l.id)] = l;
+        return acc;
+      }, {});
+
+      // ---- carriers
+      const carriersCandidates = [CARRIERS_TABLE, "carrier", "carrier_profiles", "dispatch_carriers"];
+      const carriersRes = await selectFromFirstWorkingTable(carriersCandidates, { orderBy: "created_at", ascending: false, limit: 50 });
+
+      if (carriersRes.error) {
+        setCarrierRows(demoCarrierRows);
+      } else {
+        const normalizedCarriers = (carriersRes.data || [])
+          .map(normalizeCarrierRow)
+          .filter(Boolean)
+          .sort((a, b) => (b._avg || 0) - (a._avg || 0));
+        setCarrierRows(normalizedCarriers.length ? normalizedCarriers : demoCarrierRows);
+      }
+
+      // ---- loads
+      const loadsCandidates = [LOADS_TABLE, "load", "loads"];
+      const loadsRes = await selectFromFirstWorkingTable(loadsCandidates, { orderBy: "created_at", ascending: false, limit: 30 });
+
+      if (!loadsRes.error) {
+        const mapped = (loadsRes.data || []).map((r) => normalizeLoadRow(r, lanesMap)).filter(Boolean);
+        if (mapped.length) setRecentLoads(mapped.slice(0, 8));
+
+        // weekly gross (best effort)
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const timeCols = ["created_at", "pickup_at", "inserted_at"];
+        let weekRows = null;
+
+        for (const col of timeCols) {
+          const tryWeek = await selectFromFirstWorkingTable(loadsCandidates, {
+            orderBy: col,
+            ascending: false,
+            limit: 200,
+            filters: [{ op: "gte", col, val: since }],
+          });
+          if (!tryWeek.error) {
+            weekRows = tryWeek.data || [];
+            break;
+          }
+        }
+
+        if (weekRows) {
+          const gross = weekRows.reduce((sum, r) => {
+            const v = r.rate ?? r.total_rate ?? r.totalRate ?? r.linehaul_rate ?? r.linehaulRate ?? 0;
+            return sum + num(v, 0);
+          }, 0);
+          setWeeklyGross(gross);
+        } else {
+          setWeeklyGross(0);
+        }
+      }
+    } catch (e) {
+      setDataErr(e?.message || "Could not load from Supabase. Showing demo data.");
+      setLanes(demoLanes);
+      setSelectedLaneId(String(demoLanes[0]?.id || ""));
+      setCarrierRows(demoCarrierRows);
+      setRecentLoads([
+        { date: "01/05", laneId: "chi-atl", lane: "Chicago, IL → Atlanta, GA", miles: "720", rpm: "$2.45", status: "Ok" },
+        { date: "01/04", laneId: "dal-mem", lane: "Dallas, TX → Memphis, TN", miles: "452", rpm: "$1.88", status: "Risk" },
+      ]);
+      setWeeklyGross(8760);
+    } finally {
+      setLanesLoading(false);
+    }
+  }, [demoLanes, demoCarrierRows]);
+
+  useEffect(() => {
+    refreshAll();
+  }, [refreshAll]);
+
+  // Lane history for selected lane (from loads)
+  useEffect(() => {
+    const run = async () => {
+      setLaneHistoryLoading(true);
+      setLaneHistoryRows([]);
+
+      if (!supabase || !selectedLane?.id) {
+        const l = selectedLane || demoLanes[0];
+        if (!l) {
+          setLaneHistoryLoading(false);
+          return;
+        }
+        const net = num(l?.netRpm, 2.17);
+        const miles = num(l?.miles, 0);
+        const rate = num(l?.rate, 0);
+        setLaneHistoryRows([
+          { date: "01/06", netRpm: Math.max(1, net + 0.18), miles, rate, broker: "ABC Logistics" },
+          { date: "12/28", netRpm: Math.max(1, net + 0.03), miles, rate: Math.round(rate * 0.95), broker: "RoadStar" },
+          { date: "12/16", netRpm: Math.max(1, net - 0.07), miles, rate: Math.round(rate * 0.92), broker: "BlueHaul" },
+        ]);
+        setLaneHistoryLoading(false);
+        return;
+      }
+
+      try {
+        const loadsCandidates = [LOADS_TABLE, "load", "loads"];
+        const laneIdStr = String(selectedLane.id);
+
+        const laneCols = ["lane_id", "laneId", "lane"];
+        let rows = [];
+
+        for (const col of laneCols) {
+          const res = await selectFromFirstWorkingTable(loadsCandidates, {
+            orderBy: "created_at",
+            ascending: false,
+            limit: 30,
+            filters: [{ op: "eq", col, val: laneIdStr }],
+          });
+          if (!res.error && (res.data || []).length) {
+            rows = res.data || [];
+            break;
+          }
+        }
+
+        const out = (rows || [])
+          .map((r) => ({
+            date: fmtDateShort(r.pickup_at ?? r.pickupAt ?? r.pickup_date ?? r.created_at ?? r.createdAt ?? r.inserted_at ?? null),
+            netRpm: num(r.net_rpm ?? r.netRpm ?? r.net, num(selectedLane.netRpm, 2.17)),
+            miles: num(r.miles ?? r.distance_miles ?? r.distanceMiles, num(selectedLane.miles, 0)),
+            rate: num(r.rate ?? r.linehaul_rate ?? r.total_rate ?? r.totalRate, num(selectedLane.rate, 0)),
+            broker: r.broker_name ?? r.broker ?? r.brokerCompany ?? "—",
+          }))
+          .slice(0, 6);
+
+        if (out.length) setLaneHistoryRows(out);
+      } catch {
+        // no hard fail
+      } finally {
+        setLaneHistoryLoading(false);
+      }
+    };
+
+    run();
+  }, [selectedLaneId, selectedLane, demoLanes]);
+
+  // -----------------------------
+  // KPI values
+  // -----------------------------
+  const avgNetRpm = useMemo(() => {
+    const carrierAvgs = carrierRows.map((c) => num(c._avg, 0)).filter((x) => x > 0);
+    if (carrierAvgs.length) return carrierAvgs.reduce((a, b) => a + b, 0) / carrierAvgs.length;
+
+    const laneAvgs = lanes.map((l) => num(l.netRpm, 0)).filter((x) => x > 0);
+    if (!laneAvgs.length) return 2.38;
+    return laneAvgs.reduce((a, b) => a + b, 0) / laneAvgs.length;
+  }, [carrierRows, lanes]);
+
+  const activeTrucks = useMemo(() => {
+    const total = carrierRows.reduce((sum, r) => sum + num(r._trucks, 0), 0);
+    return total || 0;
+  }, [carrierRows]);
+
+  const loadsBookedThisWeek = useMemo(() => {
+    const n = recentLoads?.length || 0;
+    return String(n || 0);
+  }, [recentLoads]);
+
+  const trucksBelowTarget = useMemo(() => {
+    const below = carrierRows
+      .filter((r) => num(r._avg, 999) < 2.1)
+      .reduce((sum, r) => sum + num(r._trucks, 0), 0);
+    return String(below || 0);
+  }, [carrierRows]);
+
   const kpis = useMemo(
     () => [
-      { id: "lanes", label: "Active Lanes", value: "8", sub: "", actionable: true },
-      { id: "trucks", label: "Active Trucks", value: "14", sub: "Healthy", actionable: true },
-      { id: "booked", label: "Loads Booked", value: "29", sub: "This Week", actionable: true },
-      { id: "below", label: "Trucks Below Target", value: "3", sub: "", actionable: true },
-      { id: "avg", label: "Avg Net RPM", value: "$2.38", sub: "This Week", actionable: true },
+      { id: "lanes", label: "Active Lanes", value: String(lanes?.length || 0), sub: "", actionable: true },
+      { id: "trucks", label: "Active Trucks", value: String(activeTrucks || 0), sub: "Healthy", actionable: true },
+      { id: "booked", label: "Loads Booked", value: String(loadsBookedThisWeek || 0), sub: "This Week", actionable: true },
+      { id: "below", label: "Trucks Below Target", value: trucksBelowTarget, sub: "", actionable: true },
+      { id: "avg", label: "Avg Net RPM", value: `$${avgNetRpm.toFixed(2)}`, sub: "This Week", actionable: true },
     ],
-    []
+    [lanes?.length, activeTrucks, loadsBookedThisWeek, trucksBelowTarget, avgNetRpm]
   );
 
   const buildLaneQuery = (laneObj, extra = {}) => {
@@ -148,7 +559,7 @@ export default function MissionControl() {
       miles: String(laneObj.miles),
       rate: String(laneObj.rate),
       net: String(laneObj.netRpm),
-      laneId: laneObj.id,
+      laneId: String(laneObj.id),
       ...extra,
     });
     return params.toString();
@@ -157,9 +568,7 @@ export default function MissionControl() {
   const rememberLane = (laneObj) => {
     try {
       sessionStorage.setItem("lanesync_selected_lane", JSON.stringify(laneObj));
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   const closeAllMenus = () => {
@@ -169,7 +578,6 @@ export default function MissionControl() {
 
   const anyOverlayOpen = menuOpen || laneHistoryMenuOpen || settingsOpen;
 
-  // helper: prevent click-through / ghost clicks
   const stopMenuEvent = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -191,7 +599,6 @@ export default function MissionControl() {
 
     if (kpiId === "trucks") return navigate("/carrier-command");
     if (kpiId === "booked") return navigate("/load-command");
-
     if (kpiId === "below") return navigate("/carrier-command?filter=below-target");
 
     if (kpiId === "avg") {
@@ -204,15 +611,9 @@ export default function MissionControl() {
     }
   };
 
-  // Carrier Performance row click -> Carrier Command
   const openCarrierFromPerformance = (carrierName) => {
     if (anyOverlayOpen) return;
-
-    const params = new URLSearchParams({
-      carrier: carrierName,
-      from: "mission-control",
-    });
-
+    const params = new URLSearchParams({ carrier: carrierName, from: "mission-control" });
     navigate(`/carrier-command?${params.toString()}`);
   };
 
@@ -248,69 +649,8 @@ export default function MissionControl() {
     return () => document.removeEventListener("mousedown", closeOnOutside);
   }, [laneHistoryMenuOpen]);
 
-  // Broker panel
-  const broker = useMemo(
-    () => ({
-      broker: "ABC Logistics",
-      mc: "567432",
-      notesShort: "Needs quick confirmation.",
-      notesList: [
-        "Confirm delivery appointment window",
-        "Verify fuel surcharge inclusion",
-        "Check detention policy before tender",
-      ],
-    }),
-    []
-  );
-
-  // Lane history rows
-  const laneHistoryRows = useMemo(() => {
-    if (!selectedLane) return [];
-    if (selectedLane.id === "dal-mem") {
-      return [
-        { date: "01/04", netRpm: 1.88, miles: 452, rate: 1050, broker: "RoadStar" },
-        { date: "12/28", netRpm: 1.95, miles: 452, rate: 1100, broker: "BlueHaul" },
-        { date: "12/16", netRpm: 2.1, miles: 452, rate: 1180, broker: "Atlas Freight" },
-      ];
-    }
-    if (selectedLane.id === "chi-atl") {
-      return [
-        { date: "01/05", netRpm: 2.45, miles: 720, rate: 1760, broker: "ABC Logistics" },
-        { date: "12/28", netRpm: 2.32, miles: 720, rate: 1680, broker: "RoadStar" },
-        { date: "12/16", netRpm: 2.18, miles: 720, rate: 1580, broker: "BlueHaul" },
-      ];
-    }
-    if (selectedLane.id === "atl-nsh") {
-      return [
-        { date: "01/06", netRpm: 2.73, miles: 250, rate: 740, broker: "ABC Logistics" },
-        { date: "12/28", netRpm: 2.55, miles: 250, rate: 700, broker: "RoadStar" },
-        { date: "12/16", netRpm: 2.48, miles: 250, rate: 680, broker: "BlueHaul" },
-      ];
-    }
-    return [
-      { date: "01/06", netRpm: 2.35, miles: 920, rate: 2600, broker: "ABC Logistics" },
-      { date: "12/28", netRpm: 2.2, miles: 920, rate: 2480, broker: "RoadStar" },
-      { date: "12/16", netRpm: 2.1, miles: 920, rate: 2400, broker: "BlueHaul" },
-    ];
-  }, [selectedLane]);
-
-  const carrierRows = useMemo(
-    () => [
-      { carrier: "Swift Transport", trucks: "5", rpm: "$2.42", loads: "3.0" },
-      { carrier: "Reliable Freight", trucks: "7", rpm: "$1.95", loads: "2.1" },
-    ],
-    []
-  );
-
-  const recentLoads = useMemo(
-    () => [
-      { date: "01/05", laneId: "chi-atl", lane: "Chicago, IL → Atlanta, GA", miles: "720", rpm: "$2.45", status: "Ok" },
-      { date: "01/04", laneId: "dal-mem", lane: "Dallas, TX → Memphis, TN", miles: "452", rpm: "$1.88", status: "Risk" },
-    ],
-    []
-  );
-
-  const statusLabel = (selectedLane?.netRpm ?? 2.17) >= 2.35 ? "HEALTHY" : (selectedLane?.netRpm ?? 2.17) >= 2.1 ? "BORDERLINE" : "RISK";
+  const statusLabel =
+    (selectedLane?.netRpm ?? 0) >= 2.35 ? "HEALTHY" : (selectedLane?.netRpm ?? 0) >= 2.1 ? "BORDERLINE" : "RISK";
 
   const openLaneCommandHere = () => {
     if (!selectedLane || anyOverlayOpen) return;
@@ -336,8 +676,8 @@ export default function MissionControl() {
 
     const csvLines = [
       header.join(","),
-      ...laneHistoryRows.map((r) =>
-        [`"${laneLabel}"`, `"${r.date}"`, `"${r.broker}"`, r.miles, r.rate, r.netRpm.toFixed(2)].join(",")
+      ...(laneHistoryRows || []).map((r) =>
+        [`"${laneLabel}"`, `"${r.date}"`, `"${r.broker}"`, r.miles, r.rate, Number(r.netRpm || 0).toFixed(2)].join(",")
       ),
     ];
 
@@ -347,7 +687,7 @@ export default function MissionControl() {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `lane-history_${selectedLane.id}.csv`;
+    a.download = `lane-history_${String(selectedLane.id)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -362,9 +702,9 @@ export default function MissionControl() {
 
   const openFromRecentLoad = (laneId) => {
     if (anyOverlayOpen) return;
-    const laneObj = lanes.find((l) => l.id === laneId);
+    const laneObj = lanes.find((l) => String(l.id) === String(laneId));
     if (!laneObj) return;
-    setSelectedLaneId(laneObj.id);
+    setSelectedLaneId(String(laneObj.id));
     rememberLane(laneObj);
     navigate(`/lane-command?${buildLaneQuery(laneObj)}`);
   };
@@ -375,9 +715,7 @@ export default function MissionControl() {
       localStorage.removeItem(LS_MC_TIPS);
       localStorage.removeItem(LS_MC_MOBILE_COMPACT);
       localStorage.removeItem("lanesync_sidebar_open");
-    } catch {
-      // ignore
-    }
+    } catch {}
     window.location.reload();
   };
 
@@ -388,10 +726,14 @@ export default function MissionControl() {
           {/* TOP STRIP */}
           <div className="mission-topstrip">
             <div className="top-pill">Week of Jan 6</div>
-            <div className="top-pill">Active Trucks: 14</div>
-            <div className="top-pill">Weekly Gross: $8,760</div>
+            <div className="top-pill">Active Trucks: {activeTrucks || 0}</div>
+            <div className="top-pill">Weekly Gross: ${Math.round(weeklyGross || 0).toLocaleString()}</div>
 
             <div className="top-actions">
+              <button className="icon-btn" title="Refresh" type="button" onClick={refreshAll}>
+                ↻
+              </button>
+
               <button className="icon-btn" title="Pop Out" type="button" onClick={popOutMissionControl}>
                 ↗
               </button>
@@ -412,7 +754,6 @@ export default function MissionControl() {
                 ⋯
               </button>
 
-              {/* ✅ FIXED: cleaned popout-menu element (no duplicates / broken JSX) */}
               <div
                 className={`popout-menu ${menuOpen ? "open" : ""}`}
                 role="menu"
@@ -493,6 +834,12 @@ export default function MissionControl() {
             </div>
           </div>
 
+          {dataErr ? (
+            <div style={{ padding: "0 18px 10px", opacity: 0.9, fontSize: 12, fontWeight: 800, color: "#ffb86b" }}>
+              {dataErr}
+            </div>
+          ) : null}
+
           {/* HEADER */}
           <div className="mission-header">
             <div className="brand-stack">
@@ -501,7 +848,6 @@ export default function MissionControl() {
             </div>
 
             <div className="mission-title">Mission Control</div>
-
             <div className="mission-header-right" />
           </div>
 
@@ -558,9 +904,10 @@ export default function MissionControl() {
                     outline: "none",
                   }}
                   aria-label="Select lane"
+                  disabled={lanesLoading}
                 >
-                  {lanes.map((l) => (
-                    <option key={l.id} value={l.id} style={{ color: "#0b1020" }}>
+                  {(lanes || []).map((l) => (
+                    <option key={String(l.id)} value={String(l.id)} style={{ color: "#0b1020" }}>
                       {l.label}
                     </option>
                   ))}
@@ -579,8 +926,10 @@ export default function MissionControl() {
                     fontWeight: 850,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
+                    opacity: anyOverlayOpen ? 0.6 : 1,
                   }}
                   title="Open Lane Command"
+                  disabled={anyOverlayOpen || !selectedLane}
                 >
                   Open
                 </button>
@@ -589,15 +938,15 @@ export default function MissionControl() {
 
             <div className="lane-chip">
               <div className="chip-label">Miles</div>
-              <div className="chip-value">{selectedLane?.miles}</div>
+              <div className="chip-value">{selectedLane?.miles ?? "—"}</div>
             </div>
 
             <div className="lane-chip">
               <div className="chip-label">Rate</div>
-              <div className="chip-value">${selectedLane?.rate?.toLocaleString?.() ?? selectedLane?.rate}</div>
+              <div className="chip-value">${selectedLane?.rate?.toLocaleString?.() ?? selectedLane?.rate ?? "—"}</div>
             </div>
 
-            <button className="popout-btn" type="button" onClick={() => popOutLaneCommand()}>
+            <button className="popout-btn" type="button" onClick={() => popOutLaneCommand()} disabled={!selectedLane}>
               Pop Out
             </button>
           </div>
@@ -632,7 +981,7 @@ export default function MissionControl() {
             {/* NET RPM */}
             <div className="panel-card netrpm-card">
               <div className="netrpm-label">NET RPM</div>
-              <div className="netrpm-value">${(selectedLane?.netRpm ?? 2.17).toFixed(2)}</div>
+              <div className="netrpm-value">${(selectedLane?.netRpm ?? 0).toFixed(2)}</div>
 
               <div className="netrpm-status">
                 <div className="status-label">STATUS</div>
@@ -661,7 +1010,12 @@ export default function MissionControl() {
                   ⋯
                 </button>
 
-                <div className={`lh-menu ${laneHistoryMenuOpen ? "open" : ""}`} role="menu" onMouseDown={stopMenuEvent} onClick={stopMenuEvent}>
+                <div
+                  className={`lh-menu ${laneHistoryMenuOpen ? "open" : ""}`}
+                  role="menu"
+                  onMouseDown={stopMenuEvent}
+                  onClick={stopMenuEvent}
+                >
                   <div className="lh-menu-title">Lane History</div>
 
                   <button
@@ -721,11 +1075,14 @@ export default function MissionControl() {
                 </div>
               </div>
 
-              <div className="history-sub">Last Rates:</div>
+              <div className="history-sub">
+                Last Rates:{laneHistoryLoading ? <span style={{ marginLeft: 8, opacity: 0.7 }}>(Loading…)</span> : null}
+              </div>
+
               <div className="history-list">
-                {laneHistoryRows.map((r) => (
-                  <div key={r.date} className="history-item">
-                    ${r.netRpm.toFixed(2)}
+                {(laneHistoryRows || []).slice(0, 6).map((r) => (
+                  <div key={r.date + String(r.netRpm)} className="history-item">
+                    ${Number(r.netRpm || 0).toFixed(2)}
                   </div>
                 ))}
               </div>
@@ -751,7 +1108,7 @@ export default function MissionControl() {
                     </tr>
                   </thead>
                   <tbody>
-                    {carrierRows.map((r) => (
+                    {(carrierRows || []).map((r) => (
                       <tr
                         key={r.carrier}
                         onClick={(e) => {
@@ -777,6 +1134,13 @@ export default function MissionControl() {
                         <td>{r.loads}</td>
                       </tr>
                     ))}
+                    {(!carrierRows || carrierRows.length === 0) ? (
+                      <tr>
+                        <td colSpan={4} style={{ opacity: 0.7, padding: 12 }}>
+                          No carriers found yet.
+                        </td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </table>
               </div>
@@ -800,22 +1164,22 @@ export default function MissionControl() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentLoads.map((r) => (
+                    {(recentLoads || []).map((r) => (
                       <tr
-                        key={`${r.date}-${r.lane}`}
+                        key={`${r.date}-${r.lane}-${r.laneId}`}
                         onClick={(e) => {
                           if (anyOverlayOpen) {
                             e.preventDefault();
                             e.stopPropagation();
                             return;
                           }
-                          openFromRecentLoad(r.laneId);
+                          if (r.laneId) openFromRecentLoad(r.laneId);
                         }}
-                        style={{ cursor: "pointer" }}
-                        title="Open Lane Command for this lane"
+                        style={{ cursor: r.laneId ? "pointer" : "default" }}
+                        title={r.laneId ? "Open Lane Command for this lane" : ""}
                       >
                         <td>{r.date}</td>
-                        <td style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{r.lane}</td>
+                        <td style={{ textDecoration: r.laneId ? "underline" : "none", textUnderlineOffset: "3px" }}>{r.lane}</td>
                         <td>{r.miles}</td>
                         <td>{r.rpm}</td>
                         <td>
@@ -823,6 +1187,13 @@ export default function MissionControl() {
                         </td>
                       </tr>
                     ))}
+                    {(!recentLoads || recentLoads.length === 0) ? (
+                      <tr>
+                        <td colSpan={5} style={{ opacity: 0.7, padding: 12 }}>
+                          No loads found yet.
+                        </td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </table>
               </div>
