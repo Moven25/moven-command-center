@@ -318,118 +318,17 @@ export default function MissionControl() {
   const [carrierRows, setCarrierRows] = useState([]);
   const [recentLoads, setRecentLoads] = useState([]);
   const [weeklyGross, setWeeklyGross] = useState(0);
+  const [avgNetRpmFromLoads, setAvgNetRpmFromLoads] = useState(0);
 
   const [laneHistoryRows, setLaneHistoryRows] = useState([]);
   const [laneHistoryLoading, setLaneHistoryLoading] = useState(false);
 
   const refreshAll = useCallback(async () => {
     setDataErr("");
-
-   // inside refreshAll()
-
-// Supabase env missing -> show demo (OK)
-if (!supabase) {
-  setLanes(demoLanes);
-  setSelectedLaneId(String(demoLanes[0]?.id || ""));
-  setCarrierRows(demoCarrierRows);
-  setRecentLoads([
-    { date: "01/05", laneId: "chi-atl", lane: "Chicago, IL → Atlanta, GA", miles: "720", rpm: "$2.45", status: "Ok" },
-    { date: "01/04", laneId: "dal-mem", lane: "Dallas, TX → Memphis, TN", miles: "452", rpm: "$1.88", status: "Risk" },
-  ]);
-  setWeeklyGross(8760);
-  setLanesLoading(false);
-  setDataErr("Supabase env missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Showing demo data.");
-  return;
-}
-
-try {
-  // ... normal Supabase loading ...
-} catch (e) {
-  // ✅ CHANGED: do NOT show demo if Supabase exists but errors
-  setDataErr(e?.message || "Could not load from Supabase. (No demo fallback while Supabase is configured.)");
-  setLanes([]);
-  setSelectedLaneId("");
-  setCarrierRows([]);
-  setRecentLoads([]);
-  setWeeklyGross(0);
-} finally {
-  setLanesLoading(false);
-}
     setLanesLoading(true);
 
-    try {
-      // ---- lanes
-      const lanesCandidates = [LANES_TABLE, "lane", "lane_intel", "lane_intelligence"];
-      const lanesRes = await selectFromFirstWorkingTable(lanesCandidates, { orderBy: "created_at", ascending: false });
-      if (lanesRes.error) throw lanesRes.error;
-
-      const normalizedLanes = (lanesRes.data || []).map(normalizeLane).filter(Boolean);
-      const finalLanes = normalizedLanes.length ? normalizedLanes : demoLanes;
-
-      setLanes(finalLanes);
-      setSelectedLaneId((prev) => {
-        const next = prev || String(finalLanes[0]?.id || "");
-        const ok = finalLanes.some((l) => String(l.id) === String(next));
-        return ok ? next : String(finalLanes[0]?.id || "");
-      });
-
-      const lanesMap = finalLanes.reduce((acc, l) => {
-        acc[String(l.id)] = l;
-        return acc;
-      }, {});
-
-      // ---- carriers
-      const carriersCandidates = [CARRIERS_TABLE, "carrier", "carrier_profiles", "dispatch_carriers"];
-      const carriersRes = await selectFromFirstWorkingTable(carriersCandidates, { orderBy: "created_at", ascending: false, limit: 50 });
-
-      if (carriersRes.error) {
-        setCarrierRows(demoCarrierRows);
-      } else {
-        const normalizedCarriers = (carriersRes.data || [])
-          .map(normalizeCarrierRow)
-          .filter(Boolean)
-          .sort((a, b) => (b._avg || 0) - (a._avg || 0));
-        setCarrierRows(normalizedCarriers.length ? normalizedCarriers : demoCarrierRows);
-      }
-
-      // ---- loads
-      const loadsCandidates = [LOADS_TABLE, "load", "loads"];
-      const loadsRes = await selectFromFirstWorkingTable(loadsCandidates, { orderBy: "created_at", ascending: false, limit: 30 });
-
-      if (!loadsRes.error) {
-        const mapped = (loadsRes.data || []).map((r) => normalizeLoadRow(r, lanesMap)).filter(Boolean);
-        if (mapped.length) setRecentLoads(mapped.slice(0, 8));
-
-        // weekly gross (best effort)
-        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        const timeCols = ["created_at", "pickup_at", "inserted_at"];
-        let weekRows = null;
-
-        for (const col of timeCols) {
-          const tryWeek = await selectFromFirstWorkingTable(loadsCandidates, {
-            orderBy: col,
-            ascending: false,
-            limit: 200,
-            filters: [{ op: "gte", col, val: since }],
-          });
-          if (!tryWeek.error) {
-            weekRows = tryWeek.data || [];
-            break;
-          }
-        }
-
-        if (weekRows) {
-          const gross = weekRows.reduce((sum, r) => {
-            const v = r.rate ?? r.total_rate ?? r.totalRate ?? r.linehaul_rate ?? r.linehaulRate ?? 0;
-            return sum + num(v, 0);
-          }, 0);
-          setWeeklyGross(gross);
-        } else {
-          setWeeklyGross(0);
-        }
-      }
-    } catch (e) {
-      setDataErr(e?.message || "Could not load from Supabase. Showing demo data.");
+    // Supabase env missing -> demo mode is allowed
+    if (!supabase) {
       setLanes(demoLanes);
       setSelectedLaneId(String(demoLanes[0]?.id || ""));
       setCarrierRows(demoCarrierRows);
@@ -438,6 +337,75 @@ try {
         { date: "01/04", laneId: "dal-mem", lane: "Dallas, TX → Memphis, TN", miles: "452", rpm: "$1.88", status: "Risk" },
       ]);
       setWeeklyGross(8760);
+      setAvgNetRpmFromLoads(2.17);
+      setDataErr("Supabase env missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Showing demo data.");
+      setLanesLoading(false);
+      return;
+    }
+
+    try {
+      // ---- lanes
+      const lanesCandidates = [LANES_TABLE, "lane", "lane_intel", "lane_intelligence"];
+      const lanesRes = await selectFromFirstWorkingTable(lanesCandidates, { orderBy: "created_at", ascending: false });
+      if (lanesRes.error) throw lanesRes.error;
+
+      const normalizedLanes = (lanesRes.data || []).map(normalizeLane).filter(Boolean);
+      setLanes(normalizedLanes);
+      setSelectedLaneId((prev) => {
+        const next = prev || String(normalizedLanes[0]?.id || "");
+        const ok = normalizedLanes.some((l) => String(l.id) === String(next));
+        return ok ? next : String(normalizedLanes[0]?.id || "");
+      });
+
+      const lanesMap = normalizedLanes.reduce((acc, l) => {
+        acc[String(l.id)] = l;
+        return acc;
+      }, {});
+
+      // ---- carriers
+      const carriersCandidates = [CARRIERS_TABLE, "carrier", "carrier_profiles", "dispatch_carriers"];
+      const carriersRes = await selectFromFirstWorkingTable(carriersCandidates, {
+        orderBy: "created_at",
+        ascending: false,
+        limit: 50,
+      });
+      if (carriersRes.error) throw carriersRes.error;
+
+      const normalizedCarriers = (carriersRes.data || [])
+        .map(normalizeCarrierRow)
+        .filter(Boolean)
+        .sort((a, b) => (b._avg || 0) - (a._avg || 0));
+      setCarrierRows(normalizedCarriers);
+
+      // ---- loads
+      const loadsCandidates = [LOADS_TABLE, "load", "loads"];
+      const loadsRes = await selectFromFirstWorkingTable(loadsCandidates, { orderBy: "created_at", ascending: false, limit: 30 });
+      if (loadsRes.error) throw loadsRes.error;
+
+      const rawLoads = loadsRes.data || [];
+      const mappedLoads = rawLoads.map((r) => normalizeLoadRow(r, lanesMap)).filter(Boolean);
+      setRecentLoads(mappedLoads.slice(0, 8));
+
+      const gross = rawLoads.reduce((sum, r) => {
+        const rate = r.rate ?? r.total_rate ?? r.totalRate ?? r.linehaul_rate ?? r.linehaulRate ?? 0;
+        return sum + num(rate, 0);
+      }, 0);
+      setWeeklyGross(gross);
+
+      const rpmValues = rawLoads
+        .map((r) => num(r.net_rpm ?? r.netRpm ?? r.net ?? r.net_rpm_calc, 0))
+        .filter((v) => v > 0);
+      const avgRpm = rpmValues.length ? rpmValues.reduce((sum, v) => sum + v, 0) / rpmValues.length : 0;
+      setAvgNetRpmFromLoads(avgRpm);
+    } catch (e) {
+      // Supabase is configured: do NOT show demo fallback on errors
+      setDataErr(e?.message || "Could not load from Supabase. (No demo fallback while Supabase is configured.)");
+      setLanes([]);
+      setSelectedLaneId("");
+      setCarrierRows([]);
+      setRecentLoads([]);
+      setWeeklyGross(0);
+      setAvgNetRpmFromLoads(0);
     } finally {
       setLanesLoading(false);
     }
@@ -516,13 +484,18 @@ try {
   // KPI values
   // -----------------------------
   const avgNetRpm = useMemo(() => {
-    const carrierAvgs = carrierRows.map((c) => num(c._avg, 0)).filter((x) => x > 0);
-    if (carrierAvgs.length) return carrierAvgs.reduce((a, b) => a + b, 0) / carrierAvgs.length;
+    if (num(avgNetRpmFromLoads, 0) > 0) return num(avgNetRpmFromLoads, 0);
 
-    const laneAvgs = lanes.map((l) => num(l.netRpm, 0)).filter((x) => x > 0);
-    if (!laneAvgs.length) return 2.38;
-    return laneAvgs.reduce((a, b) => a + b, 0) / laneAvgs.length;
-  }, [carrierRows, lanes]);
+    if (!supabase) {
+      const carrierAvgs = carrierRows.map((c) => num(c._avg, 0)).filter((x) => x > 0);
+      if (carrierAvgs.length) return carrierAvgs.reduce((a, b) => a + b, 0) / carrierAvgs.length;
+
+      const laneAvgs = lanes.map((l) => num(l.netRpm, 0)).filter((x) => x > 0);
+      if (laneAvgs.length) return laneAvgs.reduce((a, b) => a + b, 0) / laneAvgs.length;
+    }
+
+    return 0;
+  }, [avgNetRpmFromLoads, carrierRows, lanes]);
 
   const activeTrucks = useMemo(() => {
     const total = carrierRows.reduce((sum, r) => sum + num(r._trucks, 0), 0);

@@ -53,8 +53,43 @@ function loadChipKey(status = "") {
   return "default";
 }
 
+function calculateRiskScore(carrier) {
+  let score = 0;
+
+  const claims = Number(carrier?.claims || 0);
+  const onTime = Number(carrier?.onTime || 0);
+  const insuranceOnFile = Boolean(carrier?.insuranceOnFile);
+  const w9OnFile = Boolean(carrier?.w9OnFile);
+  const authorityOnFile = Boolean(carrier?.authorityOnFile);
+  const insuranceExp = carrier?.insuranceExp || "";
+
+  score += claims * 15;
+
+  if (onTime > 0) {
+    if (onTime < 70) score += 30;
+    else if (onTime < 80) score += 20;
+    else if (onTime < 90) score += 10;
+  }
+
+  if (!insuranceOnFile) score += 20;
+  if (!w9OnFile) score += 10;
+  if (!authorityOnFile) score += 15;
+
+  if (insuranceExp) {
+    const today = new Date();
+    const exp = new Date(`${insuranceExp}T00:00:00`);
+    const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) score += 30;
+    else if (diffDays <= 7) score += 20;
+    else if (diffDays <= 14) score += 10;
+  }
+
+  return Math.max(0, Math.min(100, score));
+}
+
 /* -----------------------------
-   Normalizers (handles snake_case or camelCase columns)
+   Normalizers
 ------------------------------ */
 function stableId(row) {
   return (
@@ -66,7 +101,10 @@ function stableId(row) {
     row?.dot ??
     row?.dot_number ??
     (row
-      ? JSON.stringify([row.name ?? row.carrier_name ?? "carrier", row.created_at ?? row.createdAt ?? ""])
+      ? JSON.stringify([
+          row.name ?? row.carrier_name ?? "carrier",
+          row.created_at ?? row.createdAt ?? "",
+        ])
       : "—")
   );
 }
@@ -76,20 +114,19 @@ function detectPkColumn(row) {
   if (row.id != null) return "id";
   if (row.carrier_id != null) return "carrier_id";
   if (row.uuid != null) return "uuid";
-  // fallback (not ideal, but avoids hard crash)
   return "id";
 }
 
 function normalizeCarrier(row) {
   if (!row) return row;
-  return {
+
+  const baseCarrier = {
     id: stableId(row),
     _pkCol: detectPkColumn(row),
 
     name: row.name ?? row.carrier_name ?? row.company_name ?? row.legal_name ?? "—",
     status: row.status ?? row.carrier_status ?? "—",
 
-    riskScore: row.riskScore ?? row.risk_score ?? row.risk ?? 0,
     equipment: row.equipment ?? row.equipment_type ?? row.trailer_type ?? "—",
     mc: row.mc ?? row.mc_number ?? row.mc_num ?? "—",
     dot: row.dot ?? row.dot_number ?? row.dot_num ?? "—",
@@ -101,9 +138,11 @@ function normalizeCarrier(row) {
 
     lastContactAt: row.lastContactAt ?? row.last_contact_at ?? row.last_contact ?? null,
 
-    insuranceOnFile: row.insuranceOnFile ?? row.insurance_on_file ?? row.insurance_onfile ?? false,
+    insuranceOnFile:
+      row.insuranceOnFile ?? row.insurance_on_file ?? row.insurance_onfile ?? false,
     w9OnFile: row.w9OnFile ?? row.w9_on_file ?? row.w9_onfile ?? false,
-    authorityOnFile: row.authorityOnFile ?? row.authority_on_file ?? row.authority_onfile ?? false,
+    authorityOnFile:
+      row.authorityOnFile ?? row.authority_on_file ?? row.authority_onfile ?? false,
 
     insuranceExp:
       row.insuranceExp ??
@@ -115,34 +154,54 @@ function normalizeCarrier(row) {
     onTime: row.onTime ?? row.on_time ?? row.ontime_pct ?? null,
     claims: row.claims ?? row.claim_count ?? 0,
 
-    recentLoadCount: row.recentLoadCount ?? row.recent_load_count ?? row.recent_loads ?? null,
+    recentLoadCount:
+      row.recentLoadCount ?? row.recent_load_count ?? row.recent_loads ?? null,
 
+    trucks: row.trucks ?? row.truck_count ?? row.units ?? row.num_trucks ?? 0,
     created_at: row.created_at ?? row.createdAt ?? null,
 
     _raw: row,
+  };
+
+  return {
+    ...baseCarrier,
+    riskScore: calculateRiskScore(baseCarrier),
   };
 }
 
 function normalizeLoad(row) {
   if (!row) return row;
+
+  const laneText =
+    row.lane ??
+    row.route ??
+    row.origin_destination ??
+    [row.origin ?? row.pickup_city, row.destination ?? row.delivery_city]
+      .filter(Boolean)
+      .join(" → ");
+
   return {
-    id: row.id ?? row.load_id ?? row.reference ?? "—",
+    id: row.id ?? row.load_id ?? row.reference ?? row.ref ?? "—",
     broker: row.broker ?? row.broker_name ?? row.brokerCompany ?? "—",
     status: row.status ?? row.load_status ?? "—",
-    lane: row.lane ?? row.route ?? row.origin_destination ?? "—",
-    pickupAt: row.pickupAt ?? row.pickup_at ?? row.pickup_datetime ?? row.pickup_date ?? null,
-    deliveryAt: row.deliveryAt ?? row.delivery_at ?? row.delivery_datetime ?? row.delivery_date ?? null,
+    lane: laneText || "—",
+    pickupAt:
+      row.pickupAt ?? row.pickup_at ?? row.pickup_datetime ?? row.pickup_date ?? null,
+    deliveryAt:
+      row.deliveryAt ??
+      row.delivery_at ??
+      row.delivery_datetime ??
+      row.delivery_date ??
+      null,
     netRpm: row.netRpm ?? row.net_rpm ?? row.net_rpm_calc ?? row.net ?? 0,
+    rate: row.rate ?? row.total_rate ?? row.linehaul_rate ?? 0,
     carrier_id: row.carrier_id ?? row.carrierId ?? row.carrier ?? null,
     createdAt: row.createdAt ?? row.created_at ?? null,
   };
 }
 
 /* -----------------------------
-   Safe write helper:
-   - If your table doesn't have a column we try to write,
-     Supabase throws: "Could not find the '<col>' column of '<table>' in the schema cache"
-   - We parse that and retry with the offending key removed.
+   Safe write helper
 ------------------------------ */
 function extractMissingColumn(msg = "") {
   const m = String(msg).match(/Could not find the '([^']+)' column/i);
@@ -151,7 +210,7 @@ function extractMissingColumn(msg = "") {
 
 async function safeInsert(table, payload) {
   let obj = { ...payload };
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     const res = await supabase.from(table).insert(obj).select("*").maybeSingle();
     if (!res.error) return res;
     const col = extractMissingColumn(res.error.message);
@@ -168,8 +227,13 @@ async function safeInsert(table, payload) {
 
 async function safeUpdate(table, pkCol, pkVal, patch) {
   let obj = { ...patch };
-  for (let i = 0; i < 10; i++) {
-    const res = await supabase.from(table).update(obj).eq(pkCol, pkVal).select("*").maybeSingle();
+  for (let i = 0; i < 12; i++) {
+    const res = await supabase
+      .from(table)
+      .update(obj)
+      .eq(pkCol, pkVal)
+      .select("*")
+      .maybeSingle();
     if (!res.error) return res;
     const col = extractMissingColumn(res.error.message);
     if (!col) throw res.error;
@@ -250,6 +314,16 @@ async function idbDel(key) {
 }
 
 /* -----------------------------
+   Doc helpers
+------------------------------ */
+function docTypeToPatch(docType, value) {
+  if (docType === "insurance") return { insurance_on_file: value };
+  if (docType === "w9") return { w9_on_file: value };
+  if (docType === "authority") return { authority_on_file: value };
+  return {};
+}
+
+/* -----------------------------
    DocRow
 ------------------------------ */
 function DocRow({ label, docType, record, highlight, onUpload, onDownload, onRemove }) {
@@ -315,7 +389,16 @@ export default function CarrierCommand() {
   const carriersTable = "carriers";
   const loadsTable = "loads";
 
-  // auth (Option A: scoped)
+  const EQUIPMENT_OPTIONS = [
+    "Dry Van",
+    "Reefer",
+    "Flatbed",
+    "Power Only",
+    "Step Deck",
+    "Hotshot",
+  ];
+
+  // auth
   const [userId, setUserId] = useState("");
   const [authErr, setAuthErr] = useState("");
 
@@ -342,17 +425,19 @@ export default function CarrierCommand() {
     phone: "",
     email: "",
     notes: "",
-    riskScore: 0,
+    trucks: 1,
+    claims: 0,
+    onTime: 0,
     insuranceOnFile: false,
     w9OnFile: false,
     authorityOnFile: false,
-    insuranceExp: "", // YYYY-MM-DD
+    insuranceExp: "",
   };
   const [carrierForm, setCarrierForm] = useState(blankCarrierForm);
 
   // left panel controls
   const [q, setQ] = useState("");
-  const [filterMode, setFilterMode] = useState("all"); // all | atRisk | missingDocs
+  const [filterMode, setFilterMode] = useState("all");
   const [selectedId, setSelectedId] = useState(null);
 
   // drawer
@@ -369,7 +454,7 @@ export default function CarrierCommand() {
   const [docs, setDocs] = useState({ insurance: null, w9: null, authority: null });
   const [docBusy, setDocBusy] = useState(false);
 
-  // loads in drawer (fetched from Supabase on demand)
+  // loads in drawer
   const [loadingLoads, setLoadingLoads] = useState(false);
   const [loadErr, setLoadErr] = useState("");
   const [selectedLoads, setSelectedLoads] = useState([]);
@@ -384,6 +469,8 @@ export default function CarrierCommand() {
     () => carriers.find((c) => String(c.id) === String(selectedId)) || null,
     [carriers, selectedId]
   );
+
+  const liveFormRiskScore = useMemo(() => calculateRiskScore(carrierForm), [carrierForm]);
 
   const insuranceDays = useMemo(() => {
     const d = daysUntil(selected?.insuranceExp);
@@ -423,17 +510,32 @@ export default function CarrierCommand() {
     const qq = q.trim().toLowerCase();
     let out = list;
 
-    if (filterMode === "atRisk") out = out.filter((c) => Number(c.riskScore ?? 0) > 55);
+    if (filterMode === "atRisk") {
+      out = out.filter((c) => Number(c.riskScore ?? 0) > 55);
+    }
 
     if (filterMode === "missingDocs") {
       out = out.filter(
-        (c) => c.insuranceOnFile === false || c.w9OnFile === false || c.authorityOnFile === false
+        (c) =>
+          c.insuranceOnFile === false ||
+          c.w9OnFile === false ||
+          c.authorityOnFile === false
       );
     }
 
     if (qq) {
       out = out.filter((c) => {
-        const hay = [c.name, c.id, c.mc, c.dot, c.homeBase, c.phone, c.email, c.notes]
+        const hay = [
+          c.name,
+          c.id,
+          c.mc,
+          c.dot,
+          c.homeBase,
+          c.phone,
+          c.email,
+          c.notes,
+          c.equipment,
+        ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -445,7 +547,7 @@ export default function CarrierCommand() {
   }, [carriers, q, filterMode]);
 
   /* -----------------------------
-     Auth + carriers fetch (Option A)
+     Auth + carriers fetch
   ------------------------------ */
   async function getUserId() {
     if (!supabase) return "";
@@ -473,17 +575,15 @@ export default function CarrierCommand() {
       }
 
       if (!uid) {
-        setCarriersErr("No logged-in user found. Option A requires Supabase Auth sign-in.");
+        setCarriersErr("No logged-in user found. Sign in to enable Add/Edit/Delete.");
         setCarriers([]);
         setCarriersLoading(false);
         return;
       }
 
-      // Try ordering safely, but ALWAYS scope by owner_id
       let data = null;
       let error = null;
 
-      // Attempt 1: created_at
       {
         const res = await supabase
           .from(carriersTable)
@@ -494,7 +594,6 @@ export default function CarrierCommand() {
         error = res.error;
       }
 
-      // Attempt 2: createdAt
       if (error && String(error.message || "").toLowerCase().includes("column")) {
         const res2 = await supabase
           .from(carriersTable)
@@ -505,7 +604,6 @@ export default function CarrierCommand() {
         error = res2.error;
       }
 
-      // Attempt 3: no order
       if (error && String(error.message || "").toLowerCase().includes("column")) {
         const res3 = await supabase.from(carriersTable).select("*").eq("owner_id", uid);
         data = res3.data;
@@ -553,7 +651,6 @@ export default function CarrierCommand() {
 
     const c = carriers.find((x) => String(x.id) === String(carrierId));
     if (c) {
-      // preload edit form from selected row
       setCarrierForm({
         ...blankCarrierForm,
         name: c.name === "—" ? "" : c.name,
@@ -565,7 +662,9 @@ export default function CarrierCommand() {
         phone: c.phone === "—" ? "" : c.phone,
         email: c.email === "—" ? "" : c.email,
         notes: c.notes || "",
-        riskScore: Number(c.riskScore || 0),
+        trucks: Number(c.trucks || 0) || 1,
+        claims: Number(c.claims || 0),
+        onTime: Number(c.onTime || 0),
         insuranceOnFile: Boolean(c.insuranceOnFile),
         w9OnFile: Boolean(c.w9OnFile),
         authorityOnFile: Boolean(c.authorityOnFile),
@@ -575,7 +674,7 @@ export default function CarrierCommand() {
   };
 
   /* -----------------------------
-     Add Carrier (Option A)
+     Add Carrier
   ------------------------------ */
   function openAdd() {
     setAddErr("");
@@ -584,8 +683,6 @@ export default function CarrierCommand() {
   }
 
   function dbCarrierFromForm(form, uid) {
-    // Prefer snake_case columns that are most likely in DB
-    // safeInsert/safeUpdate will automatically drop columns that don't exist in your schema.
     const payload = {
       owner_id: uid,
       name: form.name?.trim() || null,
@@ -597,7 +694,10 @@ export default function CarrierCommand() {
       phone: form.phone?.trim() || null,
       email: form.email?.trim() || null,
       notes: form.notes || "",
-      risk_score: Number(form.riskScore || 0),
+      trucks: Number(form.trucks || 0),
+      claims: Number(form.claims || 0),
+      on_time: Number(form.onTime || 0),
+      risk_score: calculateRiskScore(form),
       insurance_on_file: Boolean(form.insuranceOnFile),
       w9_on_file: Boolean(form.w9OnFile),
       authority_on_file: Boolean(form.authorityOnFile),
@@ -605,7 +705,6 @@ export default function CarrierCommand() {
       last_contact_at: null,
     };
 
-    // Remove nulls (keeps inserts clean)
     Object.keys(payload).forEach((k) => {
       if (payload[k] === null || payload[k] === "") delete payload[k];
     });
@@ -623,10 +722,7 @@ export default function CarrierCommand() {
       setUserId(uid);
 
       if (!uid) throw new Error("No logged-in user. Sign in to add a carrier.");
-
-      if (!carrierForm.name.trim()) {
-        throw new Error("Carrier name is required.");
-      }
+      if (!carrierForm.name.trim()) throw new Error("Carrier name is required.");
 
       const payload = dbCarrierFromForm(carrierForm, uid);
       const res = await safeInsert(carriersTable, payload);
@@ -643,11 +739,10 @@ export default function CarrierCommand() {
   }
 
   /* -----------------------------
-     Edit / Delete (Option A)
+     Edit / Delete
   ------------------------------ */
   async function saveCarrierEdits() {
-    if (!selected?.id) return;
-    if (!supabase) return;
+    if (!selected?.id || !supabase) return;
 
     setEditBusy(true);
     setEditErr("");
@@ -659,10 +754,14 @@ export default function CarrierCommand() {
 
       const pkCol = selected._pkCol || "id";
       const patch = dbCarrierFromForm(carrierForm, uid);
-      // never allow ownership change in UI beyond ensuring it's set
       patch.owner_id = uid;
 
-      const res = await safeUpdate(carriersTable, pkCol, selected._raw?.[pkCol] ?? selected.id, patch);
+      const res = await safeUpdate(
+        carriersTable,
+        pkCol,
+        selected._raw?.[pkCol] ?? selected.id,
+        patch
+      );
       const updated = normalizeCarrier(res.data);
 
       setCarriers((prev) =>
@@ -676,8 +775,7 @@ export default function CarrierCommand() {
   }
 
   async function deleteCarrier() {
-    if (!selected?.id) return;
-    if (!supabase) return;
+    if (!selected?.id || !supabase) return;
 
     const ok = window.confirm(`Delete carrier "${selected.name}"? This cannot be undone.`);
     if (!ok) return;
@@ -720,6 +818,7 @@ export default function CarrierCommand() {
         idbGet(docKey(carrierId, "w9")),
         idbGet(docKey(carrierId, "authority")),
       ]);
+
       setDocs({
         insurance: insurance?.payload || null,
         w9: w9?.payload || null,
@@ -729,6 +828,33 @@ export default function CarrierCommand() {
       setDocs({ insurance: null, w9: null, authority: null });
     } finally {
       setDocBusy(false);
+    }
+  }
+
+  async function syncDocFlag(docType, value) {
+    if (!selected?.id || !supabase) return;
+
+    const pkCol = selected._pkCol || "id";
+    const pkVal = selected._raw?.[pkCol] ?? selected.id;
+    const patch = docTypeToPatch(docType, value);
+    if (!Object.keys(patch).length) return;
+
+    try {
+      const res = await safeUpdate(carriersTable, pkCol, pkVal, patch);
+      const updated = normalizeCarrier(res.data || { ...selected._raw, ...patch });
+
+      setCarriers((prev) =>
+        prev.map((c) => (String(c.id) === String(selected.id) ? { ...c, ...updated } : c))
+      );
+
+      setCarrierForm((prev) => ({
+        ...prev,
+        insuranceOnFile: docType === "insurance" ? value : prev.insuranceOnFile,
+        w9OnFile: docType === "w9" ? value : prev.w9OnFile,
+        authorityOnFile: docType === "authority" ? value : prev.authorityOnFile,
+      }));
+    } catch (e) {
+      console.error("Could not sync doc flag:", e);
     }
   }
 
@@ -746,8 +872,11 @@ export default function CarrierCommand() {
         updatedAt: new Date().toISOString(),
         data: bytes,
       };
+
       await idbPut({ key: docKey(selected.id, docType), payload });
+      await syncDocFlag(docType, true);
       await loadDocsForCarrier(selected.id);
+      await fetchCarriers();
     } finally {
       setDocBusy(false);
     }
@@ -776,7 +905,9 @@ export default function CarrierCommand() {
     setDocBusy(true);
     try {
       await idbDel(docKey(selected.id, docType));
+      await syncDocFlag(docType, false);
       await loadDocsForCarrier(selected.id);
+      await fetchCarriers();
     } finally {
       setDocBusy(false);
     }
@@ -790,11 +921,11 @@ export default function CarrierCommand() {
   async function loadLoadsForCarrier(carrierId) {
     setLoadingLoads(true);
     setLoadErr("");
+
     try {
       if (!supabase) throw new Error("Supabase env missing.");
 
       const carrierIdStr = String(carrierId);
-
       let data = null;
       let error = null;
 
@@ -853,12 +984,21 @@ export default function CarrierCommand() {
     setNotesDraft(selected?.notes ?? "");
   }, [selected?.id]);
 
+  useEffect(() => {
+    if (!selected?.id) {
+      setSelectedLoads([]);
+      return;
+    }
+    loadLoadsForCarrier(selected.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
+
   async function saveNotes() {
-    if (!selected?.id) return;
-    if (!supabase) {
+    if (!selected?.id || !supabase) {
       setNotesErr("Supabase env missing. Cannot save notes.");
       return;
     }
+
     setSavingNotes(true);
     setNotesErr("");
 
@@ -914,13 +1054,18 @@ export default function CarrierCommand() {
           </div>
 
           {userId ? (
-            <div style={{ marginTop: 6, opacity: 0.75, fontSize: 12 }}>Debug userId: {userId}</div>
+            <div style={{ marginTop: 6, opacity: 0.75, fontSize: 12 }}>
+              Debug userId: {userId}
+            </div>
           ) : authErr ? (
             <div style={{ marginTop: 6, color: "#ffb86b", fontSize: 12 }}>{authErr}</div>
           ) : null}
         </div>
 
-        <div className="commandshell__actions">
+        <div
+          className="commandshell__actions"
+          style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}
+        >
           <button className="commandshell__btn" type="button" onClick={fetchCarriers}>
             Refresh
           </button>
@@ -930,7 +1075,7 @@ export default function CarrierCommand() {
             type="button"
             onClick={openAdd}
             disabled={!userId}
-            title={!userId ? "Sign in to enable Add Carrier (Option A)." : "Add Carrier"}
+            title={!userId ? "Sign in to enable Add Carrier." : "Add Carrier"}
           >
             Add Carrier
           </button>
@@ -939,14 +1084,26 @@ export default function CarrierCommand() {
 
       {/* ADD MODAL */}
       {addOpen ? (
-        <div className="carriercmd__drawerOverlay" role="dialog" aria-modal="true" onClick={() => setAddOpen(false)}>
+        <div
+          className="carriercmd__drawerOverlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setAddOpen(false)}
+        >
           <aside className="carriercmd__drawer" onClick={(e) => e.stopPropagation()}>
             <div className="carriercmd__drawerHeader">
               <div>
                 <div className="carriercmd__drawerTitle">Add Carrier</div>
-                <div className="carriercmd__drawerSub">Saved to Supabase (owner_id = your user).</div>
+                <div className="carriercmd__drawerSub">
+                  Saved to Supabase (owner_id = your user).
+                </div>
               </div>
-              <button className="carriercmd__drawerClose" type="button" onClick={() => setAddOpen(false)} aria-label="Close">
+              <button
+                className="carriercmd__drawerClose"
+                type="button"
+                onClick={() => setAddOpen(false)}
+                aria-label="Close"
+              >
                 ✕
               </button>
             </div>
@@ -957,95 +1114,250 @@ export default function CarrierCommand() {
                   <div className="carriercmd__drawerCardTitle">Carrier Info</div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.name}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, name: e.target.value }))}
-                      placeholder="Carrier name (required)"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.homeBase}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))}
-                      placeholder="Home base (City, ST)"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.mc}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, mc: e.target.value }))}
-                      placeholder="MC (optional)"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.dot}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, dot: e.target.value }))}
-                      placeholder="DOT (optional)"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.phone}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, phone: e.target.value }))}
-                      placeholder="Phone"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.email}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, email: e.target.value }))}
-                      placeholder="Email"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.equipment}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, equipment: e.target.value }))}
-                      placeholder="Equipment (e.g., Dry Van)"
-                    />
-                    <select
-                      className="carriercmd__search"
-                      value={carrierForm.status}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, status: e.target.value }))}
-                    >
-                      <option value="active">active</option>
-                      <option value="inactive">inactive</option>
-                      <option value="onboarding">onboarding</option>
-                    </select>
+                    <div>
+                      <label className="carriercmd__label">Carrier Name</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.name}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, name: e.target.value }))
+                        }
+                        placeholder="Carrier name"
+                      />
+                    </div>
 
-                    <input
-                      className="carriercmd__search"
-                      type="number"
-                      value={carrierForm.riskScore}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, riskScore: Number(e.target.value || 0) }))}
-                      placeholder="Risk score (0-100)"
-                    />
-                    <input
-                      className="carriercmd__search"
-                      value={carrierForm.insuranceExp}
-                      onChange={(e) => setCarrierForm((p) => ({ ...p, insuranceExp: e.target.value }))}
-                      placeholder="Insurance exp (YYYY-MM-DD)"
-                    />
+                    <div>
+                      <label className="carriercmd__label">Status</label>
+                      <select
+                        className="carriercmd__search"
+                        value={carrierForm.status}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, status: e.target.value }))
+                        }
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="onboarding">Onboarding</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Home Base</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.homeBase}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))
+                        }
+                        placeholder="City, ST"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Equipment</label>
+                      <select
+                        className="carriercmd__search"
+                        value={carrierForm.equipment}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, equipment: e.target.value }))
+                        }
+                      >
+                        <option value="">Select equipment</option>
+                        {EQUIPMENT_OPTIONS.map((eq) => (
+                          <option key={eq} value={eq}>
+                            {eq}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">MC Number</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.mc}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, mc: e.target.value }))
+                        }
+                        placeholder="MC Number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">DOT Number</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.dot}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, dot: e.target.value }))
+                        }
+                        placeholder="DOT Number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Phone</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.phone}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, phone: e.target.value }))
+                        }
+                        placeholder="Phone number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Email</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.email}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, email: e.target.value }))
+                        }
+                        placeholder="Email address"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Trucks</label>
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="1"
+                        value={carrierForm.trucks}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            trucks: Number(e.target.value || 1),
+                          }))
+                        }
+                        placeholder="Number of trucks"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Auto Risk Score</label>
+                      <input
+                        className="carriercmd__search"
+                        type="text"
+                        value={liveFormRiskScore}
+                        readOnly
+                        placeholder="Calculated automatically"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">Claims</label>
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="0"
+                        value={carrierForm.claims}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            claims: Number(e.target.value || 0),
+                          }))
+                        }
+                        placeholder="Claims count"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="carriercmd__label">On-Time %</label>
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={carrierForm.onTime}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            onTime: Number(e.target.value || 0),
+                          }))
+                        }
+                        placeholder="On-time %"
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label className="carriercmd__label">Insurance Expiration</label>
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.insuranceExp}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            insuranceExp: e.target.value,
+                          }))
+                        }
+                        placeholder="YYYY-MM-DD"
+                      />
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        fontSize: 13,
+                        opacity: 0.9,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={carrierForm.insuranceOnFile}
-                        onChange={(e) => setCarrierForm((p) => ({ ...p, insuranceOnFile: e.target.checked }))}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            insuranceOnFile: e.target.checked,
+                          }))
+                        }
                       />
                       Insurance on file
                     </label>
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        fontSize: 13,
+                        opacity: 0.9,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={carrierForm.w9OnFile}
-                        onChange={(e) => setCarrierForm((p) => ({ ...p, w9OnFile: e.target.checked }))}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, w9OnFile: e.target.checked }))
+                        }
                       />
                       W-9 on file
                     </label>
-                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        fontSize: 13,
+                        opacity: 0.9,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={carrierForm.authorityOnFile}
-                        onChange={(e) => setCarrierForm((p) => ({ ...p, authorityOnFile: e.target.checked }))}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({
+                            ...p,
+                            authorityOnFile: e.target.checked,
+                          }))
+                        }
                       />
                       Authority on file
                     </label>
@@ -1076,17 +1388,27 @@ export default function CarrierCommand() {
                   ) : null}
 
                   <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                    <button className="carriercmd__primaryBtn" type="button" onClick={addCarrier} disabled={addBusy}>
+                    <button
+                      className="carriercmd__primaryBtn"
+                      type="button"
+                      onClick={addCarrier}
+                      disabled={addBusy}
+                    >
                       {addBusy ? "Saving…" : "Save Carrier"}
                     </button>
-                    <button className="carriercmd__filterBtn" type="button" onClick={() => setAddOpen(false)} disabled={addBusy}>
+                    <button
+                      className="carriercmd__filterBtn"
+                      type="button"
+                      onClick={() => setAddOpen(false)}
+                      disabled={addBusy}
+                    >
                       Cancel
                     </button>
                   </div>
 
                   <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>
-                    If you get a “Could not find column…” error, your DB schema doesn’t include that field.
-                    This build auto-retries by removing unknown fields.
+                    Risk score now calculates automatically from claims, on-time %, missing docs,
+                    and insurance expiration.
                   </div>
                 </div>
               </div>
@@ -1096,25 +1418,31 @@ export default function CarrierCommand() {
       ) : null}
 
       <div className="carriercmd">
-        {/* KPI cards */}
         <div className="carriercmd__kpis">
           <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("all")}>
-            <div className="carriercmd__kpiLabel">ACTIVE</div>
+            <div className="carriercmd__kpiLabel">ACTIVE CARRIERS</div>
             <div className="carriercmd__kpiValue">{activeCount}</div>
           </button>
 
-          <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("atRisk")}>
+          <button
+            className="carriercmd__kpi"
+            type="button"
+            onClick={() => setFilterMode("atRisk")}
+          >
             <div className="carriercmd__kpiLabel">AT RISK</div>
             <div className="carriercmd__kpiValue">{atRiskCount}</div>
           </button>
 
-          <button className="carriercmd__kpi" type="button" onClick={() => setFilterMode("missingDocs")}>
+          <button
+            className="carriercmd__kpi"
+            type="button"
+            onClick={() => setFilterMode("missingDocs")}
+          >
             <div className="carriercmd__kpiLabel">MISSING DOCS</div>
             <div className="carriercmd__kpiValue">{missingDocsCount}</div>
           </button>
         </div>
 
-        {/* Search / filters */}
         <div className="carriercmd__toolbar">
           <input
             className="carriercmd__search"
@@ -1145,7 +1473,6 @@ export default function CarrierCommand() {
             >
               Missing Docs
             </button>
-
             <button
               className="carriercmd__filterBtn"
               type="button"
@@ -1160,7 +1487,6 @@ export default function CarrierCommand() {
         </div>
 
         <div className="carriercmd__content">
-          {/* list */}
           <div className="carriercmd__listWrap">
             <div className="carriercmd__listMeta">
               <div className="carriercmd__listMetaLeft">
@@ -1204,13 +1530,17 @@ export default function CarrierCommand() {
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={8}>
-                        <div className="carriercmd__muted">No carriers match this filter/search.</div>
+                        <div className="carriercmd__muted">
+                          No carriers match this filter/search.
+                        </div>
                       </td>
                     </tr>
                   ) : (
                     filtered.map((c) => {
                       const docsMissing =
-                        (c.insuranceOnFile ? 0 : 1) + (c.w9OnFile ? 0 : 1) + (c.authorityOnFile ? 0 : 1);
+                        (c.insuranceOnFile ? 0 : 1) +
+                        (c.w9OnFile ? 0 : 1) +
+                        (c.authorityOnFile ? 0 : 1);
 
                       return (
                         <tr
@@ -1225,16 +1555,28 @@ export default function CarrierCommand() {
                           <td>{c.status || "—"}</td>
                           <td>
                             <div className="carriercmd__cellMain">{c.mc || "—"}</div>
-                            <div className="carriercmd__cellSub">{c.dot ? `DOT ${c.dot}` : "—"}</div>
+                            <div className="carriercmd__cellSub">
+                              {c.dot ? `DOT ${c.dot}` : "—"}
+                            </div>
                           </td>
                           <td>{c.homeBase || "—"}</td>
                           <td>
-                            <span className={`carriercmd__chip carriercmd__chip--${riskLabel(c.riskScore).toLowerCase()}`}>
+                            <span
+                              className={`carriercmd__chip carriercmd__chip--${riskLabel(
+                                c.riskScore
+                              ).toLowerCase()}`}
+                            >
                               {riskLabel(c.riskScore)}
                             </span>
                           </td>
                           <td>
-                            <span className={`carriercmd__chip ${docsMissing > 0 ? "carriercmd__chip--warn" : "carriercmd__chip--ok"}`}>
+                            <span
+                              className={`carriercmd__chip ${
+                                docsMissing > 0
+                                  ? "carriercmd__chip--warn"
+                                  : "carriercmd__chip--ok"
+                              }`}
+                            >
                               {docsMissing > 0 ? `${docsMissing} missing` : "OK"}
                             </span>
                           </td>
@@ -1260,7 +1602,6 @@ export default function CarrierCommand() {
             </div>
           </div>
 
-          {/* right side quick detail */}
           <div className="carriercmd__side">
             <div className="carriercmd__sideCard">
               <div className="carriercmd__sideTitle">Carrier Detail</div>
@@ -1292,8 +1633,17 @@ export default function CarrierCommand() {
                     </div>
                   </div>
 
+                  <div className="carriercmd__detailRow">
+                    <div className="carriercmd__label">Loads Tied</div>
+                    <div className="carriercmd__value">{selectedLoads.length || 0}</div>
+                  </div>
+
                   <div className="carriercmd__sideActions">
-                    <button className="carriercmd__primaryBtn" type="button" onClick={() => setProfileOpen(true)}>
+                    <button
+                      className="carriercmd__primaryBtn"
+                      type="button"
+                      onClick={() => setProfileOpen(true)}
+                    >
                       Open Profile
                     </button>
                   </div>
@@ -1303,9 +1653,13 @@ export default function CarrierCommand() {
           </div>
         </div>
 
-        {/* FULL PROFILE DRAWER */}
         {profileOpen && selected ? (
-          <div className="carriercmd__drawerOverlay" role="dialog" aria-modal="true" onClick={() => setProfileOpen(false)}>
+          <div
+            className="carriercmd__drawerOverlay"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setProfileOpen(false)}
+          >
             <aside className="carriercmd__drawer" onClick={(e) => e.stopPropagation()}>
               <div className="carriercmd__drawerHeader">
                 <div>
@@ -1315,7 +1669,12 @@ export default function CarrierCommand() {
                   </div>
                 </div>
 
-                <button className="carriercmd__drawerClose" type="button" onClick={() => setProfileOpen(false)} aria-label="Close">
+                <button
+                  className="carriercmd__drawerClose"
+                  type="button"
+                  onClick={() => setProfileOpen(false)}
+                  aria-label="Close"
+                >
                   ✕
                 </button>
               </div>
@@ -1340,7 +1699,6 @@ export default function CarrierCommand() {
               </div>
 
               <div className="carriercmd__drawerBody">
-                {/* QUICK EDIT BAR (always visible inside drawer) */}
                 <div className="carriercmd__drawerGrid" style={{ marginBottom: 10 }}>
                   <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
                     <div className="carriercmd__drawerCardTitle">Edit Carrier</div>
@@ -1352,6 +1710,7 @@ export default function CarrierCommand() {
                         onChange={(e) => setCarrierForm((p) => ({ ...p, name: e.target.value }))}
                         placeholder="Carrier name"
                       />
+
                       <select
                         className="carriercmd__search"
                         value={carrierForm.status}
@@ -1365,15 +1724,26 @@ export default function CarrierCommand() {
                       <input
                         className="carriercmd__search"
                         value={carrierForm.homeBase}
-                        onChange={(e) => setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, homeBase: e.target.value }))
+                        }
                         placeholder="Home base"
                       />
-                      <input
+
+                      <select
                         className="carriercmd__search"
                         value={carrierForm.equipment}
-                        onChange={(e) => setCarrierForm((p) => ({ ...p, equipment: e.target.value }))}
-                        placeholder="Equipment"
-                      />
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, equipment: e.target.value }))
+                        }
+                      >
+                        <option value="">Select equipment</option>
+                        {EQUIPMENT_OPTIONS.map((eq) => (
+                          <option key={eq} value={eq}>
+                            {eq}
+                          </option>
+                        ))}
+                      </select>
 
                       <input
                         className="carriercmd__search"
@@ -1400,6 +1770,92 @@ export default function CarrierCommand() {
                         onChange={(e) => setCarrierForm((p) => ({ ...p, email: e.target.value }))}
                         placeholder="Email"
                       />
+
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="1"
+                        value={carrierForm.trucks}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, trucks: Number(e.target.value || 1) }))
+                        }
+                        placeholder="Trucks"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        type="text"
+                        value={liveFormRiskScore}
+                        readOnly
+                        placeholder="Auto risk score"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="0"
+                        value={carrierForm.claims}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, claims: Number(e.target.value || 0) }))
+                        }
+                        placeholder="Claims"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={carrierForm.onTime}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, onTime: Number(e.target.value || 0) }))
+                        }
+                        placeholder="On-time %"
+                      />
+
+                      <input
+                        className="carriercmd__search"
+                        value={carrierForm.insuranceExp}
+                        onChange={(e) =>
+                          setCarrierForm((p) => ({ ...p, insuranceExp: e.target.value }))
+                        }
+                        placeholder="Insurance Exp (YYYY-MM-DD)"
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
+                      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                        <input
+                          type="checkbox"
+                          checked={carrierForm.insuranceOnFile}
+                          onChange={(e) =>
+                            setCarrierForm((p) => ({ ...p, insuranceOnFile: e.target.checked }))
+                          }
+                        />
+                        Insurance on file
+                      </label>
+
+                      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                        <input
+                          type="checkbox"
+                          checked={carrierForm.w9OnFile}
+                          onChange={(e) =>
+                            setCarrierForm((p) => ({ ...p, w9OnFile: e.target.checked }))
+                          }
+                        />
+                        W-9 on file
+                      </label>
+
+                      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
+                        <input
+                          type="checkbox"
+                          checked={carrierForm.authorityOnFile}
+                          onChange={(e) =>
+                            setCarrierForm((p) => ({ ...p, authorityOnFile: e.target.checked }))
+                          }
+                        />
+                        Authority on file
+                      </label>
                     </div>
 
                     {editErr ? (
@@ -1409,10 +1865,20 @@ export default function CarrierCommand() {
                     ) : null}
 
                     <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center" }}>
-                      <button className="carriercmd__primaryBtn" type="button" onClick={saveCarrierEdits} disabled={!userId || editBusy}>
+                      <button
+                        className="carriercmd__primaryBtn"
+                        type="button"
+                        onClick={saveCarrierEdits}
+                        disabled={!userId || editBusy}
+                      >
                         {editBusy ? "Saving…" : "Save Changes"}
                       </button>
-                      <button className="carriercmd__filterBtn" type="button" onClick={deleteCarrier} disabled={!userId || editBusy}>
+                      <button
+                        className="carriercmd__filterBtn"
+                        type="button"
+                        onClick={deleteCarrier}
+                        disabled={!userId || editBusy}
+                      >
                         Delete
                       </button>
 
@@ -1425,7 +1891,27 @@ export default function CarrierCommand() {
                   </div>
                 </div>
 
-                {/* Existing tabs (your original content) */}
+                {profileTab === "Overview" ? (
+                  <div className="carriercmd__drawerGrid">
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Carrier</div>
+                      <div className="carriercmd__drawerBig">{selected.name}</div>
+                    </div>
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Equipment</div>
+                      <div className="carriercmd__drawerBig">{selected.equipment || "—"}</div>
+                    </div>
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Trucks</div>
+                      <div className="carriercmd__drawerBig">{selected.trucks || 0}</div>
+                    </div>
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Loads Tied</div>
+                      <div className="carriercmd__drawerBig">{selectedLoads.length || 0}</div>
+                    </div>
+                  </div>
+                ) : null}
+
                 {profileTab === "Compliance" ? (
                   <div className="carriercmd__drawerGrid">
                     <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
@@ -1457,7 +1943,9 @@ export default function CarrierCommand() {
                           title="Open Docs tab (W-9)"
                         >
                           <span>W-9</span>
-                          <span className="carriercmd__docMeta">{selected.w9OnFile ? "on file" : "missing"}</span>
+                          <span className="carriercmd__docMeta">
+                            {selected.w9OnFile ? "on file" : "missing"}
+                          </span>
                         </button>
 
                         <button
@@ -1467,7 +1955,9 @@ export default function CarrierCommand() {
                           title="Open Docs tab (Authority)"
                         >
                           <span>Authority</span>
-                          <span className="carriercmd__docMeta">{selected.authorityOnFile ? "verified" : "missing"}</span>
+                          <span className="carriercmd__docMeta">
+                            {selected.authorityOnFile ? "verified" : "missing"}
+                          </span>
                         </button>
                       </div>
 
@@ -1482,17 +1972,22 @@ export default function CarrierCommand() {
                   <div className="carriercmd__drawerGrid">
                     <div className="carriercmd__drawerCard">
                       <div className="carriercmd__drawerCardTitle">On-time</div>
-                      <div className="carriercmd__drawerBig">{selected.onTime ? `${selected.onTime}%` : "—"}</div>
+                      <div className="carriercmd__drawerBig">
+                        {selected.onTime ? `${selected.onTime}%` : "—"}
+                      </div>
                     </div>
                     <div className="carriercmd__drawerCard">
                       <div className="carriercmd__drawerCardTitle">Claims</div>
                       <div className="carriercmd__drawerBig">{selected.claims ?? 0}</div>
                     </div>
+                    <div className="carriercmd__drawerCard">
+                      <div className="carriercmd__drawerCardTitle">Trucks</div>
+                      <div className="carriercmd__drawerBig">{selected.trucks || 0}</div>
+                    </div>
                     <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
                       <div className="carriercmd__drawerCardTitle">Risk Model Notes</div>
                       <div className="carriercmd__drawerHint">
-                        Risk label: <strong>{riskLabel(selected.riskScore)}</strong>. Later: combine claims, on-time %,
-                        check-call compliance, and doc expiry.
+                        Risk label: <strong>{riskLabel(selected.riskScore)}</strong>. Auto-calculated from claims, on-time %, missing docs, and insurance expiry.
                       </div>
                     </div>
                   </div>
@@ -1527,13 +2022,28 @@ export default function CarrierCommand() {
                       ) : null}
 
                       <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                        <button className="carriercmd__primaryBtn" type="button" onClick={saveNotes} disabled={savingNotes}>
+                        <button
+                          className="carriercmd__primaryBtn"
+                          type="button"
+                          onClick={saveNotes}
+                          disabled={savingNotes}
+                        >
                           {savingNotes ? "Saving…" : "Save Notes"}
                         </button>
-                        <button className="carriercmd__filterBtn" type="button" onClick={() => setNotesDraft(selected?.notes ?? "")} disabled={savingNotes}>
+                        <button
+                          className="carriercmd__filterBtn"
+                          type="button"
+                          onClick={() => setNotesDraft(selected?.notes ?? "")}
+                          disabled={savingNotes}
+                        >
                           Reset
                         </button>
-                        <button className="carriercmd__filterBtn" type="button" onClick={() => setNotesDraft("")} disabled={savingNotes}>
+                        <button
+                          className="carriercmd__filterBtn"
+                          type="button"
+                          onClick={() => setNotesDraft("")}
+                          disabled={savingNotes}
+                        >
                           Clear
                         </button>
                       </div>
@@ -1546,7 +2056,8 @@ export default function CarrierCommand() {
                     <div className="carriercmd__drawerCard carriercmd__drawerCard--wide">
                       <div className="carriercmd__drawerCardTitle">Documents</div>
                       <div className="carriercmd__drawerHint">
-                        Real uploads stored locally (IndexedDB). Next step later: sync to Supabase Storage.
+                        Real uploads stored locally (IndexedDB). Compliance flags are also synced
+                        back to the carrier row when possible.
                       </div>
 
                       <div style={{ marginTop: 12 }}>
@@ -1579,11 +2090,18 @@ export default function CarrierCommand() {
                         />
                       </div>
 
-                      {docBusy ? <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>Saving…</div> : null}
+                      {docBusy ? (
+                        <div className="carriercmd__drawerHint" style={{ marginTop: 10 }}>
+                          Saving…
+                        </div>
+                      ) : null}
 
                       {!idbAvailable() ? (
-                        <div className="carriercmd__drawerHint" style={{ marginTop: 10, color: "#ffb86b" }}>
-                          IndexedDB is not available in this browser/session, so uploads may not work here.
+                        <div
+                          className="carriercmd__drawerHint"
+                          style={{ marginTop: 10, color: "#ffb86b" }}
+                        >
+                          IndexedDB is not available in this browser/session, so uploads may not work.
                         </div>
                       ) : null}
                     </div>
@@ -1598,10 +2116,13 @@ export default function CarrierCommand() {
                       {loadingLoads ? (
                         <div className="carriercmd__drawerHint">Loading loads…</div>
                       ) : loadErr ? (
-                        <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b" }}>{loadErr}</div>
+                        <div className="carriercmd__drawerHint" style={{ color: "#ff7b7b" }}>
+                          {loadErr}
+                        </div>
                       ) : selectedLoads.length === 0 ? (
                         <div className="carriercmd__drawerHint">
-                          No loads tied to this carrier yet. Once loads use <strong>carrier_id</strong>, they will appear here automatically.
+                          No loads tied to this carrier yet. Once loads use <strong>carrier_id</strong>,
+                          they will appear here automatically.
                         </div>
                       ) : (
                         <div className="carriercmd__loadsTableWrap">
@@ -1613,6 +2134,7 @@ export default function CarrierCommand() {
                                 <th>Lane</th>
                                 <th>Pickup</th>
                                 <th>Delivery</th>
+                                <th>Rate</th>
                                 <th>Net</th>
                               </tr>
                             </thead>
@@ -1624,13 +2146,18 @@ export default function CarrierCommand() {
                                     <div className="carriercmd__cellSub">{l.broker}</div>
                                   </td>
                                   <td>
-                                    <span className={`carriercmd__loadChip carriercmd__loadChip--${loadChipKey(l.status)}`}>
+                                    <span
+                                      className={`carriercmd__loadChip carriercmd__loadChip--${loadChipKey(
+                                        l.status
+                                      )}`}
+                                    >
                                       {l.status}
                                     </span>
                                   </td>
                                   <td>{l.lane}</td>
                                   <td>{formatWhen(l.pickupAt)}</td>
                                   <td>{formatWhen(l.deliveryAt)}</td>
+                                  <td>${Number(l.rate || 0).toFixed(2)}</td>
                                   <td>{Number(l.netRpm || 0).toFixed(2)}</td>
                                 </tr>
                               ))}
